@@ -1,0 +1,77 @@
+// src/assets/scss/global.scss
+@use 'variables' as *;
+
+
+
+
+body {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  color: $text-color;
+  margin: 0;
+  padding: 0;
+}
+
+@media (max-width: 1200px) {
+  .band-showcase {
+    .showcase-container {
+      width: 95%;
+      
+      .band-card {
+        flex: 0 0 45%; /* 平板设备显示两个 */
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-header {
+    .nav-boxes {
+      flex-wrap: wrap;
+      
+      .nav-box {
+        padding: 8px 15px;
+        min-width: 100px;
+      }
+    }
+  }
+  
+  .band-showcase {
+    height: 60vh;
+    margin-top: 80px;
+    
+    .nav-arrow {
+      width: 40px;
+      height: 40px;
+      top: 40%;
+      
+      &.prev {
+        left: 10px;
+      }
+      
+      &.next {
+        right: 10px;
+      }
+    }
+    
+    .showcase-container {
+      width: 95%;
+      
+      .slide-group {
+        gap: 20px;
+      }
+      
+      .band-card {
+        flex: 0 0 100%; /* 移动设备显示一个 */
+      }
+    }
+  }
+}
+
+.band-management {
+  background-color: #111;
+  color: white;
+  min-height: 100vh;
+  padding: 20px;
+  position: relative;
+  overflow-y: auto;
+}
