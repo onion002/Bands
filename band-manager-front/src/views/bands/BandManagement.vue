@@ -234,10 +234,19 @@ const closeImageUpload = () => {
 }
 
 // 处理图片上传完成
-const handleImageUploaded = async (bandId: number, imageUrl: string) => {
+const handleImageUploaded = async (bandId: number | null, imageUrl: string) => {
+  if (bandId == null) return;
   // 上传图片后，更新数据库中的 banner_image_url 字段
   try {
-    await BandService.updateBand(bandId, { banner_image_url: imageUrl });
+    const band = bands.value.find(b => b.id === bandId);
+    await BandService.updateBand(bandId, {
+      name: band.name,
+      year: band.year,
+      genre: band.genre,
+      member_count: band.member_count,
+      bio: band.bio,
+      banner_image_url: imageUrl
+    });
     await fetchBands(); // 刷新乐队列表，确保图片能显示
   } finally {
     closeImageUpload();

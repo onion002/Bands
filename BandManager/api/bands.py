@@ -258,8 +258,9 @@ def update_band(band_id):
             })
     except Exception as e:
         db.session.rollback()
+        print("更新乐队异常：", e)  # 这行会把异常信息打印到控制台
         logging.error(f"更新乐队失败: {str(e)}", exc_info=True)
-        return jsonify({'error': '更新乐队失败'}), 500
+        return jsonify({'error': f'更新乐队失败: {str(e)}'}), 500
 
 @bands_bp.route('/<int:band_id>', methods=['DELETE'])
 def delete_band(band_id):

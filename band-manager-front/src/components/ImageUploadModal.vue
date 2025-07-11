@@ -48,6 +48,13 @@
 import { ref } from 'vue'
 import { BandService } from '@/api/bandService'
 
+// 新增：定义 props 和 emits
+const props = defineProps<{ bandId?: number }>()
+const emit = defineEmits<{
+  (e: 'uploaded', bandId: number | null, imageUrl: string): void
+  (e: 'close'): void
+}>()
+
 const fileInput = ref<HTMLInputElement | null>(null)
 const file = ref<File | null>(null)
 const previewUrl = ref<string | null>(null)
@@ -118,13 +125,19 @@ const startUpload = async () => {
   result.value = null
 
   try {
-    const response = await BandService.uploadBandImage(file.value)
+    const response: any = await BandService.uploadBandImage(file.value)
     const imageUrl = response.url
 
     result.value = {
       success: true,
       message: '图片上传成功',
       url: imageUrl
+    }
+
+    // 上传成功后 emit uploaded 事件，通知父组件
+    if (imageUrl) {
+      // 如果有 bandId 作为 prop，emit bandId，否则 emit null
+      emit('uploaded', props.bandId || null, imageUrl)
     }
 
     setTimeout(() => {
