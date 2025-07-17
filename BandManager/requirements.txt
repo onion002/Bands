@@ -1,0 +1,23 @@
+alembic==1.16.4
+blinker @ file:///C:/b/abs_b1i87khtob/croot/blinker_1737448732095/work
+click @ file:///C:/b/abs_42rbjngfys/croot/click_1744271606983/work
+colorama @ file:///C:/Users/dev-admin/perseverance-python-buildout/croot/colorama_1729036581634/work
+Flask @ file:///C:/b/abs_a6m37uz578/croot/flask_1737454335662/work
+Flask-Cors @ file:///tmp/build/80754af9/flask_cors_1614875208036/work
+Flask-Migrate==4.1.0
+Flask-Script==2.0.6
+Flask-SQLAlchemy==3.1.1
+greenlet==3.2.3
+itsdangerous @ file:///C:/Users/dev-admin/buildout/croot/itsdangerous_1732929022589/work
+Jinja2 @ file:///C:/b/abs_920kup4e6u/croot/jinja2_1741711580669/work
+Mako==1.3.10
+MarkupSafe @ file:///C:/b/abs_a0ma7ge0jc/croot/markupsafe_1738584052792/work
+mysql==0.0.3
+mysql-connector-python==9.3.0
+mysqlclient==2.2.7
+setuptools==78.1.1
+six @ file:///C:/b/abs_149wuyuo1o/croot/six_1744271521515/work
+SQLAlchemy==2.0.41
+typing_extensions==4.14.1
+Werkzeug @ file:///C:/b/abs_c7bupijx2_/croot/werkzeug_1737448709012/work
+wheel==0.45.1

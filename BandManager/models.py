@@ -33,7 +33,7 @@ class Band(db.Model):
             'year': self.year,
             'genre': self.genre,
             'bio': self.bio,
-            'member_count': len(self.members) if self.members else 0,
+            'member_count': len(list(self.members)) if self.members else 0,
             # 修正：使用 None 而不是字符串 "null"
             'banner_image_url': self.banner_image_url if self.banner_image_url else None,
             'profile_image_url': self.profile_image_url if self.profile_image_url else None,
@@ -75,6 +75,6 @@ class Member(db.Model):
             'role': self.role,
             'join_date': str(self.join_date)if self.join_date else None,
             'band_id': self.band_id,
-            'band_name': self.band.name if self.band else None,
+            'band_name': self.band.name if self.band else None,  # type: ignore
             'avatar_url': self.avatar_url
         }

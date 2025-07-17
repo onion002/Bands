@@ -21,3 +21,7 @@ class Config:
     # ====== 开发调试配置 ======
     SQLALCHEMY_ECHO = True  # 打印SQL语句到控制台
     DEBUG = True
+
+    # CORS 配置 --------
+    # 允许前端跨域访问
+    CORS_ORIGINS = ["http://118.25.219.26:5173", "http://localhost:5173"]
