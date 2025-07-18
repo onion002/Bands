@@ -3,7 +3,7 @@
   <div class="band-management">
     <!-- 页面标题和操作按钮区域 -->
     <div class="section-header">
-      <h1>乐队管理</h1>
+      <h1 @click="goToHome" style="cursor:pointer;">乐队管理</h1>
       <div class="button-group">
         <!-- 返回主页按钮 -->
         <button class="back-button" @click="goToHome">
@@ -72,16 +72,15 @@
               <i class="fas fa-music"></i>
               <span>乐队图片</span>
             </div>
-            <!-- 上传图片按钮 -->
-            <button class="upload-button" @click="openImageUpload(band)">
-              <i class="fas fa-camera"></i> 上传图片
-            </button>
           </div>
           <!-- 乐队信息区域 -->
           <div class="band-info">
             <h3 class="band-name">{{ band.name }}</h3>
             <p class="band-genre">{{ band.genre }}</p>
             <p class="band-year">成立年份: {{ band.year }}</p>
+            <button class="upload-button" @click="openImageUpload(band)">
+              <i class="fas fa-camera"></i> 上传图片
+            </button>
             <div class="band-actions">
               <!-- 编辑按钮 -->
               <button @click="editBand(band)" class="action-btn edit">
@@ -360,9 +359,9 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .band-management {
+  min-height: 100vh;
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   color: white;
-  min-height: 100vh;
   width: 100%;
   margin-top: 30px;
   box-sizing: border-box;
@@ -470,117 +469,143 @@ onMounted(() => {
 // 乐队列表区域，内容区加较小左右内边距
 .band-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); // 自适应列宽
-  gap: 25px; // 卡片间距
-  padding: 0 4px 20px 4px; // 减少底部内边距，减小纵向间距
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* 自适应列宽 */
+  gap: 25px; /* 卡片间距 */
+  padding: 0 4px 20px 4px; /* 减少底部内边距，减小纵向间距 */
   .band-item {
-    // 单个乐队卡片
     .band-card {
-      background: #222; // 卡片背景
-      border-radius: 8px; // 圆角
+      background: #222;
+      border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); // 阴影
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
       transition: transform 0.3s ease;
+      min-height: 340px;
+      display: flex;
+      flex-direction: column;
       &:hover {
-        transform: translateY(-5px); // 悬停上浮
-        box-shadow: 0 8px 20px rgba(229, 57, 53, 0.2); // 悬停阴影
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(229, 57, 53, 0.2);
       }
-      // 乐队图片区域
       .band-image {
-        height: 180px; // 图片高度
-        background-color: #444; // 默认背景色
+        width: 100%;
+        height: 180px;
+        background-color: #444;
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        position: relative;
-        // 图片占位符（无图片时显示）
+        .band-image-content {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 8px 8px 0 0;
+          display: block;
+          position: static;
+          background: #222;
+        }
         .image-placeholder {
-          text-align: center;
-          color: rgba(255, 255, 255, 0.7);
+          width: 100%;
+          height: 100%;
+          border-radius: 8px 8px 0 0;
+          background: #666;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          font-size: 2.5rem;
           z-index: 1;
           i {
-            font-size: 3.5rem; // 占位图标大号
-            display: block;
-            margin-bottom: 10px;
+            font-size: 3rem;
+            margin-bottom: 8px;
             color: rgba(229, 57, 53, 0.7);
           }
           span {
-            font-size: 1.2rem;
+            font-size: 1rem;
+            color: #eee;
           }
-
         }
-        // 图片内容（有图片时显示）
-        .band-image-content {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          object-fit: cover; // 图片自适应裁剪
-          z-index: 1;
-        }
-        // 上传图片按钮，悬浮在图片右下角
-        .upload-button {
-          position: absolute;
-          bottom: 10px;
-          right: 10px;
-          background: rgba(0, 0, 0, 0.7);
+      }
+      .band-info {
+        padding: 15px 15px 60px 15px; /* 底部多留空间给按钮 */
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        position: relative;
+        .band-name {
+          font-size: 1.5rem;
+          font-weight: bold;
+          margin: 0 0 5px 0;
           color: white;
+          text-align: left;
+        }
+        .band-genre, .band-year {
+          font-size: 1rem;
+          color: #aaa;
+          margin: 5px 0 0 0;
+          text-align: left;
+        }
+        .band-actions {
+          /* 保证按钮区和文字区有足够间距 */
+          margin-top: 18px;
+        }
+      }
+      .upload-button {
+        position: absolute;
+        left: 15px;
+        bottom: 15px;
+        background: #222;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 14px;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+        cursor: pointer;
+        transition: background 0.2s;
+        z-index: 2;
+        &:hover {
+          background: #e53935;
+          color: #fff;
+        }
+      }
+      .band-actions {
+        position: absolute;
+        right: 15px;
+        bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        .action-btn {
+          padding: 8px 15px;
           border: none;
-          padding: 5px 10px;
           border-radius: 4px;
-          font-size: 0.8rem;
+          font-size: 0.9rem;
+          font-weight: 500;
           cursor: pointer;
-          z-index: 2;
-          transition: all 0.3s ease;
+          transition: all 0.2s ease;
           &:hover {
-            background: rgba(229, 57, 53, 0.7); // 悬停变色
+            transform: translateY(-2px);
           }
           i {
             margin-right: 5px;
           }
-        }
-      }
-      // 乐队信息区域
-      .band-info {
-        padding: 15px; // 内边距
-        .band-name {
-          font-size: 1.5rem; // 乐队名字号
-          margin: 0 0 5px;
-          color: white;
-        }
-        .band-genre, .band-year {
-          font-size: 1rem;
-          color: #aaa; // 次要信息色
-          margin: 5px 0;
-        }
-        // 操作按钮区域（编辑、删除）
-        .band-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 10px; // 按钮间距
-          margin-top: 15px;
-          .action-btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
+          &.edit {
+            background: linear-gradient(to right, #007bff, #0056b3);
+            color: white;
             &:hover {
-              transform: translateY(-2px); // 悬停上浮
+              box-shadow: 0 3px 10px rgba(0, 123, 255, 0.3);
             }
-            i {
-              margin-right: 5px;
-            }
-            &.edit {
-              background: rgba(41, 121, 255, 0.8); // 编辑按钮色
-              color: white;
-            }
-            &.delete {
-              background: rgba(229, 57, 53, 0.8); // 删除按钮色
-              color: white;
+          }
+          &.delete {
+            background: linear-gradient(to right, #dc3545, #c82333);
+            color: white;
+            &:hover {
+              box-shadow: 0 3px 10px rgba(220, 53, 69, 0.3);
             }
           }
         }

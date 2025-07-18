@@ -22,13 +22,17 @@
           @mouseout="unhoverCard"
         >
           <div class="image-container">
-            <div class="placeholder-image" :style="{ backgroundColor: band.color }">
-              <div v-if="!band.imageUrl" class="placeholder-text">
-                <!-- 使用原生音乐符号 -->
-                <div class="music-symbol">♪</div>
-                <span>乐队图片</span>
+            <template v-if="band.banner_image_url">
+              <img :src="band.banner_image_url" alt="乐队图片" style="width:100%;height:100%;object-fit:cover;display:block;" />
+            </template>
+            <template v-else>
+              <div class="placeholder-image" :style="{ backgroundColor: band.color || '#222' }">
+                <div class="placeholder-text">
+                  <div class="music-symbol">♪</div>
+                  <span>乐队图片</span>
+                </div>
               </div>
-            </div>
+            </template>
           </div>
           <div class="band-info">
             <h3 class="band-name">{{ band.name }}</h3>
@@ -49,83 +53,31 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { BandService } from '@/api/bandService';
 
-// 乐队数据 - 使用黑白灰三种纯色作为默认背景
-const bands = ref([
-  { 
-    id: 1, 
-    name: "霓虹狂想曲", 
-    genre: "电子摇滚", 
-    color: "#333333", // 深灰色
-    imageUrl: "" 
-  },
-  { 
-    id: 2, 
-    name: "金属意志", 
-    genre: "重金属", 
-    color: "#666666", // 中灰色
-    imageUrl: "" 
-  },
-  { 
-    id: 3, 
-    name: "城市之声", 
-    genre: "流行摇滚", 
-    color: "#999999", // 浅灰色
-    imageUrl: "" 
-  },
-  { 
-    id: 4, 
-    name: "荒野节奏", 
-    genre: "民谣摇滚", 
-    color: "#333333", // 深灰色
-    imageUrl: "" 
-  },
-  { 
-    id: 5, 
-    name: "幻影和弦", 
-    genre: "前卫摇滚", 
-    color: "#666666", // 中灰色
-    imageUrl: "" 
-  },
-  { 
-    id: 6, 
-    name: "街头回响", 
-    genre: "朋克摇滚", 
-    color: "#999999", // 浅灰色
-    imageUrl: "" 
-  },
-]);
-
+const bands = ref<any[]>([]);
 const activeBandIndex = ref(0);
-const currentGroup = ref(0);
 const autoSlideInterval = ref<number | null>(null);
 const hoveredCardIndex = ref(-1);
 
-// 每页显示3个乐队
+// 只展示1个乐队
 const visibleBands = computed(() => {
-  const start = currentGroup.value * 3;
-  return bands.value.slice(start, start + 3);
+  if (bands.value.length === 0) return [];
+  return [bands.value[activeBandIndex.value]];
 });
 
 const nextSlide = () => {
-  if (currentGroup.value >= Math.ceil(bands.value.length / 3) - 1) {
-    currentGroup.value = 0;
-  } else {
-    currentGroup.value++;
-  }
+  if (bands.value.length === 0) return;
+  activeBandIndex.value = (activeBandIndex.value + 1) % bands.value.length;
 };
 
 const prevSlide = () => {
-  if (currentGroup.value <= 0) {
-    currentGroup.value = Math.ceil(bands.value.length / 3) - 1;
-  } else {
-    currentGroup.value--;
-  }
+  if (bands.value.length === 0) return;
+  activeBandIndex.value = (activeBandIndex.value - 1 + bands.value.length) % bands.value.length;
 };
 
 const startAutoSlide = () => {
   if (autoSlideInterval.value) return;
-  
   autoSlideInterval.value = window.setInterval(() => {
     nextSlide();
   }, 5000);
@@ -145,7 +97,7 @@ const resumeAutoSlide = () => {
 };
 
 const selectBand = (band: any) => {
-  console.log('Selected band:', band);
+  // 可扩展点击事件
 };
 
 const hoverCard = (index: number) => {
@@ -156,7 +108,14 @@ const unhoverCard = () => {
   hoveredCardIndex.value = -1;
 };
 
-onMounted(() => {
+onMounted(async () => {
+  // 获取真实乐队数据
+  try {
+    const result = await BandService.getBands();
+    bands.value = Array.isArray(result.items) ? result.items : [];
+  } catch (e) {
+    bands.value = [];
+  }
   startAutoSlide();
 });
 

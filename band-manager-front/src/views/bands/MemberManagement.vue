@@ -510,13 +510,13 @@ onMounted(async () => {
   }
 }
 
-/* 筛选区域样式 */
+/* 筛选区域样式（与乐队管理一致） */
 .filter-section {
   display: flex;
   gap: 20px;
   margin-bottom: 30px;
-  padding: 20px 4px; /* 减少左右内边距 */
-  background: rgba(255, 255, 255, 0.05); /* 半透明背景 */
+  padding: 20px 4px;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   flex-wrap: wrap;
   border: 1px solid #333;
@@ -530,25 +530,25 @@ onMounted(async () => {
 
 .filter-group label {
   font-weight: 500;
-  color: white; /* 白色标签文字 */
+  color: white;
   white-space: nowrap;
 }
 
 .filter-group select,
 .filter-group input {
   padding: 8px 12px;
-  border: 1px solid #555; /* 深色边框 */
+  border: 1px solid #555;
   border-radius: 4px;
   font-size: 14px;
   min-width: 200px;
-  background: #333; /* 深色背景 */
-  color: white; /* 白色文字 */
+  background: #333;
+  color: white;
 }
 
 .filter-group select:focus,
 .filter-group input:focus {
   outline: none;
-  border-color: #e53935; /* 红色焦点边框 */
+  border-color: #e53935;
   box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.25);
 }
 
@@ -793,70 +793,62 @@ onMounted(async () => {
 
 /* 响应式设计 */
 @media (max-width: 1024px) {
-  .member-list {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* 中等屏幕调整列宽 */
-    gap: 20px;
-  }
-
   .filter-section {
     flex-direction: column;
     gap: 15px;
   }
-
   .filter-group {
     flex-direction: column;
     align-items: flex-start;
     gap: 5px;
   }
-
   .filter-group select,
   .filter-group input {
     min-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .member-list {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
   }
 }
-
 @media (max-width: 768px) {
   .member-management {
-    padding-left: 15px; /* 小屏幕减少内边距 */
+    padding-left: 15px;
     padding-right: 15px;
   }
-
   .section-header {
     flex-direction: column;
     gap: 15px;
     align-items: flex-start;
-    padding: 20px 4px 15px 4px; /* 调整内边距 */
+    padding: 20px 4px 15px 4px;
   }
-
   .button-group {
     width: 100%;
     justify-content: space-between;
   }
-
   .member-list {
-    grid-template-columns: 1fr; /* 小屏幕单列显示 */
+    grid-template-columns: 1fr;
     gap: 15px;
   }
-
   .member-item .member-card .member-image {
-    height: 150px; /* 小屏幕减少图片高度 */
+    height: 150px;
   }
-
   .member-item .member-card .member-info {
-    padding: 12px; /* 减少内边距 */
+    padding: 12px;
     .member-name {
-      font-size: 1.3rem; /* 调整字号 */
+      font-size: 1.3rem;
     }
     .member-actions {
-      flex-direction: column; /* 按钮垂直排列 */
+      flex-direction: column;
       gap: 8px;
       .action-btn {
-        width: 100%; /* 按钮占满宽度 */
-        justify-content: center; /* 居中对齐 */
+        width: 100%;
+        justify-content: center;
       }
     }
   }
-
   .pagination {
     flex-direction: column;
     gap: 10px;
@@ -864,6 +856,29 @@ onMounted(async () => {
       width: 100%;
       justify-content: center;
     }
+  }
+  .filter-section {
+    flex-direction: column;
+    gap: 15px;
+  }
+  .filter-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .filter-group select,
+  .filter-group input {
+    min-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 200px) {
+  .filter-section {
+    flex-direction: column;
+    gap: 15px;
+    flex-wrap: wrap;
   }
 }
 </style>
