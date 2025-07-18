@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 import os
 from flask import current_app
 from flask_sqlalchemy import SQLAlchemy
@@ -22,7 +22,14 @@ class Band(db.Model):
     # 颜色相关字段（用于未上传图片时）
     primary_color = db.Column(db.String(7), default="#1d3557")  # 格式: #RRGGBB
     secondary_color = db.Column(db.String(7), default="#457b9d")
-    
+
+    # 时间戳字段
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # 软删除字段
+    is_deleted = db.Column(db.Boolean, nullable=False, default=False)
+
     # 添加与Member的一对多关系
     members = db.relationship('Member', backref='band', lazy=True, cascade='all, delete-orphan')
     
@@ -67,7 +74,14 @@ class Member(db.Model):
     
     # 添加成员头像字段
     avatar_url = db.Column(db.String(255), nullable=True)
-    
+
+    # 时间戳字段
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # 软删除字段
+    is_deleted = db.Column(db.Boolean, nullable=False, default=False)
+
     def to_dict(self):
         return {
             'id': self.id,

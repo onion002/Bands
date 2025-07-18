@@ -85,11 +85,34 @@ def create_band():
             # 创建新乐队对象
             year_val = form_data.get('year')
             member_count_val = form_data.get('member_count')
+
+            # 安全地转换年份
+            year_int = None
+            if year_val is not None:
+                try:
+                    if isinstance(year_val, (int, float)):
+                        year_int = int(year_val)
+                    elif isinstance(year_val, str) and year_val.strip():
+                        year_int = int(year_val.strip())
+                except (ValueError, TypeError):
+                    year_int = None
+
+            # 安全地转换成员数量
+            member_count_int = 0
+            if member_count_val is not None:
+                try:
+                    if isinstance(member_count_val, (int, float)):
+                        member_count_int = int(member_count_val)
+                    elif isinstance(member_count_val, str) and member_count_val.strip():
+                        member_count_int = int(member_count_val.strip())
+                except (ValueError, TypeError):
+                    member_count_int = 0
+
             new_band = Band(
                 name=name,
-                year=int(year_val) if year_val is not None and str(year_val).strip() != '' else None,
+                year=year_int,
                 genre=form_data.get('genre'),
-                member_count=int(member_count_val) if member_count_val is not None and str(member_count_val).strip() != '' else 0,
+                member_count=member_count_int,
                 bio=form_data.get('bio', ''),
                 banner_image_url=file_path
             )
@@ -117,11 +140,34 @@ def create_band():
             # 创建新乐队对象
             year_val = data.get('year') if data else None
             member_count_val = data.get('member_count') if data else None
+
+            # 安全地转换年份
+            year_int = None
+            if year_val is not None:
+                try:
+                    if isinstance(year_val, (int, float)):
+                        year_int = int(year_val)
+                    elif isinstance(year_val, str) and year_val.strip():
+                        year_int = int(year_val.strip())
+                except (ValueError, TypeError):
+                    year_int = None
+
+            # 安全地转换成员数量
+            member_count_int = 0
+            if member_count_val is not None:
+                try:
+                    if isinstance(member_count_val, (int, float)):
+                        member_count_int = int(member_count_val)
+                    elif isinstance(member_count_val, str) and member_count_val.strip():
+                        member_count_int = int(member_count_val.strip())
+                except (ValueError, TypeError):
+                    member_count_int = 0
+
             new_band = Band(
                 name=data['name'],
-                year=int(year_val) if year_val is not None and str(year_val).strip() != '' else None,
+                year=year_int,
                 genre=data.get('genre'),
-                member_count=int(member_count_val) if member_count_val is not None and str(member_count_val).strip() != '' else 0,
+                member_count=member_count_int,
                 bio=data.get('bio', ''),
                 banner_image_url=data.get('banner_image_url')
             )

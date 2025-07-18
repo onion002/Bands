@@ -34,9 +34,29 @@
       <button @click="openCreateModal">添加第一支乐队</button>
     </div>
     
+    <!-- 筛选区域 -->
+    <div class="filter-section">
+      <div class="filter-group">
+        <label>按乐队种类筛选：</label>
+        <select v-model="selectedGenre" @change="handleGenreFilter">
+          <option value="">全部种类</option>
+          <option v-for="genre in genreOptions" :key="genre" :value="genre">{{ genre }}</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>搜索乐队：</label>
+        <input
+          type="text"
+          v-model="searchKeyword"
+          @input="handleSearch"
+          placeholder="输入乐队名称或流派"
+        >
+      </div>
+    </div>
+    
     <!-- 乐队列表展示 -->
     <div v-if="!loading && bands.length > 0" class="band-list">
-      <div v-for="band in bands" :key="band.id" class="band-item">
+      <div v-for="band in paginatedBands" :key="band.id" class="band-item">
         <div class="band-card">
           <!-- 乐队图片区域 -->
           <div class="band-image" :style="{ backgroundColor: '#444' }">
@@ -115,7 +135,7 @@
 
 <script setup lang="ts">
 // 引入 Vue 相关 API
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, computed } from 'vue'
 // 引入路由
 import { useRouter } from 'vue-router'
 // 引入乐队相关 API 服务
@@ -157,6 +177,52 @@ const closeBioDialog = () => {
   showBioDialog.value = false
   bioDialogBand.value = null
 }
+
+// 筛选和搜索状态
+const selectedGenre = ref('')
+const searchKeyword = ref('')
+
+// 计算所有乐队种类（去重）
+const genreOptions = computed(() => {
+  const set = new Set<string>()
+  bands.value.forEach(b => b.genre && set.add(b.genre))
+  return Array.from(set)
+})
+
+// 处理种类筛选
+const handleGenreFilter = () => {
+  currentPage.value = 1
+}
+// 处理搜索
+const handleSearch = () => {
+  currentPage.value = 1
+}
+
+// 分页状态
+const currentPage = ref(1)
+const pageSize = ref(10)
+
+// 计算属性：筛选和搜索后的乐队列表
+const filteredBands = computed(() => {
+  let result = bands.value
+  if (selectedGenre.value) {
+    result = result.filter(b => b.genre === selectedGenre.value)
+  }
+  if (searchKeyword.value.trim()) {
+    const kw = searchKeyword.value.trim().toLowerCase()
+    result = result.filter(b =>
+      b.name.toLowerCase().includes(kw) ||
+      (b.genre && b.genre.toLowerCase().includes(kw))
+    )
+  }
+  return result
+})
+
+// 分页后的乐队列表
+const paginatedBands = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredBands.value.slice(start, start + pageSize.value)
+})
 
 // 获取乐队列表数据
 const fetchBands = async () => {
@@ -293,40 +359,39 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-// 页面主容器样式，铺满整个HTML，无白边，并加一点页边距
 .band-management {
-  background-color: #111; // 深色背景
-  color: white; // 全局字体颜色
-  min-height: 100vh; // 页面最小高度撑满视口
-  width: 100%; // 铺满整个视口宽度
-  margin-top: 30px; // 顶部预留导航栏高度
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  color: white;
+  min-height: 100vh;
+  width: 100%;
+  margin-top: 30px;
   box-sizing: border-box;
   position: relative;
-  overflow-y: auto; // 允许纵向滚动
-  padding-left: 32px; // 页边距
-  padding-right: 32px; // 页边距
+  overflow-y: auto;
+  padding-left: 32px;
+  padding-right: 32px;
+  padding-top: 10px;
 }
 
-// 顶部标题和按钮区域，内容区加较小左右内边距，避免双重padding
 .section-header {
-  display: flex; // 横向排列
-  justify-content: space-between; // 两端对齐
-  align-items: center; // 垂直居中
-  margin-bottom: 30px; // 与下方内容间距
-  padding: 30px 4px 15px 4px; // 减少左右内边距
-  border-bottom: 1px solid #333; // 下边框分隔
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 30px 4px 15px 4px;
+  border-bottom: 1px solid #333;
   h1 {
-    font-size: 2.2rem; // 标题字号
-    color: #e53935; // 标题高亮色
+    font-size: 2.2rem;
+    color: #e53935;
     margin: 0;
   }
   .button-group {
     display: flex;
-    gap: 16px; // 按钮间距
+    gap: 16px;
     align-items: center;
     .back-button {
       background: #333;
-      color: white;
+      color: rgb(247, 238, 238);
       border: none;
       padding: 8px 15px;
       border-radius: 30px;
@@ -334,14 +399,14 @@ onMounted(() => {
       cursor: pointer;
       transition: all 0.3s ease;
       &:hover {
-        background: #444; // 悬停变色
+        background: #444;
       }
       i {
-        margin-right: 5px; // 图标与文字间距
+        margin-right: 5px;
       }
     }
     .add-band-btn {
-      background: linear-gradient(to right, #e53935, #e35d5b); // 渐变背景
+      background: linear-gradient(to right, #e53935, #e35d5b);
       color: white;
       border: none;
       padding: 10px 20px;
@@ -350,44 +415,56 @@ onMounted(() => {
       cursor: pointer;
       transition: all 0.3s ease;
       &:hover {
-        transform: translateY(-2px); // 悬停上浮
-        box-shadow: 0 5px 15px rgba(229, 57, 53, 0.4); // 阴影
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(229, 57, 53, 0.4);
       }
       i {
-        margin-right: 8px; // 图标与文字间距
+        margin-right: 8px;
       }
     }
   }
 }
 
-// 状态指示器样式（加载、错误、空），内容区加较小左右内边距
-.loading-state, .error-state, .empty-state {
-  text-align: center;
-  padding: 50px 4px; // 上下和左右内边距
-  font-size: 1.2rem;
-  i {
-    font-size: 3rem; // 图标大号显示
-    margin-bottom: 15px;
-    color: #e53935; // 图标高亮色
-  }
-  button {
-    margin-top: 15px;
-    padding: 10px 20px;
-    background: linear-gradient(to right, #e53935, #e35d5b);
-    color: white;
-    border: none;
-    border-radius: 30px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
+/* 筛选区域样式（与成员管理一致） */
+.filter-section {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+  padding: 20px 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  flex-wrap: wrap;
+  border: 1px solid #333;
 }
 
-// 错误状态下的按钮样式，背景色更深
-.error-state {
-  button {
-    background: #333;
-  }
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-group label {
+  font-weight: 500;
+  color: white;
+  white-space: nowrap;
+}
+
+.filter-group select,
+.filter-group input {
+  padding: 8px 12px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  font-size: 14px;
+  min-width: 200px;
+  background: #333;
+  color: white;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+  outline: none;
+  border-color: #e53935;
+  box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.25);
 }
 
 // 乐队列表区域，内容区加较小左右内边距
@@ -395,8 +472,7 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); // 自适应列宽
   gap: 25px; // 卡片间距
-  min-height: 100vh; // 保证内容区撑满视口
-  padding: 0 4px 20px 4px; // 减少左右内边距
+  padding: 0 4px 20px 4px; // 减少底部内边距，减小纵向间距
   .band-item {
     // 单个乐队卡片
     .band-card {
@@ -431,6 +507,7 @@ onMounted(() => {
           span {
             font-size: 1.2rem;
           }
+
         }
         // 图片内容（有图片时显示）
         .band-image-content {

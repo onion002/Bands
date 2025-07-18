@@ -1,10 +1,46 @@
-from flask import Blueprint, request, jsonify
+import os
+from flask import Blueprint, request, jsonify, current_app
+from werkzeug.utils import secure_filename
 from datetime import datetime
 from models import db, Member, Band
 from sqlalchemy.exc import SQLAlchemyError
 import logging
 
 members_bp = Blueprint('members', __name__, url_prefix='/api/members')
+
+# 允许的文件扩展名
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    """检查文件扩展名是否合法"""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# 获取所有成员（分页，可选band_id筛选）
+@members_bp.route('/', methods=['GET'])
+def get_all_members():
+    try:
+        # 可选乐队筛选
+        band_id = request.args.get('band_id', type=int)
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        page = max(1, page)
+        per_page = max(1, min(per_page, 100))
+
+        query = Member.query
+        if band_id:
+            query = query.filter_by(band_id=band_id)
+        pagination = query.order_by(Member.join_date.desc()).paginate(page=page, per_page=per_page, error_out=False)
+        members = [member.to_dict() for member in pagination.items]
+        return jsonify({
+            'items': members,
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'current_page': pagination.page
+        })
+    except Exception as e:
+        logging.exception("获取所有成员失败")
+        return jsonify({'error': '服务器内部错误'}), 500
 
 # 获取乐队成员列表
 @members_bp.route('/band/<int:band_id>', methods=['GET'])
@@ -46,7 +82,7 @@ def create_member():
         
         # 验证必要字段
         required_fields = ['name', 'join_date', 'band_id']
-        if not all(field in data for field in required_fields):
+        if not data or not all(field in data for field in required_fields):
             return jsonify({'error': '缺少必要字段: name, join_date 或 band_id'}), 400
         
         # 验证乐队是否存在
@@ -60,12 +96,17 @@ def create_member():
             return jsonify({'error': '日期格式无效，请使用YYYY-MM-DD格式'}), 400
         
         # 创建成员
+        name = data.get('name')
+        band_id = data.get('band_id')
+        if not name or not band_id:
+            return jsonify({'error': '缺少必要字段: name 或 band_id'}), 400
         new_member = Member(
-            name=data['name'],
+            name=name,
             role=data.get('role'),
             join_date=join_date,
-            band_id=data['band_id']
-        )
+            band_id=band_id,
+            avatar_url=data.get('avatar_url')  # 支持头像URL
+        )  # type: ignore
         
         db.session.add(new_member)
         db.session.commit()
@@ -101,6 +142,8 @@ def update_member(member_id):
             return jsonify({'error': '成员不存在'}), 404
             
         data = request.json
+        if not data:
+            return jsonify({'error': '请求体不能为空'}), 400
         
         # 更新可修改字段
         if 'name' in data:
@@ -117,6 +160,13 @@ def update_member(member_id):
             if not Band.query.get(data['band_id']):
                 return jsonify({'error': '乐队不存在'}), 404
             member.band_id = data['band_id']
+        if 'avatar_url' in data:
+            avatar_val = data['avatar_url']
+            if not avatar_val:  # 兼容 '', None, False
+                # 删除逻辑
+                member.avatar_url = None
+            else:
+                member.avatar_url = avatar_val
             
         db.session.commit()
         
@@ -147,4 +197,69 @@ def delete_member(member_id):
         return jsonify({'error': '数据库操作失败'}), 500
     except Exception as e:
         logging.exception("未知错误")
+        return jsonify({'error': '服务器内部错误'}), 500
+
+# 上传成员头像
+@members_bp.route('/<int:member_id>/avatar', methods=['POST'])
+def upload_member_avatar(member_id):
+    try:
+        # 检查成员是否存在
+        member = Member.query.get(member_id)
+        if not member:
+            return jsonify({'error': '成员不存在'}), 404
+
+        # 检查是否有文件
+        if 'file' not in request.files:
+            return jsonify({'error': '没有上传文件'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': '没有选择文件'}), 400
+
+        # 检查文件类型
+        if not allowed_file(file.filename):
+            return jsonify({'error': '不支持的文件类型，请上传图片文件'}), 400
+
+        # 删除旧头像文件（如果存在）
+        if member.avatar_url:
+            try:
+                old_file_path = os.path.join(
+                    current_app.config['UPLOAD_FOLDER'],
+                    'members',
+                    member.avatar_url.split('/')[-1]
+                )
+                if os.path.exists(old_file_path):
+                    os.remove(old_file_path)
+            except Exception as e:
+                logging.warning(f"删除旧头像失败: {str(e)}")
+
+        # 生成安全文件名
+        safe_name = member.name.replace(' ', '_') if member.name else 'member'
+        ext = file.filename.split('.')[-1] if file.filename and '.' in file.filename else 'jpg'
+        filename = f"member_{safe_name}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.{ext}"
+
+        # 确保上传目录存在
+        upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'members')
+        os.makedirs(upload_dir, exist_ok=True)
+
+        # 保存文件
+        file_path = os.path.join(upload_dir, filename)
+        file.save(file_path)
+
+        # 更新数据库中的头像URL
+        member.avatar_url = f"/uploads/members/{filename}"
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': '头像上传成功',
+            'avatar_url': member.avatar_url
+        }), 200
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logging.exception("上传头像失败")
+        return jsonify({'error': '数据库操作失败'}), 500
+    except Exception as e:
+        logging.exception("上传头像时发生未知错误")
         return jsonify({'error': '服务器内部错误'}), 500

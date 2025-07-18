@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>乐队管理系统 - 测试页面</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #e53935;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #aaa;
+        }
+
+        .test-section {
+            background: #222;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .test-section h2 {
+            color: #e53935;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .test-button {
+            background: linear-gradient(to right, #e53935, #e35d5b);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(229, 57, 53, 0.4);
+        }
+
+        .result {
+            background: #333;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .success {
+            color: #28a745;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+
+        .member-card {
+            background: #222;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .member-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(229, 57, 53, 0.2);
+        }
+
+        .member-image {
+            height: 180px;
+            background-color: #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .image-placeholder {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .image-placeholder i {
+            font-size: 3.5rem;
+            display: block;
+            margin-bottom: 10px;
+            color: rgba(229, 57, 53, 0.7);
+        }
+
+        .member-info {
+            padding: 15px;
+        }
+
+        .member-name {
+            font-size: 1.5rem;
+            margin: 0 0 5px;
+            color: white;
+        }
+
+        .member-role, .member-band {
+            font-size: 1rem;
+            color: #aaa;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-music"></i> 乐队管理系统</h1>
+            <p>成员管理功能测试页面</p>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-server"></i> 后端API测试</h2>
+            <button class="test-button" onclick="testBandsAPI()">
+                <i class="fas fa-users"></i> 测试获取乐队列表
+            </button>
+            <button class="test-button" onclick="testMembersAPI()">
+                <i class="fas fa-user"></i> 测试获取成员列表
+            </button>
+            <div id="api-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-upload"></i> 头像上传测试</h2>
+            <input type="file" id="avatar-file" accept="image/*" style="margin-bottom: 10px;">
+            <button class="test-button" onclick="testAvatarUpload()">
+                <i class="fas fa-camera"></i> 测试头像上传
+            </button>
+            <div id="upload-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-th-large"></i> 界面样式预览</h2>
+            <p>成员卡片样式预览（参照乐队管理界面）：</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; margin-top: 20px;">
+                <div class="member-card">
+                    <div class="member-image">
+                        <div class="image-placeholder">
+                            <i class="fas fa-user"></i>
+                            <span>成员头像</span>
+                        </div>
+                    </div>
+                    <div class="member-info">
+                        <h3 class="member-name">张三</h3>
+                        <p class="member-role">主唱</p>
+                        <p class="member-band">所属乐队: 摇滚乐队</p>
+                    </div>
+                </div>
+                <div class="member-card">
+                    <div class="member-image">
+                        <div class="image-placeholder">
+                            <i class="fas fa-user"></i>
+                            <span>成员头像</span>
+                        </div>
+                    </div>
+                    <div class="member-info">
+                        <h3 class="member-name">李四</h3>
+                        <p class="member-role">吉他手</p>
+                        <p class="member-band">所属乐队: 摇滚乐队</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000';
+
+        function showResult(elementId, content, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${isError ? 'error' : 'success'}`;
+            element.textContent = content;
+        }
+
+        async function testBandsAPI() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/bands/`);
+                const data = await response.json();
+                showResult('api-result', `成功获取乐队列表:\n${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                showResult('api-result', `获取乐队列表失败: ${error.message}`, true);
+            }
+        }
+
+        async function testMembersAPI() {
+            try {
+                // 先获取乐队列表
+                const bandsResponse = await fetch(`${API_BASE_URL}/api/bands/`);
+                const bandsData = await bandsResponse.json();
+                
+                if (bandsData.items && bandsData.items.length > 0) {
+                    const bandId = bandsData.items[0].id;
+                    const membersResponse = await fetch(`${API_BASE_URL}/api/members/band/${bandId}`);
+                    const membersData = await membersResponse.json();
+                    showResult('api-result', `成功获取成员列表:\n${JSON.stringify(membersData, null, 2)}`);
+                } else {
+                    showResult('api-result', '没有找到乐队，无法测试成员API', true);
+                }
+            } catch (error) {
+                showResult('api-result', `获取成员列表失败: ${error.message}`, true);
+            }
+        }
+
+        async function testAvatarUpload() {
+            const fileInput = document.getElementById('avatar-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showResult('upload-result', '请先选择一个图片文件', true);
+                return;
+            }
+
+            try {
+                // 先获取一个成员ID用于测试
+                const bandsResponse = await fetch(`${API_BASE_URL}/api/bands/`);
+                const bandsData = await bandsResponse.json();
+                
+                if (bandsData.items && bandsData.items.length > 0) {
+                    const bandId = bandsData.items[0].id;
+                    const membersResponse = await fetch(`${API_BASE_URL}/api/members/band/${bandId}`);
+                    const membersData = await membersResponse.json();
+                    
+                    if (membersData.items && membersData.items.length > 0) {
+                        const memberId = membersData.items[0].id;
+                        
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        
+                        const uploadResponse = await fetch(`${API_BASE_URL}/api/members/${memberId}/avatar`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const result = await uploadResponse.json();
+                        showResult('upload-result', `头像上传结果:\n${JSON.stringify(result, null, 2)}`);
+                    } else {
+                        showResult('upload-result', '没有找到成员，无法测试头像上传', true);
+                    }
+                } else {
+                    showResult('upload-result', '没有找到乐队，无法测试头像上传', true);
+                }
+            } catch (error) {
+                showResult('upload-result', `头像上传失败: ${error.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>

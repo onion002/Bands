@@ -10,6 +10,34 @@
         
         <div class="modal-body">
           <form @submit.prevent="save">
+            <!-- 在表单顶部添加上传图片按钮 -->
+            <div class="form-group band-image-upload-section">
+              <label>乐队图片</label>
+              <div class="band-image-upload-area">
+                <div class="band-image-preview">
+                  <img v-if="formData.banner_image_url" :src="formData.banner_image_url" alt="乐队图片" class="band-image-preview-img">
+                  <div v-else class="band-image-placeholder">
+                    <i class="fas fa-image"></i>
+                  </div>
+                </div>
+                <div class="band-image-actions">
+                  <input
+                    type="file"
+                    ref="bandImageInput"
+                    accept="image/*"
+                    @change="handleBandImageChange"
+                    style="display: none;"
+                  >
+                  <button type="button" class="upload-band-image-btn" @click="triggerBandImageUpload">
+                    <i class="fas fa-camera"></i> 上传图片
+                  </button>
+                  <button v-if="formData.banner_image_url" type="button" class="remove-band-image-btn" @click="removeBandImage">
+                    <i class="fas fa-trash"></i> 移除
+                  </button>
+                </div>
+              </div>
+            </div>
+            
             <div class="form-group">
               <label>乐队名称</label>
               <input type="text" v-model="formData.name" required>
@@ -20,16 +48,14 @@
               <input type="text" v-model="formData.genre" required>
             </div>
             
-            <div class="form-row">
-              <div class="form-group">
-                <label>成立年份</label>
-                <input type="number" v-model="formData.formedYear" min="1900" :max="new Date().getFullYear()" required>
-              </div>
-              
-              <div class="form-group">
-                <label>成员数量</label>
-                <input type="number" v-model="formData.memberCount" min="1" max="20" required>
-              </div>
+            <!-- 成立年份和成员数量各自单独一行 -->
+            <div class="form-group">
+              <label>成立年份</label>
+              <input type="number" v-model="formData.formedYear" min="1900" :max="new Date().getFullYear()" required>
+            </div>
+            <div class="form-group">
+              <label>成员数量</label>
+              <input type="number" v-model="formData.memberCount" min="1" max="20" required>
             </div>
             
             <div class="form-group">
@@ -68,7 +94,8 @@
     genre: '',
     formedYear: new Date().getFullYear(),
     description: '',
-    memberCount: 4
+    memberCount: 4,
+    banner_image_url: '' // 新增用于存储图片URL的字段
   });
   
   const emit = defineEmits(['close', 'save']);
@@ -82,7 +109,8 @@
         genre: newBand.genre,
         formedYear: newBand.year,
         description: newBand.bio,
-        memberCount: newBand.member_count
+        memberCount: newBand.member_count,
+        banner_image_url: newBand.banner_image_url // 更新图片URL
       };
     }
   }, { immediate: true });
@@ -100,8 +128,34 @@
       genre: formData.value.genre,
       year: formData.value.formedYear,
       bio: formData.value.description,
-      member_count: formData.value.memberCount
+      member_count: formData.value.memberCount,
+      banner_image_url: formData.value.banner_image_url // 传递图片URL
     });
+  };
+
+  // 图片上传相关
+  const bandImageInput = ref<HTMLInputElement | null>(null);
+
+  const triggerBandImageUpload = () => {
+    bandImageInput.value?.click();
+  };
+
+  const handleBandImageChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+      const file = target.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          formData.value.banner_image_url = e.target.result as string;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeBandImage = () => {
+    formData.value.banner_image_url = '';
   };
   </script>
   
@@ -191,11 +245,11 @@
         
         .form-row {
           display: flex;
-          gap: 15px;
-          
-          .form-group {
-            flex: 1;
-          }
+          gap: 20px;
+        }
+        .form-row .form-group {
+          flex: 1;
+          max-width: calc(50% - 10px);
         }
         
         .form-buttons {
@@ -235,4 +289,97 @@
       }
     }
   }
+  .form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select,
+.form-group textarea {
+  background: #23232e;
+  color: #fff;
+  border: none;
+  width: 100%;
+  max-width: 400px;
+  min-width: 200px;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  box-sizing: border-box;
+  padding: 12px 15px;
+  font-size: 1rem;
+  height: 43px;
+  border-radius: 6px;
+}
+.form-group textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+.form-group label {
+  color: #ccc;
+}
+.form-group select option {
+  background: #23232e;
+  color: #fff;
+}
+/* 样式：乐队图片上传区、按钮、预览等 */
+.band-image-upload-section {
+  text-align: center;
+  margin-bottom: 25px;
+}
+.band-image-upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+.band-image-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 3px solid #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #23232e;
+}
+.band-image-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.band-image-placeholder {
+  color: #888;
+  font-size: 2rem;
+}
+.band-image-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.upload-band-image-btn,
+.remove-band-image-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.upload-band-image-btn {
+  background: linear-gradient(to right, #1976d2, #2196f3);
+  color: white;
+}
+.upload-band-image-btn:hover {
+  background: #1565c0;
+}
+.remove-band-image-btn {
+  background: rgba(229, 57, 53, 0.8);
+  color: white;
+}
+.remove-band-image-btn:hover {
+  background: #b71c1c;
+}
   </style>
