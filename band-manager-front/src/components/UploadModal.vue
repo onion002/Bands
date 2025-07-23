@@ -2,7 +2,7 @@
   <div class="modal-overlay" @click.self="close">
     <div class="upload-modal">
       <div class="modal-header">
-        <h2>上传成员头像</h2>
+        <h2>{{ title }}</h2>
         <button class="close-btn" @click="close">
           <i class="fas fa-times"></i>
         </button>
@@ -46,15 +46,18 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { MemberService } from '@/api/memberService'
 
-// 定义 props 和 emits
-const props = defineProps<{ 
-  memberId: number
-  memberName: string
+// 通用图片上传弹窗组件
+const props = defineProps<{
+  title: string,
+  uploadApi: (file: File) => Promise<any>,
+  accept?: string,
+  maxSize?: number,
+  // 可选：上传成功后返回的url字段名
+  urlField?: string
 }>()
 const emit = defineEmits<{
-  (e: 'uploaded', memberId: number, avatarUrl: string): void
+  (e: 'uploaded', url: string): void
   (e: 'close'): void
 }>()
 
@@ -63,99 +66,74 @@ const file = ref<File | null>(null)
 const previewUrl = ref<string | null>(null)
 const uploading = ref(false)
 const progress = ref(0)
-const result = ref<{ success: boolean; message: string; avatar_url?: string } | null>(null)
+const result = ref<{ success: boolean; message: string; url?: string } | null>(null)
 
-// 触发文件选择
+const acceptType = props.accept || 'image/*'
+const maxFileSize = props.maxSize || 5 * 1024 * 1024
+const urlField = props.urlField || 'url'
+
 const triggerFileInput = () => {
-  if (fileInput.value) {
-    fileInput.value.click()
-  }
+  if (fileInput.value) fileInput.value.click()
 }
-
-// 处理文件选择
 const handleFileChange = (e: Event) => {
   const input = e.target as HTMLInputElement
   if (input.files && input.files.length > 0) {
     processFile(input.files[0])
   }
 }
-
-// 处理拖放
 const handleDrop = (e: DragEvent) => {
   e.preventDefault()
   if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
     processFile(e.dataTransfer.files[0])
   }
 }
-
-// 处理文件
 const processFile = (selectedFile: File) => {
-  // 检查文件类型
-  if (!['image/jpeg', 'image/png', 'image/gif'].includes(selectedFile.type)) {
+  if (!acceptType.split(',').some(type => selectedFile.type.includes(type.replace(/\s/g, '')))) {
     result.value = {
       success: false,
-      message: '不支持的文件类型，请上传 JPG、PNG 或 GIF 格式'
+      message: `不支持的文件类型，请上传 ${acceptType} 格式`
     }
     return
   }
-  
-  // 检查文件大小 (5MB)
-  if (selectedFile.size > 5 * 1024 * 1024) {
+  if (selectedFile.size > maxFileSize) {
     result.value = {
       success: false,
-      message: '文件大小超过 5MB 限制'
+      message: `文件大小超过 ${(maxFileSize / 1024 / 1024).toFixed(1)}MB 限制`
     }
     return
   }
-  
   file.value = selectedFile
   previewUrl.value = URL.createObjectURL(selectedFile)
   result.value = null
 }
-
-// 清除预览
 const clearPreview = () => {
   previewUrl.value = null
   file.value = null
   result.value = null
 }
-
-// 开始上传
 const startUpload = async () => {
   if (!file.value) return
-
   uploading.value = true
   result.value = null
   progress.value = 0
-
   try {
-    // 模拟上传进度
     const progressInterval = setInterval(() => {
-      if (progress.value < 90) {
-        progress.value += 10
-      }
+      if (progress.value < 90) progress.value += 10
     }, 100)
-
-    const response: any = await MemberService.uploadMemberAvatar(props.memberId, file.value)
-    
+    const response: any = await props.uploadApi(file.value)
     clearInterval(progressInterval)
     progress.value = 100
-
+    const url = response[urlField]
     result.value = {
       success: true,
-      message: '头像上传成功',
-      avatar_url: response.avatar_url
+      message: '图片上传成功',
+      url
     }
-
-    // 上传成功后 emit uploaded 事件，通知父组件
-    if (response.avatar_url) {
-      emit('uploaded', props.memberId, response.avatar_url)
+    if (url) {
+      emit('uploaded', url)
     }
-
     setTimeout(() => {
-      if (response.avatar_url) {
-        close()
-      }
+      if (url) close()
     }, 1500)
   } catch (err: any) {
     result.value = {
@@ -166,8 +144,6 @@ const startUpload = async () => {
     uploading.value = false
   }
 }
-
-// 关闭模态框
 const close = () => {
   emit('close')
 }

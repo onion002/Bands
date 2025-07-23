@@ -40,7 +40,14 @@ def get_all_members():
         })
     except Exception as e:
         logging.exception("获取所有成员失败")
-        return jsonify({'error': '服务器内部错误'}), 500
+        # 返回空结构，附加错误信息
+        return jsonify({
+            'items': [],
+            'total': 0,
+            'pages': 1,
+            'current_page': 1,
+            'error': '服务器内部错误'
+        }), 500
 
 # 获取乐队成员列表
 @members_bp.route('/band/<int:band_id>', methods=['GET'])
@@ -186,7 +193,20 @@ def delete_member(member_id):
         member = Member.query.get(member_id)
         if not member:
             return jsonify({'error': '成员不存在'}), 404
-            
+        
+        # 删除成员头像文件（如果存在）
+        if member.avatar_url:
+            try:
+                avatar_path = os.path.join(
+                    current_app.config['UPLOAD_FOLDER'],
+                    'members',
+                    member.avatar_url.split('/')[-1]
+                )
+                if os.path.exists(avatar_path):
+                    os.remove(avatar_path)
+            except Exception as e:
+                logging.warning(f"删除成员头像失败: {str(e)}")
+        
         db.session.delete(member)
         db.session.commit()
         

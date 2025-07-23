@@ -26,17 +26,10 @@
                 </div>
               </div>
               <div class="avatar-actions">
-                <input
-                  type="file"
-                  ref="avatarInput"
-                  accept="image/*"
-                  @change="handleAvatarChange"
-                  style="display: none;"
-                >
                 <button
                   type="button"
                   class="upload-avatar-btn"
-                  @click="triggerAvatarUpload"
+                  @click="showUploadModal = true"
                 >
                   <i class="fas fa-camera"></i> 选择头像
                 </button>
@@ -107,6 +100,17 @@
         </form>
       </div>
     </div>
+    
+    <!-- 头像上传弹窗 -->
+    <UploadModal
+      v-if="showUploadModal"
+      title="上传成员头像"
+      :uploadApi="uploadMemberAvatar"
+      accept="image/jpeg,image/png,image/gif,image/webp"
+      :maxSize="5 * 1024 * 1024"
+      @uploaded="handleAvatarUploaded"
+      @close="showUploadModal = false"
+    />
   </div>
 </template>
 
@@ -114,8 +118,8 @@
 import { ref, watch, onMounted, computed } from 'vue';
 import type { Member, Band } from '@/types';
 import { BandService } from '@/api/bandService';
-import DatePicker from 'vue-datepicker-next';
-import 'vue-datepicker-next/index.css';
+import { MemberService } from '@/api/memberService';
+import UploadModal from './UploadModal.vue';
 
 const props = defineProps({
   member: {
@@ -138,7 +142,8 @@ const formData = ref({
 });
 
 const bands = ref<Band[]>([]);
-const avatarInput = ref<HTMLInputElement | null>(null);
+const showUploadModal = ref(false);
+const selectedAvatarFile = ref<File | null>(null);
 const emit = defineEmits(['close', 'save']);
 
 // 获取今天的日期（用于限制日期选择）
@@ -187,49 +192,26 @@ const fetchBands = async () => {
   }
 };
 
-// 触发头像文件选择
-const triggerAvatarUpload = () => {
-  if (avatarInput.value) {
-    avatarInput.value.click();
-  }
+// 创建一个临时的上传API函数
+const uploadMemberAvatar = async (file: File) => {
+  // 这里只是为了配合UploadModal的接口，实际上传逻辑在save方法中处理
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    selectedAvatarFile.value = file;
+    resolve({ url });
+  });
 };
 
-// 存储选中的头像文件
-const selectedAvatarFile = ref<File | null>(null);
-
-// 处理头像文件选择
-const handleAvatarChange = (e: Event) => {
-  const input = e.target as HTMLInputElement;
-  if (input.files && input.files.length > 0) {
-    const file = input.files[0];
-
-    // 检查文件类型
-    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
-      alert('不支持的文件类型，请上传 JPG、PNG、GIF 或 WEBP 格式');
-      return;
-    }
-
-    // 检查文件大小 (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('文件大小超过 5MB 限制');
-      return;
-    }
-
-    // 存储文件用于后续上传
-    selectedAvatarFile.value = file;
-
-    // 创建预览URL
-    formData.value.avatar_url = URL.createObjectURL(file);
-  }
+// 处理头像上传完成
+const handleAvatarUploaded = (url: string) => {
+  formData.value.avatar_url = url;
+  showUploadModal.value = false;
 };
 
 // 移除头像
 const removeAvatar = () => {
   formData.value.avatar_url = '';
   selectedAvatarFile.value = null;
-  if (avatarInput.value) {
-    avatarInput.value.value = '';
-  }
 };
 
 // 关闭模态框
@@ -535,3 +517,4 @@ onMounted(() => {
   }
 }
 </style>
+

@@ -66,7 +66,7 @@ export const BandService = {
     const formData = new FormData();
     formData.append('file', file);
     
-    return axios.post(`${API_BASE_URL}/api/uploads`, formData, {
+    return axios.post(`${API_BASE_URL}/api/bands/upload_image`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }

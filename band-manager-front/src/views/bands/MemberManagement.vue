@@ -9,11 +9,38 @@
         <button class="back-button" @click="goToHome">
           <i class="fas fa-arrow-left"></i> 返回主页
         </button>
+        
+        <!-- 批量删除切换按钮 -->
+        <button 
+          class="batch-toggle-btn" 
+          @click="toggleBatchMode"
+          :class="{ active: batchMode }"
+        >
+          <i class="fas fa-check-square"></i> 
+          {{ batchMode ? '退出批量删除' : '批量删除' }}
+        </button>
+        
         <!-- 添加新成员按钮 -->
         <button class="add-member-btn" @click="openCreateModal">
           <i class="fas fa-plus"></i> 添加新成员
         </button>
       </div>
+    </div>
+
+    <!-- 批量操作工具栏 -->
+    <div v-if="batchMode" class="batch-toolbar">
+      <div class="batch-info">
+        <span>已选择 {{ selectedMembers.length }} 个成员</span>
+        <button @click="selectAll" class="select-all-btn">全选</button>
+        <button @click="clearSelection" class="clear-selection-btn">清空</button>
+      </div>
+      <button 
+        v-if="selectedMembers.length > 0" 
+        class="batch-delete-btn" 
+        @click="batchDeleteMembers"
+      >
+        <i class="fas fa-trash"></i> 删除选中项 ({{ selectedMembers.length }})
+      </button>
     </div>
 
     <!-- 筛选区域 -->
@@ -63,10 +90,18 @@
     <!-- 成员列表展示 -->
     <div v-if="!loading && filteredMembers.length > 0" class="member-list">
       <div v-for="member in paginatedMembers" :key="member.id" class="member-item">
-        <div class="member-card">
+        <div class="member-card" :class="{ 'batch-mode': batchMode }">
+          <!-- 批量删除模式下显示复选框 -->
+          <div v-show="batchMode" class="member-checkbox">
+            <input 
+              type="checkbox" 
+              :value="member.id" 
+              v-model="selectedMembers"
+            >
+          </div>
+          
           <!-- 成员头像区域 -->
           <div class="member-image">
-            <!-- 如果有头像则显示圆形头像，否则显示圆形占位符 -->
             <div class="avatar-wrapper">
               <img
                 v-if="member.avatar_url"
@@ -80,16 +115,16 @@
               </div>
             </div>
           </div>
+          
           <!-- 成员信息区域 -->
           <div class="member-info">
             <h3 class="member-name">{{ member.name }}</h3>
             <p class="member-role">{{ member.role || '未设置角色' }}</p>
             <p class="member-band">所属乐队: {{ member.band_name }}</p>
             <p class="member-date">加入日期: {{ formatDate(member.join_date) }}</p>
-            <div class="member-actions">
-              <button class="upload-avatar-action-btn" @click="openAvatarUpload(member)">
-                <i class="fas fa-camera"></i> 上传头像
-              </button>
+            
+            <!-- 非批量模式下显示操作按钮 -->
+            <div v-if="!batchMode" class="member-actions">
               <div class="action-btn-group">
                 <button @click="editMember(member)" class="action-btn edit">
                   <i class="fas fa-edit"></i> 编辑
@@ -102,29 +137,29 @@
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- 分页控件 -->
-      <div v-if="totalPages > 1" class="pagination">
-        <button
-          @click="changePage(currentPage - 1)"
-          :disabled="currentPage <= 1"
-          class="page-btn"
-        >
-          <i class="fas fa-chevron-left"></i>
-        </button>
+    <!-- 分页控件 -->
+    <div v-if="totalPages > 1" class="pagination">
+      <button
+        @click="changePage(currentPage - 1)"
+        :disabled="currentPage <= 1"
+        class="page-btn"
+      >
+        <i class="fas fa-chevron-left"></i>
+      </button>
 
-        <span class="page-info">
-          第 {{ currentPage }} 页，共 {{ totalPages }} 页
-        </span>
+      <span class="page-info">
+        第 {{ currentPage }} 页，共 {{ totalPages }} 页
+      </span>
 
-        <button
-          @click="changePage(currentPage + 1)"
-          :disabled="currentPage >= totalPages"
-          class="page-btn"
-        >
-          <i class="fas fa-chevron-right"></i>
-        </button>
-      </div>
+      <button
+        @click="changePage(currentPage + 1)"
+        :disabled="currentPage >= totalPages"
+        class="page-btn"
+      >
+        <i class="fas fa-chevron-right"></i>
+      </button>
     </div>
 
     <!-- 添加成员模态框 -->
@@ -143,15 +178,6 @@
       @close="closeEditModal"
       @save="updateMember"
     />
-
-    <!-- 头像上传模态框 -->
-    <AvatarUploadModal
-      v-if="showAvatarUploadModal"
-      :member-id="selectedMember?.id || 0"
-      :member-name="selectedMember?.name || ''"
-      @close="closeAvatarUpload"
-      @uploaded="handleAvatarUploaded"
-    />
   </div>
 </template>
 
@@ -165,8 +191,6 @@ import { MemberService } from '@/api/memberService'
 import { BandService } from '@/api/bandService'
 // 引入成员信息编辑模态框组件
 import MemberModal from '@/components/MemberModal.vue'
-// 引入头像上传模态框组件
-import AvatarUploadModal from '@/components/AvatarUploadModal.vue'
 // 引入类型定义
 import type { Member, Band } from '@/types'
 
@@ -190,8 +214,11 @@ const pageSize = ref(10)
 // 模态框状态
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
-const showAvatarUploadModal = ref(false)
 const selectedMember = ref<Member | null>(null)
+
+// 批量删除相关状态
+const batchMode = ref(false)
+const selectedMembers = ref<number[]>([])
 
 // 计算属性：筛选后的成员列表
 const filteredMembers = computed(() => {
@@ -326,7 +353,8 @@ const createNewMember = async (memberData: any) => {
     console.log('成员创建成功')
   } catch (err: any) {
     console.error('创建成员失败:', err)
-    error.value = '创建成员失败: ' + err.message
+    const errorMessage = err.response?.data?.error || err.message || '未知错误'
+    error.value = '创建成员失败: ' + errorMessage
   }
 }
 
@@ -377,7 +405,8 @@ const updateMember = async (memberData: any) => {
     console.log('成员信息更新成功')
   } catch (err: any) {
     console.error('更新成员失败:', err)
-    error.value = '更新成员失败: ' + err.message
+    const errorMessage = err.response?.data?.error || err.message || '未知错误'
+    error.value = '更新成员失败: ' + errorMessage
   }
 }
 
@@ -401,26 +430,55 @@ const deleteMember = async (member: Member) => {
   }
 }
 
-// 打开头像上传模态框
-const openAvatarUpload = (member: Member) => {
-  selectedMember.value = member
-  showAvatarUploadModal.value = true
+// 切换批量删除模式
+const toggleBatchMode = () => {
+  batchMode.value = !batchMode.value
+  if (!batchMode.value) {
+    selectedMembers.value = []
+  }
 }
 
-// 关闭头像上传模态框
-const closeAvatarUpload = () => {
-  showAvatarUploadModal.value = false
-  selectedMember.value = null
+// 全选
+const selectAll = () => {
+  selectedMembers.value = paginatedMembers.value.map(member => member.id)
 }
 
-// 处理头像上传完成后的回调
-const handleAvatarUploaded = async (memberId: number, avatarUrl: string) => {
+// 清空选择
+const clearSelection = () => {
+  selectedMembers.value = []
+}
+
+// 批量删除成员
+const batchDeleteMembers = async () => {
+  if (selectedMembers.value.length === 0) return
+  
+  const memberNames = selectedMembers.value.map(id => {
+    const member = members.value.find(m => m.id === id)
+    return member?.name || '未知'
+  }).join('、')
+  
+  if (!confirm(`确定要删除以下 ${selectedMembers.value.length} 个成员吗？\n${memberNames}\n\n此操作不可撤销。`)) {
+    return
+  }
+
   try {
-    // 刷新成员列表，确保头像能显示
+    loading.value = true
+    
+    const deletePromises = selectedMembers.value.map(id => 
+      MemberService.deleteMember(id)
+    )
+    
+    await Promise.all(deletePromises)
+    
+    selectedMembers.value = []
     await fetchMembers()
-    console.log('头像上传成功')
+    
+    console.log('批量删除成员成功')
+  } catch (err: any) {
+    console.error('批量删除成员失败:', err)
+    error.value = '批量删除成员失败: ' + err.message
   } finally {
-    closeAvatarUpload()
+    loading.value = false
   }
 }
 
@@ -490,6 +548,22 @@ onMounted(async () => {
         margin-right: 5px; /* 图标与文字间距 */
       }
     }
+    .batch-toggle-btn {
+      background: #666;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 30px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .batch-toggle-btn:hover {
+      background: #777;
+    }
+    .batch-toggle-btn.active {
+      background: linear-gradient(to right, #ff9800, #f57c00);
+    }
     .add-member-btn {
       background: linear-gradient(to right, #e53935, #e35d5b); /* 渐变背景 */
       color: white;
@@ -510,16 +584,95 @@ onMounted(async () => {
   }
 }
 
-/* 筛选区域样式（与乐队管理一致） */
+/* 批量操作工具栏 */
+.batch-toolbar {
+  background: rgba(255, 152, 0, 0.1);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.batch-info {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.select-all-btn, 
+.clear-selection-btn {
+  background: transparent;
+  border: 1px solid #ff9800;
+  color: #ff9800;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.select-all-btn:hover, 
+.clear-selection-btn:hover {
+  background: #ff9800;
+  color: white;
+}
+
+.batch-delete-btn {
+  background: linear-gradient(to right, #dc3545, #c82333);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.batch-delete-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.member-card {
+  background: #222;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
+  position: relative;
+}
+
+.member-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(229, 57, 53, 0.2);
+}
+
+.member-checkbox {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 10;
+}
+
+.member-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #ff9800;
+}
+
+/* 筛选区域样式 */
 .filter-section {
   display: flex;
   gap: 20px;
-  margin-bottom: 30px;
+  margin-bottom: 25px;
   padding: 20px 4px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   flex-wrap: wrap;
-  border: 1px solid #333;
 }
 
 .filter-group {
@@ -596,153 +749,131 @@ onMounted(async () => {
       overflow: hidden;
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* 阴影 */
       transition: transform 0.3s ease;
+      position: relative; /* 关键：为绝对定位提供上下文 */
+      
       &:hover {
         transform: translateY(-5px); /* 悬停上浮 */
         box-shadow: 0 8px 20px rgba(229, 57, 53, 0.2); /* 悬停阴影 */
       }
+      
+      .member-checkbox {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        z-index: 10;
+        
+        input[type="checkbox"] {
+          width: 20px;
+          height: 20px;
+          cursor: pointer;
+          accent-color: #ff9800;
+        }
+      }
+
       /* 成员头像区域 */
       .member-image {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+        height: 200px;
+        background: #333;
         position: relative;
-        height: 180px;
-        background-color: #444;
+        overflow: hidden;
+
         .avatar-wrapper {
-          position: relative;
-          width: 160px;
-          height: 160px;
-          margin: 0 auto;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 50%;
-          overflow: hidden;
-          background: #222;
-        }
-        .member-avatar-image {
           width: 100%;
           height: 100%;
-          border-radius: 50%;
-          object-fit: cover;
-          background: #222;
-          z-index: 1;
-          display: block;
-        }
-        .avatar-placeholder {
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          background: #666;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          color: #fff;
-          font-size: 2.5rem;
-          z-index: 1;
-          i {
-            font-size: 3rem;
-            margin-bottom: 8px;
-            color: rgba(229, 57, 53, 0.7);
-          }
-          span {
-            font-size: 1rem;
-            color: #eee;
-          }
-        }
-        .upload-button {
-          position: absolute;
-          right: 0;
-          bottom: 0;
-          background: #222;
-          color: #fff;
-          border: none;
-          border-radius: 50%;
-          width: 36px;
-          height: 36px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 1.1rem;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.18);
-          cursor: pointer;
-          transition: background 0.2s;
-          z-index: 2;
-          &:hover {
-            background: #e53935;
-            color: #fff;
+
+          .member-avatar-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+
+          .avatar-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            font-size: 0.9rem;
+
+            i {
+              font-size: 3rem;
+              margin-bottom: 10px;
+              color: #666;
+            }
           }
         }
       }
+
       /* 成员信息区域 */
       .member-info {
-        padding: 15px; /* 内边距 */
+        padding: 20px;
+
         .member-name {
-          font-size: 1.5rem; /* 成员名字号 */
-          margin: 0 0 5px;
-          color: white;
+          font-size: 1.5rem;
+          font-weight: bold;
+          color: #e53935;
+          margin-bottom: 8px;
         }
-        .member-role, .member-band, .member-date {
+
+        .member-role {
           font-size: 1rem;
-          color: #aaa; /* 次要信息色 */
-          margin: 5px 0;
+          color: #ccc;
+          margin-bottom: 6px;
         }
-        /* 操作按钮区域（编辑、删除） */
+
+        .member-band {
+          font-size: 0.9rem;
+          color: #aaa;
+          margin-bottom: 4px;
+        }
+
+        .member-date {
+          font-size: 0.9rem;
+          color: #aaa;
+          margin-bottom: 15px;
+        }
+
+        /* 操作按钮区域 */
         .member-actions {
-          display: flex;
-          align-items: flex-end;
-          margin-top: 18px;
-          justify-content: space-between;
-          .upload-avatar-action-btn {
-            background: #222;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            padding: 6px 14px;
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.10);
-            cursor: pointer;
-            transition: background 0.2s;
-            &:hover {
-              background: #e53935;
-              color: #fff;
-            }
-          }
           .action-btn-group {
             display: flex;
             gap: 10px;
-          }
-          .action-btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            &:hover {
-              transform: translateY(-2px); /* 悬停上浮 */
-            }
-            i {
-              margin-right: 5px;
-            }
-            &.edit {
-              background: linear-gradient(to right, #007bff, #0056b3); /* 蓝色渐变 */
-              color: white;
-              &:hover {
-                box-shadow: 0 3px 10px rgba(0, 123, 255, 0.3);
+
+            .action-btn {
+              flex: 1;
+              padding: 8px 12px;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 0.9rem;
+              font-weight: 500;
+              transition: all 0.3s ease;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 5px;
+
+              &.edit {
+                background: linear-gradient(to right, #2196f3, #1976d2);
+                color: white;
+
+                &:hover {
+                  transform: translateY(-2px);
+                  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+                }
               }
-            }
-            &.delete {
-              background: linear-gradient(to right, #dc3545, #c82333); /* 红色渐变 */
-              color: white;
-              &:hover {
-                box-shadow: 0 3px 10px rgba(220, 53, 69, 0.3);
+
+              &.delete {
+                background: linear-gradient(to right, #dc3545, #c82333);
+                color: white;
+
+                &:hover {
+                  transform: translateY(-2px);
+                  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+                }
               }
             }
           }

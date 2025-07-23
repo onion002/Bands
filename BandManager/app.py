@@ -1,7 +1,7 @@
 from app_factory import create_app
 import os
 from flask_cors import CORS
-from flask import send_from_directory
+from flask import send_from_directory, current_app
 
 app = create_app()
 
@@ -16,7 +16,7 @@ def run_app():
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == '__main__':
     run_app()

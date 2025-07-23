@@ -28,10 +28,10 @@
             <template v-else>
               <div class="placeholder-image" :style="{ backgroundColor: band.color || '#222' }">
                 <div class="placeholder-text">
-                  <div class="music-symbol">♪</div>
-                  <span>乐队图片</span>
-                </div>
+                <div class="music-symbol">♪</div>
+                <span>乐队图片</span>
               </div>
+            </div>
             </template>
           </div>
           <div class="band-info">

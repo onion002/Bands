@@ -25,6 +25,7 @@ export interface CreateMemberData {
   role?: string;
   join_date: string;
   band_id: number;
+  avatar_url?: string;
 }
 
 export interface UpdateMemberData {
@@ -32,6 +33,7 @@ export interface UpdateMemberData {
   role?: string;
   join_date?: string;
   band_id?: number;
+  avatar_url?: string;
 }
 
 export const MemberService = {
@@ -39,28 +41,27 @@ export const MemberService = {
   async getBandMembers(bandId: number, page: number = 1, perPage: number = 10): Promise<GetMembersResponse> {
     return axios.get(`${API_BASE_URL}/api/members/band/${bandId}?page=${page}&per_page=${perPage}`);
   },
-  
+
   // 获取所有成员列表（用于成员管理页面）
   async getAllMembers(page: number = 1, perPage: number = 10): Promise<GetMembersResponse> {
-    // 直接请求后端分页接口
     return axios.get(`${API_BASE_URL}/api/members/?page=${page}&per_page=${perPage}`);
   },
-  
+
   // 创建新成员
   async createMember(memberData: CreateMemberData): Promise<Member> {
     return axios.post(`${API_BASE_URL}/api/members/`, memberData);
   },
-  
+
   // 获取成员详情
   async getMember(id: number): Promise<Member> {
     return axios.get(`${API_BASE_URL}/api/members/${id}`);
   },
-  
+
   // 更新成员信息
   async updateMember(id: number, memberData: UpdateMemberData): Promise<Member> {
     return axios.put(`${API_BASE_URL}/api/members/${id}`, memberData);
   },
-  
+
   // 删除成员
   async deleteMember(id: number): Promise<{ message: string }> {
     return axios.delete(`${API_BASE_URL}/api/members/${id}`);

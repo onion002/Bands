@@ -87,7 +87,7 @@ class Member(db.Model):
             'id': self.id,
             'name': self.name,
             'role': self.role,
-            'join_date': str(self.join_date)if self.join_date else None,
+            'join_date': str(self.join_date) if self.join_date else None,
             'band_id': self.band_id,
             'band_name': self.band.name if self.band else None,  # type: ignore
             'avatar_url': self.avatar_url

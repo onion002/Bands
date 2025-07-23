@@ -21,13 +21,6 @@
                   </div>
                 </div>
                 <div class="band-image-actions">
-                  <input
-                    type="file"
-                    ref="bandImageInput"
-                    accept="image/*"
-                    @change="handleBandImageChange"
-                    style="display: none;"
-                  >
                   <button type="button" class="upload-band-image-btn" @click="triggerBandImageUpload">
                     <i class="fas fa-camera"></i> 上传图片
                   </button>
@@ -71,12 +64,24 @@
         </div>
       </div>
     </div>
+    <!-- 图片上传弹窗 -->
+    <UploadModal
+      v-if="showUploadModal"
+      title="上传乐队图片"
+      :uploadApi="BandService.uploadBandImage"
+      accept="image/jpeg,image/png,image/gif"
+      :maxSize="5 * 1024 * 1024"
+      @uploaded="handleImageUploaded"
+      @close="showUploadModal = false"
+    />
   </template>
   
   <script setup lang="ts">
   import { ref, watch, onMounted } from 'vue';
   import type { Band } from '@/types';
-  
+  import UploadModal from './UploadModal.vue';
+  import { BandService } from '@/api/bandService';
+
   const props = defineProps({
     band: {
       type: Object as () => Band | null,
@@ -95,7 +100,7 @@
     formedYear: new Date().getFullYear(),
     description: '',
     memberCount: 4,
-    banner_image_url: '' // 新增用于存储图片URL的字段
+    banner_image_url: '' // 只存图片URL
   });
   
   const emit = defineEmits(['close', 'save']);
@@ -110,7 +115,7 @@
         formedYear: newBand.year,
         description: newBand.bio,
         memberCount: newBand.member_count,
-        banner_image_url: newBand.banner_image_url // 更新图片URL
+        banner_image_url: newBand.banner_image_url // 只存图片URL
       };
     }
   }, { immediate: true });
@@ -129,31 +134,19 @@
       year: formData.value.formedYear,
       bio: formData.value.description,
       member_count: formData.value.memberCount,
-      banner_image_url: formData.value.banner_image_url // 传递图片URL
+      banner_image_url: formData.value.banner_image_url // 只传图片URL
     });
   };
 
-  // 图片上传相关
-  const bandImageInput = ref<HTMLInputElement | null>(null);
-
+  // 控制 UploadModal 显示
+  const showUploadModal = ref(false);
   const triggerBandImageUpload = () => {
-    bandImageInput.value?.click();
+    showUploadModal.value = true;
   };
-
-  const handleBandImageChange = (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    if (target.files && target.files.length > 0) {
-      const file = target.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          formData.value.banner_image_url = e.target.result as string;
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleImageUploaded = (imageUrl: string) => {
+    formData.value.banner_image_url = imageUrl;
+    showUploadModal.value = false;
   };
-
   const removeBandImage = () => {
     formData.value.banner_image_url = '';
   };

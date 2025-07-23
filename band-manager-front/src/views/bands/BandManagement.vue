@@ -9,13 +9,39 @@
         <button class="back-button" @click="goToHome">
           <i class="fas fa-arrow-left"></i> 返回主页
         </button>
-        <!-- 添加新乐队按钮 -->
+        
+        <!-- 批量删除切换按钮 -->
+        <button 
+          class="batch-toggle-btn" 
+          @click="toggleBatchMode"
+          :class="{ active: batchMode }"
+        >
+          <i class="fas fa-check-square"></i> 
+          {{ batchMode ? '退出批量删除' : '批量删除' }}
+        </button>
+        
         <button class="add-band-btn" @click="openCreateModal">
           <i class="fas fa-plus"></i> 添加新乐队
         </button>
       </div>
     </div>
-    
+
+    <!-- 批量操作工具栏 -->
+    <div v-if="batchMode" class="batch-toolbar">
+      <div class="batch-info">
+        <span>已选择 {{ selectedBands.length }} 个乐队</span>
+        <button @click="selectAll" class="select-all-btn">全选</button>
+        <button @click="clearSelection" class="clear-selection-btn">清空</button>
+      </div>
+      <button 
+        v-if="selectedBands.length > 0" 
+        class="batch-delete-btn" 
+        @click="batchDeleteBands"
+      >
+        <i class="fas fa-trash"></i> 删除选中项 ({{ selectedBands.length }})
+      </button>
+    </div>
+
     <!-- 加载状态指示器 -->
     <div v-if="loading" class="loading-state">
       <i class="fas fa-spinner fa-spin"></i> 加载中...
@@ -55,18 +81,28 @@
     </div>
     
     <!-- 乐队列表展示 -->
-    <div v-if="!loading && bands.length > 0" class="band-list">
+    <div v-if="!loading && filteredBands.length > 0" class="band-list">
       <div v-for="band in paginatedBands" :key="band.id" class="band-item">
-        <div class="band-card">
+        <div class="band-card" :class="{ 'batch-mode': batchMode }">
+          <!-- 批量删除模式下显示复选框 -->
+          <div v-if="batchMode" class="band-checkbox">
+            <input 
+              type="checkbox" 
+              :value="band.id" 
+              v-model="selectedBands"
+            >
+          </div>
+          
           <!-- 乐队图片区域 -->
           <div class="band-image" :style="{ backgroundColor: '#444' }">
             <!-- 如果有图片则显示图片，否则显示占位符 -->
             <img
               v-if="band.banner_image_url"
-              :src="band.banner_image_url"
+              :src="getBandImageUrl(band.banner_image_url)"
               class="band-image-content"
               @click="openBioDialog(band)"
               style="cursor: pointer;"
+              @error="handleImageError"
             >
             <div v-else class="image-placeholder">
               <i class="fas fa-music"></i>
@@ -76,15 +112,21 @@
           <!-- 乐队信息区域 -->
           <div class="band-info">
             <h3 class="band-name">{{ band.name }}</h3>
-            <p class="band-genre">{{ band.genre }}</p>
-            <p class="band-year">成立年份: {{ band.year }}</p>
-            <button class="upload-button" @click="openImageUpload(band)">
-              <i class="fas fa-camera"></i> 上传图片
-            </button>
-            <div class="band-actions">
+            <p class="band-genre">{{ band.genre || '未设置流派' }}</p>
+            <p class="band-year">成立年份: {{ band.year || '未设置' }}</p>
+            <p class="band-member-count">成员数量: {{ band.member_count || 0 }} 人</p>
+            <p class="band-bio-preview" v-if="band.bio" @click="openBioDialog(band)" style="cursor: pointer;">
+              简介: {{ band.bio.length > 30 ? band.bio.substring(0, 30) + '...' : band.bio }}
+            </p>
+            <p class="band-bio-preview" v-else>简介: 暂无简介</p>
+            <div v-if="!batchMode" class="band-actions">
               <!-- 编辑按钮 -->
               <button @click="editBand(band)" class="action-btn edit">
                 <i class="fas fa-edit"></i> 编辑
+              </button>
+              <!-- 上传图片按钮 -->
+              <button @click="openImageUpload(band)" class="action-btn upload">
+                <i class="fas fa-image"></i> 图片
               </button>
               <!-- 删除按钮 -->
               <button @click="deleteBand(band)" class="action-btn delete">
@@ -95,7 +137,30 @@
         </div>
       </div>
     </div>
-    
+
+    <!-- 分页控件 -->
+    <div v-if="totalPages > 1" class="pagination">
+      <button
+        @click="changePage(currentPage - 1)"
+        :disabled="currentPage <= 1"
+        class="page-btn"
+      >
+        <i class="fas fa-chevron-left"></i>
+      </button>
+
+      <span class="page-info">
+        第 {{ currentPage }} 页，共 {{ totalPages }} 页
+      </span>
+
+      <button
+        @click="changePage(currentPage + 1)"
+        :disabled="currentPage >= totalPages"
+        class="page-btn"
+      >
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+
     <!-- 添加乐队模态框 -->
     <BandModal 
       v-if="showCreateModal"
@@ -105,30 +170,40 @@
     />
     
     <!-- 编辑乐队模态框 -->
-    <BandModal 
+    <BandModal
       v-if="showEditModal"
       :band="selectedBand"
       mode="edit"
       @close="closeEditModal"
       @save="updateBand"
     />
-    
-    <!-- 图片上传模态框 -->
-    <ImageUploadModal 
-      v-if="showImageUploadModal"
-      :band-id="selectedBand?.id"
-      @close="closeImageUpload"
-      @uploaded="handleImageUploaded"
-    />
-    
-    <!-- 乐队简介弹窗 -->
-    <div v-if="showBioDialog" class="bio-dialog-overlay" @click.self="closeBioDialog">
-      <div class="bio-dialog">
-        <h3>乐队简介</h3>
-        <div class="bio-content">{{ bioDialogBand?.bio || '暂无简介' }}</div>
-        <button class="close-bio-btn" @click="closeBioDialog">关闭</button>
+
+    <!-- 简介弹窗 -->
+    <div v-if="showBioDialog" class="bio-modal-overlay" @click.self="closeBioDialog">
+      <div class="bio-modal">
+        <div class="bio-modal-header">
+          <h3>{{ bioDialogBand?.name }} - 乐队简介</h3>
+          <button @click="closeBioDialog" class="close-btn">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="bio-modal-content">
+          <p v-if="bioDialogBand?.bio">{{ bioDialogBand.bio }}</p>
+          <p v-else class="no-bio">暂无简介信息</p>
+        </div>
       </div>
     </div>
+
+    <!-- 图片上传模态框 -->
+    <UploadModal
+      v-if="showImageUploadModal"
+      title="上传乐队图片"
+      :uploadApi="BandService.uploadBandImage"
+      accept="image/jpeg,image/png,image/gif,image/webp"
+      :maxSize="10 * 1024 * 1024"
+      @uploaded="handleImageUploaded"
+      @close="closeImageUpload"
+    />
   </div>
 </template>
 
@@ -142,7 +217,7 @@ import { BandService } from '@/api/bandService'
 // 引入乐队信息编辑模态框组件
 import BandModal from '@/components/BandModal.vue'
 // 引入图片上传模态框组件
-import ImageUploadModal from '@/components/ImageUploadModal.vue'
+import UploadModal from '@/components/UploadModal.vue'
 
 // 路由实例
 const router = useRouter()
@@ -222,6 +297,18 @@ const paginatedBands = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   return filteredBands.value.slice(start, start + pageSize.value)
 })
+
+// 计算属性：总页数
+const totalPages = computed(() => {
+  return Math.ceil(filteredBands.value.length / pageSize.value)
+})
+
+// 分页切换
+const changePage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
 
 // 获取乐队列表数据
 const fetchBands = async () => {
@@ -329,14 +416,13 @@ const closeImageUpload = () => {
 }
 
 // 处理图片上传完成后的回调
-const handleImageUploaded = async (bandId: number | null, imageUrl: string) => {
-  if (bandId == null) return;
+const handleImageUploaded = async (imageUrl: string) => {
+  if (!selectedBand.value) return;
   // 上传图片后，更新数据库中的 banner_image_url 字段
   try {
-    // 找到当前乐队
-    const band = bands.value.find(b => b.id === bandId);
+    const band = selectedBand.value;
     // 更新乐队信息，带上新图片地址
-    await BandService.updateBand(bandId, {
+    await BandService.updateBand(band.id, {
       name: band.name,
       year: band.year,
       genre: band.genre,
@@ -345,16 +431,88 @@ const handleImageUploaded = async (bandId: number | null, imageUrl: string) => {
       banner_image_url: imageUrl
     });
     // 刷新乐队列表，确保图片能显示
-    await fetchBands(); 
+    await fetchBands();
   } finally {
     closeImageUpload();
   }
+}
+
+// 获取乐队图片URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+
+const getBandImageUrl = (imageUrl: string) => {
+  if (!imageUrl) return ''
+  if (imageUrl.startsWith('http')) return imageUrl
+  return API_BASE_URL + imageUrl
+}
+
+// 处理图片加载错误
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  img.style.display = 'none'
+  console.warn('图片加载失败:', img.src)
 }
 
 // 组件挂载时自动拉取乐队数据
 onMounted(() => {
   fetchBands()
 })
+
+// 添加批量删除相关状态和方法
+const batchMode = ref(false)
+const selectedBands = ref<number[]>([])
+
+const toggleBatchMode = () => {
+  batchMode.value = !batchMode.value
+  if (!batchMode.value) {
+    selectedBands.value = []
+  }
+}
+
+const selectAll = () => {
+  selectedBands.value = paginatedBands.value.map(band => band.id)
+}
+
+const clearSelection = () => {
+  selectedBands.value = []
+}
+
+const batchDeleteBands = async () => {
+  if (selectedBands.value.length === 0) return
+  
+  const bandNames = selectedBands.value.map(id => {
+    const band = bands.value.find(b => b.id === id)
+    return band?.name || '未知'
+  }).join('、')
+  
+  if (!confirm(`确定要删除以下 ${selectedBands.value.length} 个乐队吗？\n${bandNames}\n\n此操作不可撤销。`)) {
+    return
+  }
+
+  try {
+    loading.value = true
+    
+    // 并发删除所有选中的乐队
+    const deletePromises = selectedBands.value.map(id => 
+      BandService.deleteBand(id)
+    )
+    
+    await Promise.all(deletePromises)
+    
+    // 清空选择
+    selectedBands.value = []
+    
+    // 刷新乐队列表
+    await fetchBands()
+    
+    console.log('批量删除乐队成功')
+  } catch (err: any) {
+    console.error('批量删除乐队失败:', err)
+    error.value = '批量删除乐队失败: ' + err.message
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -388,6 +546,7 @@ onMounted(() => {
     display: flex;
     gap: 16px;
     align-items: center;
+    
     .back-button {
       background: #333;
       color: rgb(247, 238, 238);
@@ -404,6 +563,27 @@ onMounted(() => {
         margin-right: 5px;
       }
     }
+    
+    .batch-toggle-btn {
+      background: #666;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 30px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      &:hover {
+        background: #777;
+      }
+      &.active {
+        background: linear-gradient(to right, #ff9800, #f57c00);
+      }
+      i {
+        margin-right: 5px;
+      }
+    }
+    
     .add-band-btn {
       background: linear-gradient(to right, #e53935, #e35d5b);
       color: white;
@@ -580,6 +760,7 @@ onMounted(() => {
         display: flex;
         align-items: center;
         gap: 10px;
+        justify-content: flex-end; /* 确保靠右对齐 */
         .action-btn {
           padding: 8px 15px;
           border: none;
@@ -664,5 +845,216 @@ onMounted(() => {
 }
 .close-bio-btn:hover {
   background: #b71c1c; // 悬停变深
+}
+
+/* 批量操作工具栏 */
+.batch-toolbar {
+  background: rgba(255, 152, 0, 0.1);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.batch-info {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.select-all-btn, .clear-selection-btn {
+  background: transparent;
+  border: 1px solid #ff9800;
+  color: #ff9800;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.select-all-btn:hover, .clear-selection-btn:hover {
+  background: #ff9800;
+  color: white;
+}
+
+.batch-delete-btn {
+  background: linear-gradient(to right, #dc3545, #c82333);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.batch-delete-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.band-card {
+  position: relative;
+  
+  &.batch-mode {
+    .band-actions {
+      display: none; /* 批量模式下隐藏单个操作按钮 */
+    }
+  }
+}
+
+.band-checkbox {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 10;
+}
+
+.band-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #ff9800;
+}
+
+/* 简介弹窗样式 */
+.bio-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.bio-modal {
+  background: linear-gradient(135deg, #1e1e2e, #2c2c3e);
+  border-radius: 12px;
+  width: 600px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(229, 57, 53, 0.3);
+}
+
+.bio-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: rgba(229, 57, 53, 0.8);
+  border-radius: 12px 12px 0 0;
+}
+
+.bio-modal-header h3 {
+  margin: 0;
+  color: white;
+  font-size: 1.4rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.bio-modal-content {
+  padding: 20px;
+  color: white;
+  line-height: 1.6;
+}
+
+.no-bio {
+  color: #888;
+  font-style: italic;
+}
+
+/* 乐队信息区域新增样式 */
+.band-member-count {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin-bottom: 4px;
+}
+
+.band-bio-preview {
+  font-size: 0.9rem;
+  color: #ccc;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.band-bio-preview:hover {
+  color: #e53935;
+  text-decoration: underline;
+}
+
+/* 上传按钮样式 */
+.action-btn.upload {
+  background: linear-gradient(to right, #ff9800, #f57c00);
+  color: white;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+  }
+}
+
+/* 分页控件样式 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  padding: 30px 4px;
+  margin-top: 20px;
+}
+
+.page-btn {
+  padding: 10px 15px;
+  border: 1px solid #555;
+  background: #333;
+  color: white;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(to right, #e53935, #e35d5b);
+    border-color: #e53935;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(229, 57, 53, 0.3);
+  }
+
+  &:disabled {
+    background: #555;
+    color: #888;
+    cursor: not-allowed;
+    border-color: #555;
+  }
+}
+
+.page-info {
+  font-weight: 500;
+  color: white;
+  font-size: 1rem;
 }
 </style>

@@ -76,10 +76,10 @@ def create_band():
                     safe_name = 'band'
                 ext = file.filename.split('.')[-1] if file and file.filename and '.' in file.filename else 'jpg'
                 filename = f"band_{safe_name}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.{ext}"
-                upload_folder = current_app.config['UPLOAD_FOLDER']
-                file_path = os.path.join(upload_folder, 'bands', filename)
-                os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                file.save(file_path)
+                upload_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'bands')
+                os.makedirs(upload_folder, exist_ok=True)
+                file_path_full = os.path.join(upload_folder, filename)
+                file.save(file_path_full)
                 file_path = f"/uploads/bands/{filename}"
             
             # 创建新乐队对象
@@ -117,7 +117,6 @@ def create_band():
                 banner_image_url=file_path
             )
             
-            
             db.session.add(new_band)
             db.session.commit()
             
@@ -137,6 +136,11 @@ def create_band():
             if not data or not data.get('name'):
                 return jsonify({'error': '乐队名称不能为空'}), 400
                 
+            # 处理 banner_image_url 路径（如果是 /uploads/xxx，自动修正为 /uploads/bands/xxx）
+            banner_image_url = data.get('banner_image_url')
+            if banner_image_url and banner_image_url.startswith('/uploads/') and not banner_image_url.startswith('/uploads/bands/'):
+                banner_image_url = banner_image_url.replace('/uploads/', '/uploads/bands/')
+            
             # 创建新乐队对象
             year_val = data.get('year') if data else None
             member_count_val = data.get('member_count') if data else None
@@ -169,7 +173,7 @@ def create_band():
                 genre=data.get('genre'),
                 member_count=member_count_int,
                 bio=data.get('bio', ''),
-                banner_image_url=data.get('banner_image_url')
+                banner_image_url=banner_image_url
             )
             
             # 保存到数据库
@@ -315,17 +319,20 @@ def delete_band(band_id):
         band = Band.query.get(band_id)
         if not band:
             return jsonify({'error': '乐队不存在'}), 404
-            
+        
         # 删除乐队相关图片
         if band.banner_image_url:
             try:
-                file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'bands', band.banner_image_url.split('/')[-1])
+                file_path = os.path.join(
+                    current_app.config['UPLOAD_FOLDER'],
+                    'bands',
+                    band.banner_image_url.split('/')[-1]
+                )
                 if os.path.exists(file_path):
                     os.remove(file_path)
             except Exception as e:
                 logging.warning(f"删除乐队图片失败: {str(e)}")
         
-        # 删除乐队
         db.session.delete(band)
         db.session.commit()
         
@@ -334,3 +341,38 @@ def delete_band(band_id):
         db.session.rollback()
         logging.error(f"删除乐队失败: {str(e)}", exc_info=True)
         return jsonify({'error': '删除乐队失败'}), 500
+
+@bands_bp.route('/upload_image', methods=['POST'])
+def upload_band_image():
+    """上传乐队图片，统一存储到 uploads/bands/ 目录下"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': '没有上传文件'}), 400
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': '没有选择文件'}), 400
+        # 检查文件类型
+        allowed_exts = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+        def allowed_file(filename):
+            return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_exts
+        if not allowed_file(file.filename):
+            return jsonify({'error': '不支持的文件类型，请上传图片文件'}), 400
+        # 生成唯一文件名
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        filename = f"{timestamp}_" + secure_filename(file.filename)
+        # 确保上传目录存在
+        upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'bands')
+        os.makedirs(upload_dir, exist_ok=True)
+        # 保存文件
+        file_path = os.path.join(upload_dir, filename)
+        file.save(file_path)
+        # 返回图片URL
+        url = f"/uploads/bands/{filename}"
+        return jsonify({
+            'success': True,
+            'message': '图片上传成功',
+            'url': url
+        }), 201
+    except Exception as e:
+        return jsonify({'error': f'图片上传失败: {str(e)}'}), 500

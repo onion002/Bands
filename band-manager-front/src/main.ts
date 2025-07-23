@@ -10,6 +10,6 @@ const pinia = createPinia()
 
 app.use(router)
 app.use(pinia)
-app.use(ElementPlus)
+app.use(ElementPlus)  
 
 app.mount('#app')

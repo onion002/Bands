@@ -95,11 +95,9 @@ def register_blueprints(app):
     # 动态导入蓝图，避免循环导入
     try:
         from api.bands import bands_bp
-        from api.uploads import uploads_bp
         from api.members import members_bp
         
         app.register_blueprint(bands_bp, url_prefix='/api/bands')
-        app.register_blueprint(uploads_bp, url_prefix='/api/uploads')
         app.register_blueprint(members_bp, url_prefix='/api/members')
         
         if not is_reloader_process():
