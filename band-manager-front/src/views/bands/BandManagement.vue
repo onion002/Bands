@@ -357,15 +357,43 @@ const updateBand = async (bandData: any) => {
 // 删除乐队
 const deleteBand = async (band: any) => {
   // 弹窗确认
-  if (!confirm(`确定删除乐队 "${band.name}" 吗?`)) return
+  if (!confirm(`确定删除乐队 "${band.name}" 吗？\n\n⚠️ 此操作将同时删除：\n• 乐队的所有历史图片\n• 乐队成员的所有头像\n• 乐队成员记录\n\n此操作不可撤销！`)) return
   try {
-    // 调用 API 删除乐队
-    await BandService.deleteBand(band.id)
+    loading.value = true
+
+    // 1. 先强制清理该乐队的所有图片
+    try {
+      const cleanupResponse = await BandService.cleanupAllBandImages(band.id)
+      console.log(`清理乐队 "${band.name}" 的图片:`, cleanupResponse.data)
+    } catch (cleanupErr) {
+      console.warn('清理乐队图片时出现警告:', cleanupErr)
+      // 继续执行删除操作，不因为清理失败而中断
+    }
+
+    // 2. 调用 API 删除乐队
+    const response = await BandService.deleteBand(band.id)
+
+    // 3. 强制清理所有未使用的图片（解决格式2文件问题）
+    try {
+      const forceCleanupResponse = await BandService.forceCleanupAllUnusedImages()
+      console.log('强制清理未使用图片:', forceCleanupResponse.data)
+    } catch (forceCleanupErr) {
+      console.warn('强制清理未使用图片时出现警告:', forceCleanupErr)
+    }
+
+    // 显示删除结果
+    if (response.data?.deleted_files_count > 0) {
+      console.log(`删除乐队 "${band.name}" 成功，共删除了 ${response.data.deleted_files_count} 个图片文件`)
+    }
+
     // 刷新乐队列表
     await fetchBands()
-  } catch (err) {
-    error.value = '删除乐队失败'
+  } catch (err: any) {
+    const errorMessage = err.response?.data?.error || err.message || '未知错误'
+    error.value = '删除乐队失败: ' + errorMessage
     console.error('删除乐队失败:', err)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -413,36 +441,86 @@ const clearSelection = () => {
 
 const batchDeleteBands = async () => {
   if (selectedBands.value.length === 0) return
-  
+
   const bandNames = selectedBands.value.map(id => {
     const band = bands.value.find(b => b.id === id)
     return band?.name || '未知'
   }).join('、')
-  
-  if (!confirm(`确定要删除以下 ${selectedBands.value.length} 个乐队吗？\n${bandNames}\n\n此操作不可撤销。`)) {
+
+  if (!confirm(`确定要删除以下 ${selectedBands.value.length} 个乐队吗？\n${bandNames}\n\n⚠️ 此操作将同时删除：\n• 乐队的所有历史图片\n• 乐队成员的所有头像\n• 乐队成员记录\n\n此操作不可撤销！`)) {
     return
   }
 
   try {
     loading.value = true
-    
-    // 并发删除所有选中的乐队
-    const deletePromises = selectedBands.value.map(id => 
-      BandService.deleteBand(id)
-    )
-    
-    await Promise.all(deletePromises)
-    
+
+    // 1. 先为每个乐队强制清理图片
+    console.log('开始清理各个乐队的图片...')
+    const cleanupPromises = selectedBands.value.map(async (bandId) => {
+      try {
+        const response = await BandService.cleanupAllBandImages(bandId)
+        console.log(`清理乐队 ${bandId} 的图片:`, response.data)
+        return response.data
+      } catch (err) {
+        console.warn(`清理乐队 ${bandId} 图片时出现警告:`, err)
+        return null
+      }
+    })
+
+    await Promise.all(cleanupPromises)
+    console.log('各个乐队图片清理完成')
+
+    // 2. 使用批量删除API
+    console.log('开始批量删除乐队...')
+    const response = await BandService.batchDeleteBands(selectedBands.value)
+    console.log('批量删除API调用成功:', response.data)
+
+    // 3. 强制清理所有未使用的图片（解决格式2文件问题）
+    console.log('开始强制清理所有未使用的图片...')
+    try {
+      const forceCleanupResponse = await BandService.forceCleanupAllUnusedImages()
+      console.log('批量删除后强制清理未使用图片:', forceCleanupResponse.data)
+    } catch (forceCleanupErr) {
+      console.warn('强制清理未使用图片时出现警告:', forceCleanupErr)
+      // 强制清理失败不应该影响主流程
+    }
+
     // 清空选择
     selectedBands.value = []
-    
+
     // 刷新乐队列表
+    console.log('刷新乐队列表...')
     await fetchBands()
-    
-    console.log('批量删除乐队成功')
+
+    // 显示删除结果
+    if (response && response.data) {
+      const result = response.data
+      console.log('批量删除乐队成功:', result)
+
+      // 可以在这里显示更详细的删除信息
+      if (result.total_deleted_files && result.total_deleted_files > 0) {
+        console.log(`共删除了 ${result.total_deleted_files} 个图片文件`)
+      }
+
+      // 显示成功消息给用户
+      console.log(`成功删除 ${result.deleted_bands?.length || selectedBands.value.length} 个乐队`)
+    } else {
+      console.log('批量删除乐队成功')
+    }
+
   } catch (err: any) {
     console.error('批量删除乐队失败:', err)
-    error.value = '批量删除乐队失败: ' + err.message
+    console.error('错误详情:', err.response?.data)
+
+    // 更详细的错误处理
+    let errorMessage = '未知错误'
+    if (err.response?.data?.error) {
+      errorMessage = err.response.data.error
+    } else if (err.message) {
+      errorMessage = err.message
+    }
+
+    error.value = '批量删除乐队失败: ' + errorMessage
   } finally {
     loading.value = false
   }
@@ -468,11 +546,35 @@ const batchDeleteBands = async () => {
 }
 
 
+/* 状态指示器样式（加载、错误），内容区加较小左右内边距 */
+.loading-state, .error-state {
+  text-align: center;
+  padding: 50px 4px; /* 上下和左右内边距 */
+  font-size: 1.2rem;
+  i {
+    font-size: 3rem; /* 图标大号显示 */
+    margin-bottom: 15px;
+    color: #e53935; /* 图标高亮色 */
+  }
+  button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    background: linear-gradient(to right, #e53935, #e35d5b);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+}
 
-
-
- 
-
+/* 错误状态下的按钮样式，背景色更深 */
+.error-state {
+  button {
+    background: #333;
+  }
+}
 
 
 // 乐队列表区域，内容区加较小左右内边距

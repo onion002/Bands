@@ -1,7 +1,9 @@
 import os
+import glob
+import re
 from flask import Blueprint, jsonify, request, current_app
 from werkzeug.utils import secure_filename
-from models import db, Band
+from models import db, Band, Member
 from sqlalchemy import text
 from datetime import datetime
 import logging
@@ -24,15 +26,155 @@ def save_uploaded_file(file, upload_folder, file_prefix):
         # 生成安全文件名
         filename = f"{file_prefix}_{secure_filename(file.filename)}"
         file_path = os.path.join(upload_folder, filename)
-        
+
         # 确保目标目录存在
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        
+
         # 保存文件
         file.save(file_path)
         return f"/{os.path.basename(upload_folder)}/{filename}"
-    
+
     return None
+
+def delete_band_related_images(band):
+    """删除乐队相关的所有图片文件"""
+    deleted_files = []
+
+    try:
+        # 1. 删除乐队的所有历史图片
+        bands_upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'bands')
+        if os.path.exists(bands_upload_dir):
+            # 首先删除当前数据库中记录的图片
+            if band.banner_image_url:
+                try:
+                    current_filename = band.banner_image_url.split('/')[-1]
+                    current_file_path = os.path.join(bands_upload_dir, current_filename)
+                    if os.path.exists(current_file_path):
+                        os.remove(current_file_path)
+                        deleted_files.append(current_file_path)
+                        logging.info(f"删除当前乐队图片: {current_file_path}")
+                except Exception as e:
+                    logging.warning(f"删除当前乐队图片失败 {band.banner_image_url}: {str(e)}")
+
+            # 生成乐队名称的安全版本，用于匹配文件名
+            safe_band_name = band.name.replace(' ', '_') if band.name else 'band'
+
+            # 删除所有明确属于该乐队的历史图片
+            # 格式: band_{safe_name}_{timestamp}.{ext}
+            patterns = [
+                f"band_{safe_band_name}_*.jpg",
+                f"band_{safe_band_name}_*.jpeg",
+                f"band_{safe_band_name}_*.png",
+                f"band_{safe_band_name}_*.gif",
+                f"band_{safe_band_name}_*.webp"
+            ]
+
+            for pattern in patterns:
+                matching_files = glob.glob(os.path.join(bands_upload_dir, pattern))
+                for file_path in matching_files:
+                    filename = os.path.basename(file_path)
+
+                    # 跳过已经删除的当前图片
+                    if band.banner_image_url and filename == band.banner_image_url.split('/')[-1]:
+                        continue
+
+                    try:
+                        os.remove(file_path)
+                        deleted_files.append(file_path)
+                        logging.info(f"删除乐队历史图片: {file_path}")
+                    except Exception as e:
+                        logging.warning(f"删除乐队历史图片失败 {file_path}: {str(e)}")
+
+            # 对于upload_image端点上传的图片（格式: {timestamp}_{original_filename}）
+            # 我们需要检查所有其他乐队是否还在使用这些图片
+            # 如果没有其他乐队使用，则可以安全删除
+            all_files = [f for f in os.listdir(bands_upload_dir)
+                        if os.path.isfile(os.path.join(bands_upload_dir, f))
+                        and any(f.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp'])]
+
+            # 获取所有其他乐队正在使用的图片
+            other_bands = Band.query.filter(Band.id != band.id).all()
+            used_images = set()
+            for other_band in other_bands:
+                if other_band.banner_image_url:
+                    used_images.add(other_band.banner_image_url.split('/')[-1])
+
+            # 检查每个文件是否可以安全删除
+            for filename in all_files:
+                file_path = os.path.join(bands_upload_dir, filename)
+
+                # 跳过已经删除的当前图片
+                if band.banner_image_url and filename == band.banner_image_url.split('/')[-1]:
+                    continue
+
+                # 跳过明确属于该乐队的图片（已经在上面处理过）
+                if filename.startswith(f"band_{safe_band_name}_"):
+                    continue
+
+                # 跳过其他乐队正在使用的图片
+                if filename in used_images:
+                    continue
+
+                # 对于格式2的文件，如果没有其他乐队使用，可能是该乐队的历史图片
+                # 检查文件名格式是否符合 {timestamp}_{filename} 模式
+                parts = filename.split('_', 1)
+                if len(parts) == 2 and parts[0].isdigit() and len(parts[0]) >= 8:
+                    # 看起来像是时间戳格式的文件，且没有被其他乐队使用
+                    # 可能是该乐队的历史图片，删除它
+                    try:
+                        os.remove(file_path)
+                        deleted_files.append(file_path)
+                        logging.info(f"删除可能的乐队历史图片: {file_path}")
+                    except Exception as e:
+                        logging.warning(f"删除可能的乐队历史图片失败 {file_path}: {str(e)}")
+                else:
+                    # 不符合已知格式，跳过
+                    continue
+
+        # 2. 删除该乐队所有成员的头像
+        members = Member.query.filter_by(band_id=band.id).all()
+        members_upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'members')
+
+        for member in members:
+            if member.avatar_url:
+                try:
+                    # 删除当前头像
+                    avatar_filename = member.avatar_url.split('/')[-1]
+                    avatar_path = os.path.join(members_upload_dir, avatar_filename)
+                    if os.path.exists(avatar_path):
+                        os.remove(avatar_path)
+                        deleted_files.append(avatar_path)
+                        logging.info(f"删除成员头像: {avatar_path}")
+                except Exception as e:
+                    logging.warning(f"删除成员头像失败 {member.avatar_url}: {str(e)}")
+
+            # 删除该成员的所有历史头像
+            if os.path.exists(members_upload_dir):
+                safe_member_name = member.name.replace(' ', '_') if member.name else 'member'
+                member_patterns = [
+                    f"member_{safe_member_name}_*.jpg",
+                    f"member_{safe_member_name}_*.jpeg",
+                    f"member_{safe_member_name}_*.png",
+                    f"member_{safe_member_name}_*.gif",
+                    f"member_{safe_member_name}_*.webp"
+                ]
+
+                for pattern in member_patterns:
+                    matching_files = glob.glob(os.path.join(members_upload_dir, pattern))
+                    for file_path in matching_files:
+                        try:
+                            os.remove(file_path)
+                            deleted_files.append(file_path)
+                            logging.info(f"删除成员历史头像: {file_path}")
+                        except Exception as e:
+                            logging.warning(f"删除成员历史头像失败 {file_path}: {str(e)}")
+
+        logging.info(f"乐队 {band.name} 相关图片删除完成，共删除 {len(deleted_files)} 个文件")
+        return deleted_files
+
+    except Exception as e:
+        logging.error(f"删除乐队相关图片时发生错误: {str(e)}")
+        return deleted_files
 
 @bands_bp.route('/', methods=['GET'])
 def get_bands():
@@ -314,33 +456,293 @@ def update_band(band_id):
 
 @bands_bp.route('/<int:band_id>', methods=['DELETE'])
 def delete_band(band_id):
-    """删除乐队（物理删除图片）"""
+    """删除乐队（物理删除所有相关图片和成员图片）"""
     try:
         band = Band.query.get(band_id)
         if not band:
             return jsonify({'error': '乐队不存在'}), 404
-        
-        # 删除乐队相关图片
-        if band.banner_image_url:
-            try:
-                file_path = os.path.join(
-                    current_app.config['UPLOAD_FOLDER'],
-                    'bands',
-                    band.banner_image_url.split('/')[-1]
-                )
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-            except Exception as e:
-                logging.warning(f"删除乐队图片失败: {str(e)}")
-        
+
+        # 记录乐队信息用于日志
+        band_name = band.name
+
+        # 删除乐队相关的所有图片文件（包括历史图片和成员头像）
+        deleted_files = delete_band_related_images(band)
+
+        # 删除数据库记录（由于设置了cascade='all, delete-orphan'，成员记录会自动删除）
         db.session.delete(band)
         db.session.commit()
-        
-        return jsonify({'message': '乐队删除成功'}), 200
+
+        return jsonify({
+            'message': f'乐队 "{band_name}" 删除成功',
+            'deleted_files_count': len(deleted_files)
+        }), 200
+
     except Exception as e:
         db.session.rollback()
         logging.error(f"删除乐队失败: {str(e)}", exc_info=True)
         return jsonify({'error': '删除乐队失败'}), 500
+
+@bands_bp.route('/batch_delete', methods=['POST'])
+def batch_delete_bands():
+    """批量删除乐队（物理删除所有相关图片和成员图片）"""
+    try:
+        data = request.json
+        if not data or 'band_ids' not in data:
+            return jsonify({'error': '请提供要删除的乐队ID列表'}), 400
+
+        band_ids = data['band_ids']
+        if not isinstance(band_ids, list) or not band_ids:
+            return jsonify({'error': '乐队ID列表不能为空'}), 400
+
+        # 验证所有乐队是否存在
+        bands = Band.query.filter(Band.id.in_(band_ids)).all()
+        if len(bands) != len(band_ids):
+            found_ids = [band.id for band in bands]
+            missing_ids = [bid for bid in band_ids if bid not in found_ids]
+            return jsonify({'error': f'以下乐队不存在: {missing_ids}'}), 404
+
+        deleted_bands = []
+        total_deleted_files = 0
+
+        # 逐个删除乐队
+        for band in bands:
+            try:
+                band_name = band.name
+
+                # 删除相关图片文件
+                deleted_files = delete_band_related_images(band)
+                total_deleted_files += len(deleted_files)
+
+                # 删除数据库记录
+                db.session.delete(band)
+
+                deleted_bands.append({
+                    'id': band.id,
+                    'name': band_name,
+                    'deleted_files_count': len(deleted_files)
+                })
+
+            except Exception as e:
+                logging.error(f"删除乐队 {band.name} 时发生错误: {str(e)}")
+                # 继续删除其他乐队，不中断整个过程
+                continue
+
+        # 提交所有删除操作
+        db.session.commit()
+
+        return jsonify({
+            'message': f'成功删除 {len(deleted_bands)} 个乐队',
+            'deleted_bands': deleted_bands,
+            'total_deleted_files': total_deleted_files
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"批量删除乐队失败: {str(e)}", exc_info=True)
+        return jsonify({'error': '批量删除乐队失败'}), 500
+
+@bands_bp.route('/cleanup_orphaned_images', methods=['POST'])
+def cleanup_orphaned_images():
+    """清理孤立的图片文件（没有被数据库记录引用的图片）"""
+    try:
+        cleaned_files = []
+
+        # 清理乐队图片目录
+        bands_upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'bands')
+        if os.path.exists(bands_upload_dir):
+            # 获取所有数据库中引用的乐队图片
+            referenced_band_images = set()
+            bands = Band.query.all()
+            for band in bands:
+                if band.banner_image_url:
+                    filename = band.banner_image_url.split('/')[-1]
+                    referenced_band_images.add(filename)
+
+            # 检查目录中的所有图片文件
+            for filename in os.listdir(bands_upload_dir):
+                file_path = os.path.join(bands_upload_dir, filename)
+                if os.path.isfile(file_path) and filename not in referenced_band_images:
+                    # 检查文件是否是图片文件
+                    if any(filename.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
+                        try:
+                            os.remove(file_path)
+                            cleaned_files.append(f"bands/{filename}")
+                            logging.info(f"清理孤立乐队图片: {file_path}")
+                        except Exception as e:
+                            logging.warning(f"清理孤立乐队图片失败 {file_path}: {str(e)}")
+
+        # 清理成员头像目录
+        members_upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'members')
+        if os.path.exists(members_upload_dir):
+            # 获取所有数据库中引用的成员头像
+            referenced_member_images = set()
+            members = Member.query.all()
+            for member in members:
+                if member.avatar_url:
+                    filename = member.avatar_url.split('/')[-1]
+                    referenced_member_images.add(filename)
+
+            # 检查目录中的所有图片文件
+            for filename in os.listdir(members_upload_dir):
+                file_path = os.path.join(members_upload_dir, filename)
+                if os.path.isfile(file_path) and filename not in referenced_member_images:
+                    # 检查文件是否是图片文件
+                    if any(filename.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
+                        try:
+                            os.remove(file_path)
+                            cleaned_files.append(f"members/{filename}")
+                            logging.info(f"清理孤立成员头像: {file_path}")
+                        except Exception as e:
+                            logging.warning(f"清理孤立成员头像失败 {file_path}: {str(e)}")
+
+        return jsonify({
+            'message': f'清理完成，共删除 {len(cleaned_files)} 个孤立图片文件',
+            'cleaned_files': cleaned_files
+        }), 200
+
+    except Exception as e:
+        logging.error(f"清理孤立图片失败: {str(e)}", exc_info=True)
+        return jsonify({'error': '清理孤立图片失败'}), 500
+
+@bands_bp.route('/<int:band_id>/cleanup_all_images', methods=['POST'])
+def cleanup_all_band_images(band_id):
+    """强制清理指定乐队的所有可能相关图片（包括upload_image上传的图片）"""
+    try:
+        band = Band.query.get(band_id)
+        if not band:
+            return jsonify({'error': '乐队不存在'}), 404
+
+        deleted_files = []
+        bands_upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'bands')
+
+        if not os.path.exists(bands_upload_dir):
+            return jsonify({
+                'message': f'乐队 "{band.name}" 的图片清理完成',
+                'deleted_files': [],
+                'deleted_files_count': 0
+            }), 200
+
+        # 获取所有其他乐队正在使用的图片
+        other_bands = Band.query.filter(Band.id != band_id).all()
+        protected_images = set()
+        for other_band in other_bands:
+            if other_band.banner_image_url:
+                protected_images.add(other_band.banner_image_url.split('/')[-1])
+
+        # 生成该乐队的安全名称
+        safe_band_name = band.name.replace(' ', '_') if band.name else 'band'
+
+        # 获取所有图片文件
+        all_files = [f for f in os.listdir(bands_upload_dir)
+                    if os.path.isfile(os.path.join(bands_upload_dir, f))
+                    and any(f.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp'])]
+
+        logging.info(f"开始强制清理乐队 {band.name} 的图片，共找到 {len(all_files)} 个图片文件")
+        logging.info(f"受保护的图片: {protected_images}")
+
+        for filename in all_files:
+            file_path = os.path.join(bands_upload_dir, filename)
+
+            # 保护其他乐队正在使用的图片
+            if filename in protected_images:
+                logging.info(f"跳过受保护的图片: {filename}")
+                continue
+
+            should_delete = False
+            delete_reason = ""
+
+            # 1. 明确属于该乐队的图片（格式1）
+            if filename.startswith(f"band_{safe_band_name}_"):
+                should_delete = True
+                delete_reason = "格式1乐队图片"
+
+            # 2. 当前乐队正在使用的图片
+            elif band.banner_image_url and filename == band.banner_image_url.split('/')[-1]:
+                should_delete = True
+                delete_reason = "当前使用的图片"
+
+            # 3. 对于格式2的文件，采用激进策略：删除所有未被保护的格式2文件
+            else:
+                # 检查文件名格式是否符合 {timestamp}_{filename} 模式
+                parts = filename.split('_', 1)
+                if len(parts) == 2 and parts[0].isdigit() and len(parts[0]) >= 8:
+                    # 看起来像是时间戳格式，可能是通过upload_image上传的
+                    should_delete = True
+                    delete_reason = "格式2历史图片"
+
+            if should_delete:
+                try:
+                    os.remove(file_path)
+                    deleted_files.append(filename)
+                    logging.info(f"强制删除乐队图片: {file_path} (原因: {delete_reason})")
+                except Exception as e:
+                    logging.warning(f"强制删除乐队图片失败 {file_path}: {str(e)}")
+            else:
+                logging.info(f"跳过文件: {filename} (不符合删除条件)")
+
+        return jsonify({
+            'message': f'乐队 "{band.name}" 的图片强制清理完成',
+            'deleted_files': deleted_files,
+            'deleted_files_count': len(deleted_files)
+        }), 200
+
+    except Exception as e:
+        logging.error(f"强制清理乐队图片失败: {str(e)}", exc_info=True)
+        return jsonify({'error': '强制清理乐队图片失败'}), 500
+
+@bands_bp.route('/force_cleanup_all_unused_images', methods=['POST'])
+def force_cleanup_all_unused_images():
+    """强制清理所有未被使用的图片文件（危险操作，谨慎使用）"""
+    try:
+        deleted_files = []
+        bands_upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'bands')
+
+        if not os.path.exists(bands_upload_dir):
+            return jsonify({
+                'message': '上传目录不存在',
+                'deleted_files': [],
+                'deleted_files_count': 0
+            }), 200
+
+        # 获取所有乐队正在使用的图片
+        all_bands = Band.query.all()
+        used_images = set()
+        for band in all_bands:
+            if band.banner_image_url:
+                used_images.add(band.banner_image_url.split('/')[-1])
+
+        # 获取所有图片文件
+        all_files = [f for f in os.listdir(bands_upload_dir)
+                    if os.path.isfile(os.path.join(bands_upload_dir, f))
+                    and any(f.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp'])]
+
+        logging.info(f"开始强制清理所有未使用的图片，共找到 {len(all_files)} 个图片文件")
+        logging.info(f"正在使用的图片: {used_images}")
+
+        for filename in all_files:
+            file_path = os.path.join(bands_upload_dir, filename)
+
+            # 如果文件没有被任何乐队使用，删除它
+            if filename not in used_images:
+                try:
+                    os.remove(file_path)
+                    deleted_files.append(filename)
+                    logging.info(f"强制删除未使用的图片: {file_path}")
+                except Exception as e:
+                    logging.warning(f"强制删除未使用的图片失败 {file_path}: {str(e)}")
+            else:
+                logging.info(f"保留正在使用的图片: {filename}")
+
+        return jsonify({
+            'message': f'强制清理完成，删除了 {len(deleted_files)} 个未使用的图片文件',
+            'deleted_files': deleted_files,
+            'deleted_files_count': len(deleted_files),
+            'used_images': list(used_images)
+        }), 200
+
+    except Exception as e:
+        logging.error(f"强制清理所有未使用图片失败: {str(e)}", exc_info=True)
+        return jsonify({'error': '强制清理所有未使用图片失败'}), 500
 
 @bands_bp.route('/upload_image', methods=['POST'])
 def upload_band_image():

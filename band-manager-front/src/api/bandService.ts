@@ -60,6 +60,28 @@ export const BandService = {
   async deleteBand(id: string | number) {
     return axios.delete(`${API_BASE_URL}/api/bands/${id}`);
   },
+
+  // 批量删除乐队
+  async batchDeleteBands(bandIds: number[]) {
+    return axios.post(`${API_BASE_URL}/api/bands/batch_delete`, {
+      band_ids: bandIds
+    });
+  },
+
+  // 强制清理乐队的所有图片
+  async cleanupAllBandImages(bandId: number) {
+    return axios.post(`${API_BASE_URL}/api/bands/${bandId}/cleanup_all_images`);
+  },
+
+  // 清理孤立图片
+  async cleanupOrphanedImages() {
+    return axios.post(`${API_BASE_URL}/api/bands/cleanup_orphaned_images`);
+  },
+
+  // 强制清理所有未使用的图片
+  async forceCleanupAllUnusedImages() {
+    return axios.post(`${API_BASE_URL}/api/bands/force_cleanup_all_unused_images`);
+  },
   
   // 上传乐队图片
   async uploadBandImage(file: File) {
