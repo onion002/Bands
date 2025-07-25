@@ -690,7 +690,7 @@ onMounted(async () => {
 .filter-group select,
 .filter-group input {
   padding: 8px 12px;
-  border: 1px solid #555;
+  border: 2px solid #555;
   border-radius: 4px;
   font-size: 14px;
   min-width: 200px;
@@ -755,6 +755,12 @@ onMounted(async () => {
         transform: translateY(-5px); /* 悬停上浮 */
         box-shadow: 0 8px 20px rgba(229, 57, 53, 0.2); /* 悬停阴影 */
       }
+
+      &.batch-mode {
+        .member-actions {
+          display: none; /* 批量模式下隐藏单个操作按钮 */
+        }
+      }
       
       .member-checkbox {
         position: absolute;
@@ -809,71 +815,90 @@ onMounted(async () => {
 
       /* 成员信息区域 */
       .member-info {
-        padding: 20px;
+        padding: 15px 15px 60px 15px; /* 底部多留空间给按钮 */
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
 
         .member-name {
           font-size: 1.5rem;
           font-weight: bold;
           color: #e53935;
-          margin-bottom: 8px;
+          margin: 0 0 5px 0;
+          text-align: left;
         }
 
         .member-role {
           font-size: 1rem;
           color: #ccc;
-          margin-bottom: 6px;
+          margin: 0 0 5px 0;
+          text-align: left;
         }
 
         .member-band {
           font-size: 0.9rem;
           color: #aaa;
-          margin-bottom: 4px;
+          margin: 0 0 5px 0;
+          text-align: left;
         }
 
         .member-date {
           font-size: 0.9rem;
           color: #aaa;
-          margin-bottom: 15px;
+          margin: 0;
+          text-align: left;
         }
 
         /* 操作按钮区域 */
         .member-actions {
-          .action-btn-group {
+          /* 保证按钮区和文字区有足够间距 */
+          margin-top: 18px;
+        }
+      }
+
+      .member-actions {
+        position: absolute;
+        right: 15px;
+        bottom: 15px;
+        display: flex;
+        align-items: center;
+
+        .action-btn-group {
+          display: flex;
+          gap: 10px;
+
+          .action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
             display: flex;
-            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
 
-            .action-btn {
-              flex: 1;
-              padding: 8px 12px;
-              border: none;
-              border-radius: 4px;
-              cursor: pointer;
-              font-size: 0.9rem;
-              font-weight: 500;
-              transition: all 0.3s ease;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              gap: 5px;
+            &.edit {
+              background: linear-gradient(to right, #2196f3, #1976d2);
+              color: white;
 
-              &.edit {
-                background: linear-gradient(to right, #2196f3, #1976d2);
-                color: white;
-
-                &:hover {
-                  transform: translateY(-2px);
-                  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
-                }
+              &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
               }
+            }
 
-              &.delete {
-                background: linear-gradient(to right, #dc3545, #c82333);
-                color: white;
+            &.delete {
+              background: linear-gradient(to right, #dc3545, #c82333);
+              color: white;
 
-                &:hover {
-                  transform: translateY(-2px);
-                  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-                }
+              &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
               }
             }
           }

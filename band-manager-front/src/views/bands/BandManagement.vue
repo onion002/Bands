@@ -42,24 +42,6 @@
       </button>
     </div>
 
-    <!-- 加载状态指示器 -->
-    <div v-if="loading" class="loading-state">
-      <i class="fas fa-spinner fa-spin"></i> 加载中...
-    </div>
-    
-    <!-- 错误提示区域 -->
-    <div v-if="error" class="error-state">
-      {{ error }}
-      <button @click="fetchBands">重试</button>
-    </div>
-    
-    <!-- 数据为空时的提示 -->
-    <div v-if="!loading && bands.length === 0" class="empty-state">
-      <i class="fas fa-music"></i>
-      <p>暂无乐队数据</p>
-      <button @click="openCreateModal">添加第一支乐队</button>
-    </div>
-    
     <!-- 筛选区域 -->
     <div class="filter-section">
       <div class="filter-group">
@@ -77,6 +59,29 @@
           @input="handleSearch"
           placeholder="输入乐队名称或流派"
         >
+      </div>
+    </div>
+
+    <!-- 加载状态指示器 -->
+    <div v-if="loading" class="loading-state">
+      <i class="fas fa-spinner fa-spin"></i> 加载中...
+    </div>
+    
+    <!-- 错误提示区域 -->
+    <div v-if="error" class="error-state">
+      {{ error }}
+      <button @click="fetchBands">重试</button>
+    </div>
+    
+    <!-- 数据为空时的提示 -->
+    <div v-if="!loading && bands.length === 0" class="empty-state">
+      <div class="empty-content">
+        <i class="fas fa-music"></i>
+        <p>暂无乐队数据</p>
+        <button @click="openCreateModal">
+          <i class="fas fa-plus"></i>
+          添加第一支乐队
+        </button>
       </div>
     </div>
     
@@ -124,10 +129,7 @@
               <button @click="editBand(band)" class="action-btn edit">
                 <i class="fas fa-edit"></i> 编辑
               </button>
-              <!-- 上传图片按钮 -->
-              <button @click="openImageUpload(band)" class="action-btn upload">
-                <i class="fas fa-image"></i> 图片
-              </button>
+
               <!-- 删除按钮 -->
               <button @click="deleteBand(band)" class="action-btn delete">
                 <i class="fas fa-trash"></i> 删除
@@ -194,16 +196,7 @@
       </div>
     </div>
 
-    <!-- 图片上传模态框 -->
-    <UploadModal
-      v-if="showImageUploadModal"
-      title="上传乐队图片"
-      :uploadApi="BandService.uploadBandImage"
-      accept="image/jpeg,image/png,image/gif,image/webp"
-      :maxSize="10 * 1024 * 1024"
-      @uploaded="handleImageUploaded"
-      @close="closeImageUpload"
-    />
+
   </div>
 </template>
 
@@ -216,8 +209,7 @@ import { useRouter } from 'vue-router'
 import { BandService } from '@/api/bandService'
 // 引入乐队信息编辑模态框组件
 import BandModal from '@/components/BandModal.vue'
-// 引入图片上传模态框组件
-import UploadModal from '@/components/UploadModal.vue'
+
 
 // 路由实例
 const router = useRouter()
@@ -231,8 +223,7 @@ const error = ref('')
 const showCreateModal = ref(false)
 // 控制编辑乐队模态框显示
 const showEditModal = ref(false)
-// 控制图片上传模态框显示
-const showImageUploadModal = ref(false)
+
 // 当前选中的乐队（用于编辑/上传图片）
 const selectedBand = ref<any>(null)
 
@@ -404,38 +395,7 @@ const deleteBand = async (band: any) => {
   }
 }
 
-// 打开图片上传模态框
-const openImageUpload = (band: any) => {
-  selectedBand.value = band
-  showImageUploadModal.value = true
-}
-// 关闭图片上传模态框
-const closeImageUpload = () => {
-  showImageUploadModal.value = false
-  selectedBand.value = null
-}
 
-// 处理图片上传完成后的回调
-const handleImageUploaded = async (imageUrl: string) => {
-  if (!selectedBand.value) return;
-  // 上传图片后，更新数据库中的 banner_image_url 字段
-  try {
-    const band = selectedBand.value;
-    // 更新乐队信息，带上新图片地址
-    await BandService.updateBand(band.id, {
-      name: band.name,
-      year: band.year,
-      genre: band.genre,
-      member_count: band.member_count,
-      bio: band.bio,
-      banner_image_url: imageUrl
-    });
-    // 刷新乐队列表，确保图片能显示
-    await fetchBands();
-  } finally {
-    closeImageUpload();
-  }
-}
 
 // 获取乐队图片URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
@@ -516,6 +476,9 @@ const batchDeleteBands = async () => {
 </script>
 
 <style scoped lang="scss">
+
+/* 乐队管理页面样式 */
+
 .band-management {
   min-height: 100vh;
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
@@ -604,6 +567,146 @@ const batchDeleteBands = async () => {
   }
 }
 
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  margin: 40px auto;
+  max-width: 500px;
+  background: linear-gradient(135deg, rgba(229, 57, 53, 0.1), rgba(229, 57, 53, 0.05));
+  border: 2px dashed rgba(229, 57, 53, 0.3);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  
+  /* 添加背景装饰 */
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(229, 57, 53, 0.05) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+  }
+  
+  .empty-content {
+    position: relative;
+    z-index: 2;
+  }
+  
+  i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: #e53935;
+    display: block;
+    animation: bounce 2s ease-in-out infinite;
+    text-shadow: 0 0 20px rgba(229, 57, 53, 0.3);
+  }
+  
+  p {
+    font-size: 1.4rem;
+    color: #ccc;
+    margin: 20px 0 30px 0;
+    font-weight: 300;
+    line-height: 1.5;
+  }
+  
+  button {
+    margin-top: 20px;
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #e53935, #c62828);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 8px 25px rgba(229, 57, 53, 0.3);
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    &:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 12px 35px rgba(229, 57, 53, 0.4);
+      
+      &::before {
+        left: 100%;
+      }
+    }
+    
+    &:active {
+      transform: translateY(-1px) scale(1.02);
+    }
+    
+    i {
+      margin-right: 8px;
+      font-size: 1rem;
+      animation: none;
+      text-shadow: none;
+    }
+  }
+}
+
+/* 动画效果 */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .empty-state {
+    padding: 60px 15px;
+    margin: 20px auto;
+    
+    i {
+      font-size: 3rem;
+    }
+    
+    p {
+      font-size: 1.2rem;
+    }
+    
+    button {
+      padding: 12px 25px;
+      font-size: 1rem;
+    }
+  }
+}
+
+ 
+
 /* 筛选区域样式（与成员管理一致） */
 .filter-section {
   display: flex;
@@ -631,7 +734,7 @@ const batchDeleteBands = async () => {
 .filter-group select,
 .filter-group input {
   padding: 8px 12px;
-  border: 1px solid #555;
+  border: 2px solid #555;
   border-radius: 4px;
   font-size: 14px;
   min-width: 200px;
@@ -731,28 +834,7 @@ const batchDeleteBands = async () => {
           margin-top: 18px;
         }
       }
-      .upload-button {
-        position: absolute;
-        left: 15px;
-        bottom: 15px;
-        background: #222;
-        color: #fff;
-        border: none;
-        border-radius: 4px;
-        padding: 6px 14px;
-        font-size: 0.95rem;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.10);
-        cursor: pointer;
-        transition: background 0.2s;
-        z-index: 2;
-        &:hover {
-          background: #e53935;
-          color: #fff;
-        }
-      }
+
       .band-actions {
         position: absolute;
         right: 15px;
@@ -1006,16 +1088,7 @@ const batchDeleteBands = async () => {
   text-decoration: underline;
 }
 
-/* 上传按钮样式 */
-.action-btn.upload {
-  background: linear-gradient(to right, #ff9800, #f57c00);
-  color: white;
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
-  }
-}
 
 /* 分页控件样式 */
 .pagination {

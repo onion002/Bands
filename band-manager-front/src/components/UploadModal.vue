@@ -12,9 +12,9 @@
         <!-- 上传区域 -->
         <div v-if="!previewUrl" class="upload-area" @dragover.prevent @drop="handleDrop">
           <i class="fas fa-user-circle"></i>
-          <p>拖放头像到这里或</p>
+          <p>拖放图片到这里或</p>
           <input type="file" ref="fileInput" accept="image/*" @change="handleFileChange" hidden>
-          <button class="select-file" @click="triggerFileInput">选择头像</button>
+          <button class="select-file" @click="triggerFileInput">选择图片</button>
           <p class="hint">支持 JPG, PNG, GIF 格式，最大 5MB</p>
         </div>
         
