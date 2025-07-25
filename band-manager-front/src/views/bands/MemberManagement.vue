@@ -2,72 +2,34 @@
   <!-- 成员管理页面主容器 -->
   <div class="member-management">
     <!-- 页面标题和操作按钮区域 -->
-    <div class="section-header">
-      <h1 @click="goToHome" style="cursor:pointer;">成员管理</h1>
-      <div class="button-group">
-        <!-- 返回主页按钮 -->
-        <button class="back-button" @click="goToHome">
-          <i class="fas fa-arrow-left"></i> 返回主页
-        </button>
-        
-        <!-- 批量删除切换按钮 -->
-        <button 
-          class="batch-toggle-btn" 
-          @click="toggleBatchMode"
-          :class="{ active: batchMode }"
-        >
-          <i class="fas fa-check-square"></i> 
-          {{ batchMode ? '退出批量删除' : '批量删除' }}
-        </button>
-        
-        <!-- 添加新成员按钮 -->
-        <button class="add-member-btn" @click="openCreateModal">
-          <i class="fas fa-plus"></i> 添加新成员
-        </button>
-      </div>
-    </div>
-
-    <!-- 批量操作工具栏 -->
-    <div v-if="batchMode" class="batch-toolbar">
-      <div class="batch-info">
-        <span>已选择 {{ selectedMembers.length }} 个成员</span>
-        <button @click="selectAll" class="select-all-btn">全选</button>
-        <button @click="clearSelection" class="clear-selection-btn">清空</button>
-      </div>
-      <button 
-        v-if="selectedMembers.length > 0" 
-        class="batch-delete-btn" 
-        @click="batchDeleteMembers"
-      >
-        <i class="fas fa-trash"></i> 删除选中项 ({{ selectedMembers.length }})
-      </button>
-    </div>
+    <PageHeader
+      title="成员管理"
+      :batch-mode="batchMode"
+      :selected-count="selectedMembers.length"
+      item-type="成员"
+      add-button-text="添加新成员"
+      add-button-class="add-member-btn"
+      @title-click="goToHome"
+      @back-click="goToHome"
+      @batch-toggle="toggleBatchMode"
+      @add-click="openCreateModal"
+      @select-all="selectAll"
+      @clear-selection="clearSelection"
+      @batch-delete="batchDeleteMembers"
+    />
 
     <!-- 筛选区域 -->
-    <div class="filter-section">
-      <div class="filter-group">
-        <label>按乐队筛选：</label>
-        <select v-model="selectedBandId" @change="handleBandFilter">
-          <option value="">全部乐队</option>
-          <option
-            v-for="band in bands"
-            :key="band.id"
-            :value="band.id"
-          >
-            {{ band.name }}
-          </option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>搜索成员：</label>
-        <input
-          type="text"
-          v-model="searchKeyword"
-          @input="handleSearch"
-          placeholder="输入成员姓名或角色"
-        >
-      </div>
-    </div>
+    <FilterSection
+      select-label="按乐队筛选"
+      :select-value="selectedBandId"
+      select-placeholder="全部乐队"
+      :select-options="bands.map(band => ({ value: band.id, label: band.name }))"
+      search-label="搜索成员"
+      :search-value="searchKeyword"
+      search-placeholder="输入成员姓名或角色"
+      @select-change="handleBandChange"
+      @search-input="handleSearchInput"
+    />
 
     <!-- 加载状态指示器 -->
     <div v-if="loading" class="loading-state">
@@ -81,11 +43,14 @@
     </div>
 
     <!-- 数据为空时的提示 -->
-    <div v-if="!loading && filteredMembers.length === 0" class="empty-state">
-      <i class="fas fa-users"></i>
-      <p>{{ selectedBandId ? '该乐队暂无成员' : '暂无成员数据' }}</p>
-      <button @click="openCreateModal">添加第一个成员</button>
-    </div>
+    <EmptyState
+      v-if="!loading && filteredMembers.length === 0"
+      icon-class="fas fa-users"
+      :message="selectedBandId ? '该乐队暂无成员' : '暂无成员数据'"
+      button-text="添加第一个成员"
+      button-icon="fas fa-plus"
+      @button-click="openCreateModal"
+    />
 
     <!-- 成员列表展示 -->
     <div v-if="!loading && filteredMembers.length > 0" class="member-list">
@@ -191,6 +156,10 @@ import { MemberService } from '@/api/memberService'
 import { BandService } from '@/api/bandService'
 // 引入成员信息编辑模态框组件
 import MemberModal from '@/components/MemberModal.vue'
+// 引入可复用组件
+import PageHeader from '@/components/PageHeader.vue'
+import FilterSection from '@/components/FilterSection.vue'
+import EmptyState from '@/components/EmptyState.vue'
 // 引入类型定义
 import type { Member, Band } from '@/types'
 
@@ -293,12 +262,14 @@ const formatDate = (dateString: string) => {
 }
 
 // 处理乐队筛选
-const handleBandFilter = () => {
+const handleBandChange = (value: string | number) => {
+  selectedBandId.value = value as string
   currentPage.value = 1 // 重置到第一页
 }
 
-// 处理搜索
-const handleSearch = () => {
+// 处理搜索输入
+const handleSearchInput = (value: string) => {
+  searchKeyword.value = value
   currentPage.value = 1 // 重置到第一页
 }
 
@@ -515,126 +486,7 @@ onMounted(async () => {
   padding-top: 10px;
 }
 
-/* 顶部标题和按钮区域，内容区加较小左右内边距，避免双重padding */
-.section-header {
-  display: flex; /* 横向排列 */
-  justify-content: space-between; /* 两端对齐 */
-  align-items: center; /* 垂直居中 */
-  margin-bottom: 30px; /* 与下方内容间距 */
-  padding: 30px 4px 15px 4px; /* 减少左右内边距 */
-  border-bottom: 1px solid #333; /* 下边框分隔 */
-  h1 {
-    font-size: 2.2rem; /* 标题字号 */
-    color: #e53935; /* 标题高亮色 */
-    margin: 0;
-  }
-  .button-group {
-    display: flex;
-    gap: 16px; /* 按钮间距 */
-    align-items: center;
-    .back-button {
-      background: #333;
-      color: rgb(247, 238, 238);
-      border: none;
-      padding: 8px 15px;
-      border-radius: 30px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      &:hover {
-        background: #444; /* 悬停变色 */
-      }
-      i {
-        margin-right: 5px; /* 图标与文字间距 */
-      }
-    }
-    .batch-toggle-btn {
-      background: #666;
-      color: white;
-      border: none;
-      padding: 8px 15px;
-      border-radius: 30px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    .batch-toggle-btn:hover {
-      background: #777;
-    }
-    .batch-toggle-btn.active {
-      background: linear-gradient(to right, #ff9800, #f57c00);
-    }
-    .add-member-btn {
-      background: linear-gradient(to right, #e53935, #e35d5b); /* 渐变背景 */
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 30px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      &:hover {
-        transform: translateY(-2px); /* 悬停上浮 */
-        box-shadow: 0 5px 15px rgba(229, 57, 53, 0.4); /* 阴影 */
-      }
-      i {
-        margin-right: 8px; /* 图标与文字间距 */
-      }
-    }
-  }
-}
 
-/* 批量操作工具栏 */
-.batch-toolbar {
-  background: rgba(255, 152, 0, 0.1);
-  border: 1px solid rgba(255, 152, 0, 0.3);
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.batch-info {
-  display: flex;
-  gap: 15px;
-  align-items: center;
-}
-
-.select-all-btn, 
-.clear-selection-btn {
-  background: transparent;
-  border: 1px solid #ff9800;
-  color: #ff9800;
-  padding: 5px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-}
-
-.select-all-btn:hover, 
-.clear-selection-btn:hover {
-  background: #ff9800;
-  color: white;
-}
-
-.batch-delete-btn {
-  background: linear-gradient(to right, #dc3545, #c82333);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.batch-delete-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-}
 
 .member-card {
   background: #222;
@@ -664,49 +516,10 @@ onMounted(async () => {
   accent-color: #ff9800;
 }
 
-/* 筛选区域样式 */
-.filter-section {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 25px;
-  padding: 20px 4px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  flex-wrap: wrap;
-}
 
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
 
-.filter-group label {
-  font-weight: 500;
-  color: white;
-  white-space: nowrap;
-}
-
-.filter-group select,
-.filter-group input {
-  padding: 8px 12px;
-  border: 2px solid #555;
-  border-radius: 4px;
-  font-size: 14px;
-  min-width: 200px;
-  background: #333;
-  color: white;
-}
-
-.filter-group select:focus,
-.filter-group input:focus {
-  outline: none;
-  border-color: #e53935;
-  box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.25);
-}
-
-/* 状态指示器样式（加载、错误、空），内容区加较小左右内边距 */
-.loading-state, .error-state, .empty-state {
+/* 状态指示器样式（加载、错误），内容区加较小左右内边距 */
+.loading-state, .error-state {
   text-align: center;
   padding: 50px 4px; /* 上下和左右内边距 */
   font-size: 1.2rem;
@@ -949,21 +762,6 @@ onMounted(async () => {
 
 /* 响应式设计 */
 @media (max-width: 1024px) {
-  .filter-section {
-    flex-direction: column;
-    gap: 15px;
-  }
-  .filter-group {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-  }
-  .filter-group select,
-  .filter-group input {
-    min-width: 100%;
-    width: 100%;
-    box-sizing: border-box;
-  }
   .member-list {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
@@ -974,16 +772,7 @@ onMounted(async () => {
     padding-left: 15px;
     padding-right: 15px;
   }
-  .section-header {
-    flex-direction: column;
-    gap: 15px;
-    align-items: flex-start;
-    padding: 20px 4px 15px 4px;
-  }
-  .button-group {
-    width: 100%;
-    justify-content: space-between;
-  }
+
   .member-list {
     grid-template-columns: 1fr;
     gap: 15px;
@@ -1012,29 +801,6 @@ onMounted(async () => {
       width: 100%;
       justify-content: center;
     }
-  }
-  .filter-section {
-    flex-direction: column;
-    gap: 15px;
-  }
-  .filter-group {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-  }
-  .filter-group select,
-  .filter-group input {
-    min-width: 100%;
-    width: 100%;
-    box-sizing: border-box;
-  }
-}
-
-@media (max-width: 200px) {
-  .filter-section {
-    flex-direction: column;
-    gap: 15px;
-    flex-wrap: wrap;
   }
 }
 </style>

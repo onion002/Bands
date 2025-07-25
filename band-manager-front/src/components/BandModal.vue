@@ -52,9 +52,9 @@
             </div>
             
             <div class="form-group">
-              <label>乐队简介</label>
-              <textarea v-model="formData.description" rows="4"></textarea>
+              <label>乐队简介</label>              <textarea v-model="formData.description" rows="4"></textarea>
             </div>
+
             
             <div class="form-buttons">
               <button type="button" class="cancel-btn" @click="close">取消</button>
@@ -170,9 +170,12 @@
       border-radius: 12px;
       width: 500px;
       max-width: 90vw;
+      max-height: auto;
+      overflow-y: auto;
+      overflow-x: hidden;
       box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
       border: 1px solid rgba(229, 57, 53, 0.3);
-      overflow: hidden;
+      box-sizing: border-box;
       
       .modal-header {
         background: rgba(229, 57, 53, 0.8);

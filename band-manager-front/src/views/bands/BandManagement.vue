@@ -2,65 +2,34 @@
   <!-- 乐队管理页面主容器 -->
   <div class="band-management">
     <!-- 页面标题和操作按钮区域 -->
-    <div class="section-header">
-      <h1 @click="goToHome" style="cursor:pointer;">乐队管理</h1>
-      <div class="button-group">
-        <!-- 返回主页按钮 -->
-        <button class="back-button" @click="goToHome">
-          <i class="fas fa-arrow-left"></i> 返回主页
-        </button>
-        
-        <!-- 批量删除切换按钮 -->
-        <button 
-          class="batch-toggle-btn" 
-          @click="toggleBatchMode"
-          :class="{ active: batchMode }"
-        >
-          <i class="fas fa-check-square"></i> 
-          {{ batchMode ? '退出批量删除' : '批量删除' }}
-        </button>
-        
-        <button class="add-band-btn" @click="openCreateModal">
-          <i class="fas fa-plus"></i> 添加新乐队
-        </button>
-      </div>
-    </div>
-
-    <!-- 批量操作工具栏 -->
-    <div v-if="batchMode" class="batch-toolbar">
-      <div class="batch-info">
-        <span>已选择 {{ selectedBands.length }} 个乐队</span>
-        <button @click="selectAll" class="select-all-btn">全选</button>
-        <button @click="clearSelection" class="clear-selection-btn">清空</button>
-      </div>
-      <button 
-        v-if="selectedBands.length > 0" 
-        class="batch-delete-btn" 
-        @click="batchDeleteBands"
-      >
-        <i class="fas fa-trash"></i> 删除选中项 ({{ selectedBands.length }})
-      </button>
-    </div>
+    <PageHeader
+      title="乐队管理"
+      :batch-mode="batchMode"
+      :selected-count="selectedBands.length"
+      item-type="乐队"
+      add-button-text="添加新乐队"
+      add-button-class="add-band-btn"
+      @title-click="goToHome"
+      @back-click="goToHome"
+      @batch-toggle="toggleBatchMode"
+      @add-click="openCreateModal"
+      @select-all="selectAll"
+      @clear-selection="clearSelection"
+      @batch-delete="batchDeleteBands"
+    />
 
     <!-- 筛选区域 -->
-    <div class="filter-section">
-      <div class="filter-group">
-        <label>按乐队种类筛选：</label>
-        <select v-model="selectedGenre" @change="handleGenreFilter">
-          <option value="">全部种类</option>
-          <option v-for="genre in genreOptions" :key="genre" :value="genre">{{ genre }}</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>搜索乐队：</label>
-        <input
-          type="text"
-          v-model="searchKeyword"
-          @input="handleSearch"
-          placeholder="输入乐队名称或流派"
-        >
-      </div>
-    </div>
+    <FilterSection
+      select-label="按乐队种类筛选"
+      :select-value="selectedGenre"
+      select-placeholder="全部种类"
+      :select-options="genreOptions.map(genre => ({ value: genre, label: genre }))"
+      search-label="搜索乐队"
+      :search-value="searchKeyword"
+      search-placeholder="输入乐队名称或流派"
+      @select-change="handleGenreChange"
+      @search-input="handleSearchInput"
+    />
 
     <!-- 加载状态指示器 -->
     <div v-if="loading" class="loading-state">
@@ -74,16 +43,14 @@
     </div>
     
     <!-- 数据为空时的提示 -->
-    <div v-if="!loading && bands.length === 0" class="empty-state">
-      <div class="empty-content">
-        <i class="fas fa-music"></i>
-        <p>暂无乐队数据</p>
-        <button @click="openCreateModal">
-          <i class="fas fa-plus"></i>
-          添加第一支乐队
-        </button>
-      </div>
-    </div>
+    <EmptyState
+      v-if="!loading && bands.length === 0"
+      icon-class="fas fa-music"
+      message="暂无乐队数据"
+      button-text="添加第一支乐队"
+      button-icon="fas fa-plus"
+      @button-click="openCreateModal"
+    />
     
     <!-- 乐队列表展示 -->
     <div v-if="!loading && filteredBands.length > 0" class="band-list">
@@ -117,7 +84,7 @@
           <!-- 乐队信息区域 -->
           <div class="band-info">
             <h3 class="band-name">{{ band.name }}</h3>
-            <p class="band-genre">{{ band.genre || '未设置流派' }}</p>
+            <p class="band-genre">流派:{{ band.genre || '未设置流派' }}</p>
             <p class="band-year">成立年份: {{ band.year || '未设置' }}</p>
             <p class="band-member-count">成员数量: {{ band.member_count || 0 }} 人</p>
             <p class="band-bio-preview" v-if="band.bio" @click="openBioDialog(band)" style="cursor: pointer;">
@@ -209,6 +176,10 @@ import { useRouter } from 'vue-router'
 import { BandService } from '@/api/bandService'
 // 引入乐队信息编辑模态框组件
 import BandModal from '@/components/BandModal.vue'
+// 引入可复用组件
+import PageHeader from '@/components/PageHeader.vue'
+import FilterSection from '@/components/FilterSection.vue'
+import EmptyState from '@/components/EmptyState.vue'
 
 
 // 路由实例
@@ -255,11 +226,14 @@ const genreOptions = computed(() => {
 })
 
 // 处理种类筛选
-const handleGenreFilter = () => {
+const handleGenreChange = (value: string | number) => {
+  selectedGenre.value = value as string
   currentPage.value = 1
 }
-// 处理搜索
-const handleSearch = () => {
+
+// 处理搜索输入
+const handleSearchInput = (value: string) => {
+  searchKeyword.value = value
   currentPage.value = 1
 }
 
@@ -493,261 +467,13 @@ const batchDeleteBands = async () => {
   padding-top: 10px;
 }
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  padding: 30px 4px 15px 4px;
-  border-bottom: 1px solid #333;
-  h1 {
-    font-size: 2.2rem;
-    color: #e53935;
-    margin: 0;
-  }
-  .button-group {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-    
-    .back-button {
-      background: #333;
-      color: rgb(247, 238, 238);
-      border: none;
-      padding: 8px 15px;
-      border-radius: 30px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      &:hover {
-        background: #444;
-      }
-      i {
-        margin-right: 5px;
-      }
-    }
-    
-    .batch-toggle-btn {
-      background: #666;
-      color: white;
-      border: none;
-      padding: 8px 15px;
-      border-radius: 30px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      &:hover {
-        background: #777;
-      }
-      &.active {
-        background: linear-gradient(to right, #ff9800, #f57c00);
-      }
-      i {
-        margin-right: 5px;
-      }
-    }
-    
-    .add-band-btn {
-      background: linear-gradient(to right, #e53935, #e35d5b);
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 30px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(229, 57, 53, 0.4);
-      }
-      i {
-        margin-right: 8px;
-      }
-    }
-  }
-}
 
-.empty-state {
-  text-align: center;
-  padding: 80px 20px;
-  margin: 40px auto;
-  max-width: 500px;
-  background: linear-gradient(135deg, rgba(229, 57, 53, 0.1), rgba(229, 57, 53, 0.05));
-  border: 2px dashed rgba(229, 57, 53, 0.3);
-  border-radius: 16px;
-  position: relative;
-  overflow: hidden;
-  
-  /* 添加背景装饰 */
-  &::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(229, 57, 53, 0.05) 0%, transparent 70%);
-    animation: pulse 4s ease-in-out infinite;
-  }
-  
-  .empty-content {
-    position: relative;
-    z-index: 2;
-  }
-  
-  i {
-    font-size: 4rem;
-    margin-bottom: 20px;
-    color: #e53935;
-    display: block;
-    animation: bounce 2s ease-in-out infinite;
-    text-shadow: 0 0 20px rgba(229, 57, 53, 0.3);
-  }
-  
-  p {
-    font-size: 1.4rem;
-    color: #ccc;
-    margin: 20px 0 30px 0;
-    font-weight: 300;
-    line-height: 1.5;
-  }
-  
-  button {
-    margin-top: 20px;
-    padding: 15px 30px;
-    background: linear-gradient(135deg, #e53935, #c62828);
-    color: white;
-    border: none;
-    border-radius: 50px;
-    font-weight: 600;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 8px 25px rgba(229, 57, 53, 0.3);
-    position: relative;
-    overflow: hidden;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-      transition: left 0.5s;
-    }
-    
-    &:hover {
-      transform: translateY(-3px) scale(1.05);
-      box-shadow: 0 12px 35px rgba(229, 57, 53, 0.4);
-      
-      &::before {
-        left: 100%;
-      }
-    }
-    
-    &:active {
-      transform: translateY(-1px) scale(1.02);
-    }
-    
-    i {
-      margin-right: 8px;
-      font-size: 1rem;
-      animation: none;
-      text-shadow: none;
-    }
-  }
-}
 
-/* 动画效果 */
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0.5;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.8;
-  }
-}
 
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-10px);
-  }
-  60% {
-    transform: translateY(-5px);
-  }
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .empty-state {
-    padding: 60px 15px;
-    margin: 20px auto;
-    
-    i {
-      font-size: 3rem;
-    }
-    
-    p {
-      font-size: 1.2rem;
-    }
-    
-    button {
-      padding: 12px 25px;
-      font-size: 1rem;
-    }
-  }
-}
 
  
 
-/* 筛选区域样式（与成员管理一致） */
-.filter-section {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 30px;
-  padding: 20px 4px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  flex-wrap: wrap;
-  border: 1px solid #333;
-}
 
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.filter-group label {
-  font-weight: 500;
-  color: white;
-  white-space: nowrap;
-}
-
-.filter-group select,
-.filter-group input {
-  padding: 8px 12px;
-  border: 2px solid #555;
-  border-radius: 4px;
-  font-size: 14px;
-  min-width: 200px;
-  background: #333;
-  color: white;
-}
-
-.filter-group select:focus,
-.filter-group input:focus {
-  outline: none;
-  border-color: #e53935;
-  box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.25);
-}
 
 // 乐队列表区域，内容区加较小左右内边距
 .band-list {
