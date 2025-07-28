@@ -29,20 +29,26 @@ def is_reloader_process():
 def load_config(app):
     """加载应用配置（所有进程都需要）"""
     try:
-        from config import Config
-        app.config.from_object(Config)
-        
+        # 根据环境变量选择配置
+        config_name = os.environ.get('FLASK_ENV', 'development')
+
+        from config import config
+        app.config.from_object(config.get(config_name, config['default']))
+
         # 仅在主进程打印配置
         if not is_reloader_process():
             print("=" * 50)
-            print(f"数据库URI: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
-            print(f"上传目录: {app.config.get('UPLOAD_FOLDER')}")
+            print(f"🌍 环境: {config_name}")
+            print(f"📊 数据库URI: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
+            print(f"📁 上传目录: {app.config.get('UPLOAD_FOLDER')}")
+            print(f"🌐 API地址: {app.config.get('API_BASE_URL')}")
+            print(f"🔧 调试模式: {app.config.get('DEBUG')}")
             print("=" * 50)
-        
+
         # 验证必要配置
         if not app.config.get('SQLALCHEMY_DATABASE_URI'):
             raise ValueError("SQLALCHEMY_DATABASE_URI 配置未设置")
-            
+
     except ImportError as e:
         if not is_reloader_process():
             print(f"⚠️ 导入配置错误: {str(e)}")
