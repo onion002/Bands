@@ -88,13 +88,31 @@ const handleDrop = (e: DragEvent) => {
   }
 }
 const processFile = (selectedFile: File) => {
-  if (!acceptType.split(',').some(type => selectedFile.type.includes(type.replace(/\s/g, '')))) {
+  console.log('处理文件:', selectedFile.name, selectedFile.type, selectedFile.size)
+  console.log('接受的类型:', acceptType)
+  
+  // 修复文件类型验证逻辑
+  let isValidType = false
+  
+  // 如果 acceptType 是 "image/*"，检查文件类型是否以 "image/" 开头
+  if (acceptType === 'image/*') {
+    isValidType = selectedFile.type.startsWith('image/')
+  } else {
+    // 处理其他具体的 MIME 类型
+    const acceptTypes = acceptType.split(',').map(type => type.trim())
+    isValidType = acceptTypes.includes(selectedFile.type)
+  }
+  
+  console.log('文件类型验证结果:', isValidType)
+  
+  if (!isValidType) {
     result.value = {
       success: false,
-      message: `不支持的文件类型，请上传 ${acceptType} 格式`
+      message: `不支持的文件类型，请上传图片文件 (支持: JPG, PNG, GIF, WEBP)`
     }
     return
   }
+  
   if (selectedFile.size > maxFileSize) {
     result.value = {
       success: false,
@@ -102,9 +120,12 @@ const processFile = (selectedFile: File) => {
     }
     return
   }
+  
   file.value = selectedFile
   previewUrl.value = URL.createObjectURL(selectedFile)
   result.value = null
+  
+  console.log('文件处理完成，准备预览')
 }
 const clearPreview = () => {
   previewUrl.value = null
@@ -113,29 +134,46 @@ const clearPreview = () => {
 }
 const startUpload = async () => {
   if (!file.value) return
+  
+  console.log('开始上传文件:', file.value.name, file.value.type)
+  
   uploading.value = true
   result.value = null
   progress.value = 0
+  
   try {
     const progressInterval = setInterval(() => {
       if (progress.value < 90) progress.value += 10
     }, 100)
+    
+    console.log('调用上传 API...')
     const response: any = await props.uploadApi(file.value)
+    console.log('上传响应:', response)
+    
     clearInterval(progressInterval)
     progress.value = 100
-    const url = response[urlField]
+    
+    // 修复URL获取逻辑，支持多种字段名
+    const url = response[urlField] || response.url || response.poster_url
+    console.log('提取的URL:', url, '使用字段:', urlField)
+    
     result.value = {
       success: true,
       message: '图片上传成功',
       url
     }
+    
     if (url) {
       emit('uploaded', url)
+    } else {
+      throw new Error('响应中未找到图片URL')
     }
+    
     setTimeout(() => {
       if (url) close()
     }, 1500)
   } catch (err: any) {
+    console.error('上传失败:', err)
     result.value = {
       success: false,
       message: '上传失败: ' + (err.message || '服务器错误')

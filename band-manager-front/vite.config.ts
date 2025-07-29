@@ -17,7 +17,8 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0', // 允许外部访问
       port: 5173,
       proxy: {
-        '/uploads': isDev ? 'http://localhost:5000' : 'http://47.108.249.242:5000'
+        '/uploads': isDev ? 'http://localhost:5000' : 'http://47.108.249.242:5000',
+        '/api': isDev ? 'http://localhost:5000' : 'http://47.108.249.242:5000' // 新增这一行
       }
     },
     preview: {
@@ -31,8 +32,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: {
-            vendor: ['vue', 'vue-router', 'pinia'],
-            ui: ['element-plus']
+            vendor: ['vue', 'vue-router', 'pinia']
           }
         }
       }

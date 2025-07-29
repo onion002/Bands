@@ -12,9 +12,7 @@ itsdangerous @ file:///C:/Users/dev-admin/buildout/croot/itsdangerous_1732929022
 Jinja2 @ file:///C:/b/abs_920kup4e6u/croot/jinja2_1741711580669/work
 Mako==1.3.10
 MarkupSafe @ file:///C:/b/abs_a0ma7ge0jc/croot/markupsafe_1738584052792/work
-mysql==0.0.3
-mysql-connector-python==9.3.0
-mysqlclient==2.2.7
+mysql-connector-python==9.4.0
 setuptools==78.1.1
 six @ file:///C:/b/abs_149wuyuo1o/croot/six_1744271521515/work
 SQLAlchemy==2.0.41

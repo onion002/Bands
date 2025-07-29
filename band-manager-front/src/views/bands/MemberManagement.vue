@@ -1,148 +1,150 @@
 <template>
   <!-- 成员管理页面主容器 -->
   <div class="member-management">
-    <!-- 页面标题和操作按钮区域 -->
-    <PageHeader
-      title="成员管理"
-      :batch-mode="batchMode"
-      :selected-count="selectedMembers.length"
-      item-type="成员"
-      add-button-text="添加新成员"
-      add-button-class="add-member-btn"
-      @title-click="goToHome"
-      @back-click="goToHome"
-      @batch-toggle="toggleBatchMode"
-      @add-click="openCreateModal"
-      @select-all="selectAll"
-      @clear-selection="clearSelection"
-      @batch-delete="batchDeleteMembers"
-    />
+    <div class="content-container">
+      <!-- 页面标题和操作按钮区域 -->
+      <PageHeader
+        title="成员管理"
+        :batch-mode="batchMode"
+        :selected-count="selectedMembers.length"
+        item-type="成员"
+        add-button-text="添加新成员"
+        add-button-class="add-member-btn"
+        @title-click="goToHome"
+        @back-click="goToHome"
+        @batch-toggle="toggleBatchMode"
+        @add-click="openCreateModal"
+        @select-all="selectAll"
+        @clear-selection="clearSelection"
+        @batch-delete="batchDeleteMembers"
+      />
 
-    <!-- 筛选区域 -->
-    <FilterSection
-      select-label="按乐队筛选"
-      :select-value="selectedBandId"
-      select-placeholder="全部乐队"
-      :select-options="bands.map(band => ({ value: band.id, label: band.name }))"
-      search-label="搜索成员"
-      :search-value="searchKeyword"
-      search-placeholder="输入成员姓名或角色"
-      @select-change="handleBandChange"
-      @search-input="handleSearchInput"
-    />
+      <!-- 筛选区域 -->
+      <FilterSection
+        select-label="按乐队筛选"
+        :select-value="selectedBandId"
+        select-placeholder="全部乐队"
+        :select-options="bands.map(band => ({ value: band.id, label: band.name }))"
+        search-label="搜索成员"
+        :search-value="searchKeyword"
+        search-placeholder="输入成员姓名或角色"
+        @select-change="handleBandChange"
+        @search-input="handleSearchInput"
+      />
 
-    <!-- 加载状态指示器 -->
-    <div v-if="loading" class="loading-state">
-      <i class="fas fa-spinner fa-spin"></i> 加载中...
-    </div>
+      <!-- 加载状态指示器 -->
+      <div v-if="loading" class="loading-state">
+        <i class="fas fa-spinner fa-spin"></i> 加载中...
+      </div>
 
-    <!-- 错误提示区域 -->
-    <div v-if="error" class="error-state">
-      {{ error }}
-      <button @click="fetchMembers">重试</button>
-    </div>
+      <!-- 错误提示区域 -->
+      <div v-if="error" class="error-state">
+        {{ error }}
+        <button @click="fetchMembers">重试</button>
+      </div>
 
-    <!-- 数据为空时的提示 -->
-    <EmptyState
-      v-if="!loading && filteredMembers.length === 0"
-      icon-class="fas fa-users"
-      :message="selectedBandId ? '该乐队暂无成员' : '暂无成员数据'"
-      button-text="添加第一个成员"
-      button-icon="fas fa-plus"
-      @button-click="openCreateModal"
-    />
+      <!-- 数据为空时的提示 -->
+      <EmptyState
+        v-if="!loading && filteredMembers.length === 0"
+        icon-class="fas fa-users"
+        :message="selectedBandId ? '该乐队暂无成员' : '暂无成员数据'"
+        button-text="添加第一个成员"
+        button-icon="fas fa-plus"
+        @button-click="openCreateModal"
+      />
 
-    <!-- 成员列表展示 -->
-    <div v-if="!loading && filteredMembers.length > 0" class="member-list">
-      <div v-for="member in paginatedMembers" :key="member.id" class="member-item">
-        <div class="member-card" :class="{ 'batch-mode': batchMode }">
-          <!-- 批量删除模式下显示复选框 -->
-          <div v-show="batchMode" class="member-checkbox">
-            <input 
-              type="checkbox" 
-              :value="member.id" 
-              v-model="selectedMembers"
-            >
-          </div>
-          
-          <!-- 成员头像区域 -->
-          <div class="member-image">
-            <div class="avatar-wrapper">
-              <img
-                v-if="member.avatar_url"
-                :src="getAvatarUrl(member.avatar_url)"
-                class="member-avatar-image"
-                :alt="member.name"
+      <!-- 成员列表展示 -->
+      <div v-if="!loading && filteredMembers.length > 0" class="member-list">
+        <div v-for="member in paginatedMembers" :key="member.id" class="member-item">
+          <div class="member-card" :class="{ 'batch-mode': batchMode }">
+            <!-- 批量删除模式下显示复选框 -->
+            <div v-show="batchMode" class="member-checkbox">
+              <input 
+                type="checkbox" 
+                :value="member.id" 
+                v-model="selectedMembers"
               >
-              <div v-else class="avatar-placeholder">
-                <i class="fas fa-user"></i>
-                <span>成员头像</span>
+            </div>
+            
+            <!-- 成员头像区域 -->
+            <div class="member-image">
+              <div class="avatar-wrapper">
+                <img
+                  v-if="member.avatar_url"
+                  :src="getAvatarUrl(member.avatar_url)"
+                  class="member-avatar-image"
+                  :alt="member.name"
+                >
+                <div v-else class="avatar-placeholder">
+                  <i class="fas fa-user"></i>
+                  <span>成员头像</span>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <!-- 成员信息区域 -->
-          <div class="member-info">
-            <h3 class="member-name">{{ member.name }}</h3>
-            <p class="member-role">{{ member.role || '未设置角色' }}</p>
-            <p class="member-band">所属乐队: {{ member.band_name }}</p>
-            <p class="member-date">加入日期: {{ formatDate(member.join_date) }}</p>
             
-            <!-- 非批量模式下显示操作按钮 -->
-            <div v-if="!batchMode" class="member-actions">
-              <div class="action-btn-group">
-                <button @click="editMember(member)" class="action-btn edit">
-                  <i class="fas fa-edit"></i> 编辑
-                </button>
-                <button @click="deleteMember(member)" class="action-btn delete">
-                  <i class="fas fa-trash"></i> 删除
-                </button>
+            <!-- 成员信息区域 -->
+            <div class="member-info">
+              <h3 class="member-name">{{ member.name }}</h3>
+              <p class="member-role">{{ member.role || '未设置角色' }}</p>
+              <p class="member-band">所属乐队: {{ member.band_name }}</p>
+              <p class="member-date">加入日期: {{ formatDate(member.join_date) }}</p>
+              
+              <!-- 非批量模式下显示操作按钮 -->
+              <div v-if="!batchMode" class="member-actions">
+                <div class="action-btn-group">
+                  <button @click="editMember(member)" class="action-btn edit">
+                    <i class="fas fa-edit"></i> 编辑
+                  </button>
+                  <button @click="deleteMember(member)" class="action-btn delete">
+                    <i class="fas fa-trash"></i> 删除
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- 分页控件 -->
+      <div v-if="totalPages > 1" class="pagination">
+        <button
+          @click="changePage(currentPage - 1)"
+          :disabled="currentPage <= 1"
+          class="page-btn"
+        >
+          <i class="fas fa-chevron-left"></i>
+        </button>
+
+        <span class="page-info">
+          第 {{ currentPage }} 页，共 {{ totalPages }} 页
+        </span>
+
+        <button
+          @click="changePage(currentPage + 1)"
+          :disabled="currentPage >= totalPages"
+          class="page-btn"
+        >
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <!-- 添加成员模态框 -->
+      <MemberModal
+        v-if="showCreateModal"
+        mode="add"
+        @close="closeCreateModal"
+        @save="createNewMember"
+      />
+
+      <!-- 编辑成员模态框 -->
+      <MemberModal
+        v-if="showEditModal"
+        :member="selectedMember"
+        mode="edit"
+        @close="closeEditModal"
+        @save="updateMember"
+      />
     </div>
-
-    <!-- 分页控件 -->
-    <div v-if="totalPages > 1" class="pagination">
-      <button
-        @click="changePage(currentPage - 1)"
-        :disabled="currentPage <= 1"
-        class="page-btn"
-      >
-        <i class="fas fa-chevron-left"></i>
-      </button>
-
-      <span class="page-info">
-        第 {{ currentPage }} 页，共 {{ totalPages }} 页
-      </span>
-
-      <button
-        @click="changePage(currentPage + 1)"
-        :disabled="currentPage >= totalPages"
-        class="page-btn"
-      >
-        <i class="fas fa-chevron-right"></i>
-      </button>
-    </div>
-
-    <!-- 添加成员模态框 -->
-    <MemberModal
-      v-if="showCreateModal"
-      mode="add"
-      @close="closeCreateModal"
-      @save="createNewMember"
-    />
-
-    <!-- 编辑成员模态框 -->
-    <MemberModal
-      v-if="showEditModal"
-      :member="selectedMember"
-      mode="edit"
-      @close="closeEditModal"
-      @save="updateMember"
-    />
   </div>
 </template>
 
@@ -178,7 +180,7 @@ const searchKeyword = ref('')
 
 // 分页状态
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(6) 
 
 // 模态框状态
 const showCreateModal = ref(false)
@@ -471,22 +473,35 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-/* 主容器样式，参照乐队管理界面 */
+/* 主容器样式，参照演出活动管理界面 */
 .member-management {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); /* 深色渐变背景 */
-  color: white; /* 白色文字 */
-  min-height: 100vh; /* 页面最小高度撑满视口 */
-  width: 100%; /* 铺满整个视口宽度 */
-  margin-top: 30px; /* 顶部预留导航栏高度 */
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  color: white;
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
   position: relative;
-  overflow-y: auto; /* 允许纵向滚动 */
-  padding-left: 32px; /* 页边距 */
-  padding-right: 32px; /* 页边距 */
-  padding-top: 10px;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 15px;
 }
 
-
+/* 内容容器 - 居中显示 */
+.content-container {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+  background: transparent;
+  min-height: calc(100vh - 120px);
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+}
 
 .member-card {
   background: #222;

@@ -102,10 +102,12 @@ def register_blueprints(app):
     try:
         from api.bands import bands_bp
         from api.members import members_bp
-        
+        from api.events import events_bp
+
         app.register_blueprint(bands_bp, url_prefix='/api/bands')
         app.register_blueprint(members_bp, url_prefix='/api/members')
-        
+        app.register_blueprint(events_bp, url_prefix='/api/events')
+
         if not is_reloader_process():
             print("✅ 蓝图注册成功")
     except ImportError as e:

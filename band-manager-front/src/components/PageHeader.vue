@@ -177,7 +177,8 @@ const handleBatchDelete = () => {
     
     .add-btn,
     .add-band-btn,
-    .add-member-btn {
+    .add-member-btn,
+    .add-event-btn {
       background: linear-gradient(to right, #e53935, #e35d5b);
       color: white;
       border: none;

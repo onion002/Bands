@@ -1,169 +1,170 @@
 <template>
   <!-- 乐队管理页面主容器 -->
   <div class="band-management">
-    <!-- 页面标题和操作按钮区域 -->
-    <PageHeader
-      title="乐队管理"
-      :batch-mode="batchMode"
-      :selected-count="selectedBands.length"
-      item-type="乐队"
-      add-button-text="添加新乐队"
-      add-button-class="add-band-btn"
-      @title-click="goToHome"
-      @back-click="goToHome"
-      @batch-toggle="toggleBatchMode"
-      @add-click="openCreateModal"
-      @select-all="selectAll"
-      @clear-selection="clearSelection"
-      @batch-delete="batchDeleteBands"
-    />
+    <!-- 内容容器 - 居中显示 -->
+    <div class="content-container">
+      <!-- 页面标题和操作按钮区域 -->
+      <PageHeader
+        title="乐队管理"
+        :batch-mode="batchMode"
+        :selected-count="selectedBands.length"
+        item-type="乐队"
+        add-button-text="添加新乐队"
+        add-button-class="add-band-btn"
+        @title-click="goToHome"
+        @back-click="goToHome"
+        @batch-toggle="toggleBatchMode"
+        @add-click="openCreateModal"
+        @select-all="selectAll"
+        @clear-selection="clearSelection"
+        @batch-delete="batchDeleteBands"
+      />
 
-    <!-- 筛选区域 -->
-    <FilterSection
-      select-label="按乐队种类筛选"
-      :select-value="selectedGenre"
-      select-placeholder="全部种类"
-      :select-options="genreOptions.map(genre => ({ value: genre, label: genre }))"
-      search-label="搜索乐队"
-      :search-value="searchKeyword"
-      search-placeholder="输入乐队名称或流派"
-      @select-change="handleGenreChange"
-      @search-input="handleSearchInput"
-    />
+      <!-- 筛选区域 -->
+      <FilterSection
+        select-label="按乐队种类筛选"
+        :select-value="selectedGenre"
+        select-placeholder="全部种类"
+        :select-options="genreOptions.map(genre => ({ value: genre, label: genre }))"
+        search-label="搜索乐队"
+        :search-value="searchKeyword"
+        search-placeholder="输入乐队名称或流派"
+        @select-change="handleGenreChange"
+        @search-input="handleSearchInput"
+      />
 
-    <!-- 加载状态指示器 -->
-    <div v-if="loading" class="loading-state">
-      <i class="fas fa-spinner fa-spin"></i> 加载中...
-    </div>
-    
-    <!-- 错误提示区域 -->
-    <div v-if="error" class="error-state">
-      {{ error }}
-      <button @click="fetchBands">重试</button>
-    </div>
-    
-    <!-- 数据为空时的提示 -->
-    <EmptyState
-      v-if="!loading && bands.length === 0"
-      icon-class="fas fa-music"
-      message="暂无乐队数据"
-      button-text="添加第一支乐队"
-      button-icon="fas fa-plus"
-      @button-click="openCreateModal"
-    />
-    
-    <!-- 乐队列表展示 -->
-    <div v-if="!loading && filteredBands.length > 0" class="band-list">
-      <div v-for="band in paginatedBands" :key="band.id" class="band-item">
-        <div class="band-card" :class="{ 'batch-mode': batchMode }">
-          <!-- 批量删除模式下显示复选框 -->
-          <div v-if="batchMode" class="band-checkbox">
-            <input 
-              type="checkbox" 
-              :value="band.id" 
-              v-model="selectedBands"
-            >
-          </div>
-          
-          <!-- 乐队图片区域 -->
-          <div class="band-image" :style="{ backgroundColor: '#444' }">
-            <!-- 如果有图片则显示图片，否则显示占位符 -->
-            <img
-              v-if="band.banner_image_url"
-              :src="getBandImageUrl(band.banner_image_url)"
-              class="band-image-content"
-              @click="openBioDialog(band)"
-              style="cursor: pointer;"
-              @error="handleImageError"
-            >
-            <div v-else class="image-placeholder">
-              <i class="fas fa-music"></i>
-              <span>乐队图片</span>
+      <!-- 加载状态指示器 -->
+      <div v-if="loading" class="loading-state">
+        <i class="fas fa-spinner fa-spin"></i> 加载中...
+      </div>
+      
+      <!-- 错误提示区域 -->
+      <div v-if="error" class="error-state">
+        {{ error }}
+        <button @click="fetchBands">重试</button>
+      </div>
+      
+      <!-- 数据为空时的提示 -->
+      <EmptyState
+        v-if="!loading && bands.length === 0"
+        icon-class="fas fa-music"
+        message="暂无乐队数据"
+        button-text="添加第一支乐队"
+        button-icon="fas fa-plus"
+        @button-click="openCreateModal"
+      />
+      
+      <!-- 乐队列表展示 -->
+      <div v-if="!loading && filteredBands.length > 0" class="band-list">
+        <div v-for="band in paginatedBands" :key="band.id" class="band-item">
+          <div class="band-card" :class="{ 'batch-mode': batchMode }">
+            <!-- 批量删除模式下显示复选框 -->
+            <div v-if="batchMode" class="band-checkbox">
+              <input 
+                type="checkbox" 
+                :value="band.id" 
+                v-model="selectedBands"
+              >
             </div>
-          </div>
-          <!-- 乐队信息区域 -->
-          <div class="band-info">
-            <h3 class="band-name">{{ band.name }}</h3>
-            <p class="band-genre">流派:{{ band.genre || '未设置流派' }}</p>
-            <p class="band-year">成立年份: {{ band.year || '未设置' }}</p>
-            <p class="band-member-count">成员数量: {{ band.member_count || 0 }} 人</p>
-            <p class="band-bio-preview" v-if="band.bio" @click="openBioDialog(band)" style="cursor: pointer;">
-              简介: {{ band.bio.length > 30 ? band.bio.substring(0, 30) + '...' : band.bio }}
-            </p>
-            <p class="band-bio-preview" v-else>简介: 暂无简介</p>
-            <div v-if="!batchMode" class="band-actions">
-              <!-- 编辑按钮 -->
-              <button @click="editBand(band)" class="action-btn edit">
-                <i class="fas fa-edit"></i> 编辑
-              </button>
+            
+            <!-- 乐队图片区域 -->
+            <div class="band-image" :style="{ backgroundColor: '#444' }">
+              <!-- 如果有图片则显示图片，否则显示占位符 -->
+              <img
+                v-if="band.banner_image_url"
+                :src="getBandImageUrl(band.banner_image_url)"
+                class="band-image-content"
+                @click="openBioDialog(band)"
+                style="cursor: pointer;"
+                @error="handleImageError"
+              >
+              <div v-else class="image-placeholder">
+                <i class="fas fa-music"></i>
+                <span>乐队图片</span>
+              </div>
+            </div>
+            <!-- 乐队信息区域 -->
+            <div class="band-info">
+              <h3 class="band-name">{{ band.name }}</h3>
+              <p class="band-genre">流派:{{ band.genre || '未设置流派' }}</p>
+              <p class="band-year">成立年份: {{ band.year || '未设置' }}</p>
+              <p class="band-member-count">成员数量: {{ band.member_count || 0 }} 人</p>
+              <p class="band-bio-preview" v-if="band.bio" @click="openBioDialog(band)" style="cursor: pointer;">
+                简介: {{ band.bio.length > 30 ? band.bio.substring(0, 30) + '...' : band.bio }}
+              </p>
+              <p class="band-bio-preview" v-else>简介: 暂无简介</p>
+              <div v-if="!batchMode" class="band-actions">
+                <!-- 编辑按钮 -->
+                <button @click="editBand(band)" class="action-btn edit">
+                  <i class="fas fa-edit"></i> 编辑
+                </button>
 
-              <!-- 删除按钮 -->
-              <button @click="deleteBand(band)" class="action-btn delete">
-                <i class="fas fa-trash"></i> 删除
-              </button>
+                <!-- 删除按钮 -->
+                <button @click="deleteBand(band)" class="action-btn delete">
+                  <i class="fas fa-trash"></i> 删除
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 分页控件 -->
-    <div v-if="totalPages > 1" class="pagination">
-      <button
-        @click="changePage(currentPage - 1)"
-        :disabled="currentPage <= 1"
-        class="page-btn"
-      >
-        <i class="fas fa-chevron-left"></i>
-      </button>
+      <!-- 分页控件 -->
+      <div v-if="totalPages > 1" class="pagination">
+        <button
+          @click="changePage(currentPage - 1)"
+          :disabled="currentPage <= 1"
+          class="page-btn"
+        >
+          <i class="fas fa-chevron-left"></i>
+        </button>
 
-      <span class="page-info">
-        第 {{ currentPage }} 页，共 {{ totalPages }} 页
-      </span>
+        <span class="page-info">
+          第 {{ currentPage }} 页，共 {{ totalPages }} 页
+        </span>
 
-      <button
-        @click="changePage(currentPage + 1)"
-        :disabled="currentPage >= totalPages"
-        class="page-btn"
-      >
-        <i class="fas fa-chevron-right"></i>
-      </button>
-    </div>
+        <button
+          @click="changePage(currentPage + 1)"
+          :disabled="currentPage >= totalPages"
+          class="page-btn"
+        >
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
 
-    <!-- 添加乐队模态框 -->
-    <BandModal 
-      v-if="showCreateModal"
-      mode="add"
-      @close="closeCreateModal"
-      @save="createNewBand"
-    />
-    
-    <!-- 编辑乐队模态框 -->
-    <BandModal
-      v-if="showEditModal"
-      :band="selectedBand"
-      mode="edit"
-      @close="closeEditModal"
-      @save="updateBand"
-    />
+      <!-- 添加乐队模态框 -->
+      <BandModal 
+        v-if="showCreateModal"
+        mode="add"
+        @close="closeCreateModal"
+        @save="createNewBand"
+      />
+      
+      <!-- 编辑乐队模态框 -->
+      <BandModal
+        v-if="showEditModal"
+        :band="selectedBand"
+        mode="edit"
+        @close="closeEditModal"
+        @save="updateBand"
+      />
 
-    <!-- 简介弹窗 -->
-    <div v-if="showBioDialog" class="bio-modal-overlay" @click.self="closeBioDialog">
-      <div class="bio-modal">
-        <div class="bio-modal-header">
-          <h3>{{ bioDialogBand?.name }} - 乐队简介</h3>
-          <button @click="closeBioDialog" class="close-btn">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="bio-modal-content">
-          <p v-if="bioDialogBand?.bio">{{ bioDialogBand.bio }}</p>
-          <p v-else class="no-bio">暂无简介信息</p>
+      <!-- 简介弹窗 -->
+      <div v-if="showBioDialog" class="bio-modal-overlay" @click.self="closeBioDialog">
+        <div class="bio-modal">
+          <div class="bio-modal-header">
+            <h3>{{ bioDialogBand?.name }} - 乐队简介</h3>
+            <button @click="closeBioDialog" class="close-btn">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="bio-modal-content">
+            <p v-if="bioDialogBand?.bio">{{ bioDialogBand.bio }}</p>
+            <p v-else class="no-bio">暂无简介信息</p>
+          </div>
         </div>
       </div>
     </div>
-
-
   </div>
 </template>
 
@@ -239,7 +240,7 @@ const handleSearchInput = (value: string) => {
 
 // 分页状态
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(6) 
 
 // 计算属性：筛选和搜索后的乐队列表
 const filteredBands = computed(() => {
@@ -532,17 +533,32 @@ const batchDeleteBands = async () => {
 /* 乐队管理页面样式 */
 
 .band-management {
-  min-height: 100vh;
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   color: white;
+  min-height: 100vh;
   width: 100%;
-  margin-top: 30px;
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
   position: relative;
   overflow-y: auto;
-  padding-left: 32px;
-  padding-right: 32px;
-  padding-top: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 15px;
+}
+
+/* 内容容器 - 居中显示 */
+.content-container {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+  background: transparent;
+  min-height: calc(100vh - 120px);
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 

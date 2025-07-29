@@ -32,6 +32,8 @@ class Band(db.Model):
 
     # 添加与Member的一对多关系
     members = db.relationship('Member', backref='band', lazy=True, cascade='all, delete-orphan')
+    # 添加与Event的一对多关系
+    events = db.relationship('Event', backref='band', lazy=True, cascade='all, delete-orphan')
     
     def to_dict(self):
         return {
@@ -91,4 +93,43 @@ class Member(db.Model):
             'band_id': self.band_id,
             'band_name': self.band.name if self.band else None,  # type: ignore
             'avatar_url': self.avatar_url
+        }
+
+class Event(db.Model):
+    __tablename__ = 'events'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    event_date = db.Column(db.DateTime, nullable=False)
+    venue = db.Column(db.String(200))
+    address = db.Column(db.String(500))
+    ticket_price = db.Column(db.Numeric(10, 2))  # 票价，支持小数
+    capacity = db.Column(db.Integer)  # 场地容量
+    status = db.Column(db.String(20), default='upcoming')  # upcoming, ongoing, completed, cancelled
+    band_id = db.Column(db.Integer, db.ForeignKey('bands.id'), nullable=False)
+
+    # 图片相关字段
+    poster_image_url = db.Column(db.String(255), nullable=True)  # 演出海报
+
+    # 时间戳字段
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # 软删除字段
+    is_deleted = db.Column(db.Boolean, nullable=False, default=False)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'event_date': self.event_date.isoformat() if self.event_date else None,
+            'venue': self.venue,
+            'address': self.address,
+            'ticket_price': float(self.ticket_price) if self.ticket_price else None,
+            'capacity': self.capacity,
+            'status': self.status,
+            'band_id': self.band_id,
+            'band_name': self.band.name if self.band else None,  # type: ignore
+            'poster_image_url': self.poster_image_url
         }

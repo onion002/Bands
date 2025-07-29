@@ -47,6 +47,58 @@ export interface GetMembersResponse {
   current_page: number;
 }
 
+// 演出活动类型定义
+export interface Event {
+  id: number;
+  title: string;
+  description?: string;
+  event_date: string;
+  venue?: string;
+  address?: string;
+  ticket_price?: number;
+  capacity?: number;
+  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  band_id: number;
+  band_name: string;
+  poster_image_url?: string;
+}
+
+// 创建演出活动数据类型
+export interface CreateEventData {
+  title: string;
+  description?: string;
+  event_date: string;
+  venue?: string;
+  address?: string;
+  ticket_price?: number;
+  capacity?: number;
+  status?: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  band_id: number;
+  poster_image_url?: string;
+}
+
+// 更新演出活动数据类型
+export interface UpdateEventData {
+  title?: string;
+  description?: string;
+  event_date?: string;
+  venue?: string;
+  address?: string;
+  ticket_price?: number;
+  capacity?: number;
+  status?: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  band_id?: number;
+  poster_image_url?: string;
+}
+
+// 获取演出活动响应类型
+export interface GetEventsResponse {
+  items: Event[];
+  total: number;
+  pages: number;
+  current_page: number;
+}
+
 // 粒子类型定义
 export interface Particle {
   size: number;
