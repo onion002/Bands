@@ -12,6 +12,7 @@
         <router-link to="/members" class="nav-box">成员管理</router-link>
         <router-link to="/events" class="nav-box">演出活动</router-link>
         <router-link to="/gallery" class="nav-box">照片墙</router-link>
+        <a href="https://www.damai.cn/" target="_blank" class="nav-box">大麦网</a>
       </div>
     </div>
     
