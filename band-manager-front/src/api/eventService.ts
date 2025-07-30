@@ -1,10 +1,21 @@
 import axios from 'axios'
 
-// 使用相对路径，让Vite代理处理
-const eventAxios = axios.create();
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
-// 添加请求拦截器
-eventAxios.interceptors.request.use(config => {
+// 创建axios实例
+const eventApi = axios.create({
+  baseURL: `${API_BASE_URL}/api/events`,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// 添加请求拦截器 - 自动添加认证token
+eventApi.interceptors.request.use(config => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   console.log('EventService 请求:', config.method?.toUpperCase(), config.url);
   return config;
 }, error => {
@@ -13,13 +24,17 @@ eventAxios.interceptors.request.use(config => {
 });
 
 // 添加响应拦截器
-eventAxios.interceptors.response.use(response => {
+eventApi.interceptors.response.use(response => {
   console.log('EventService 响应:', response.status, response.data);
   return response.data;
 }, error => {
   console.error('EventService 响应错误:', error);
   if (error.response) {
     console.error('API Error:', error.response.status, error.response.data);
+    if (error.response.status === 401) {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_info');
+    }
     return Promise.reject(error.response.data);
   } else {
     console.error('Network Error:', error.message);
@@ -36,10 +51,10 @@ interface EventsResponse {
 }
 
 export class EventService {
-  // 获取所有演出活动
+  // 获取所有演出活动（需要认证）
   static async getEvents(): Promise<EventsResponse> {
     try {
-      return await eventAxios.get('/api/events/');
+      return await eventApi.get('/');
     } catch (error) {
       console.error('获取演出活动失败:', error)
       throw error
@@ -51,10 +66,20 @@ export class EventService {
     return this.getEvents()
   }
 
+  // 获取公开活动列表
+  static async getPublicEvents(username: string): Promise<EventsResponse> {
+    try {
+      return await eventApi.get(`/public/${username}`);
+    } catch (error) {
+      console.error('获取公开演出活动失败:', error)
+      throw error
+    }
+  }
+
   // 创建演出活动
   static async createEvent(eventData: any) {
     try {
-      return await eventAxios.post('/api/events/', eventData);
+      return await eventApi.post('/', eventData);
     } catch (error) {
       console.error('创建演出活动失败:', error)
       throw error
@@ -64,7 +89,7 @@ export class EventService {
   // 更新演出活动
   static async updateEvent(id: number, eventData: any) {
     try {
-      return await eventAxios.put(`/api/events/${id}`, eventData);
+      return await eventApi.put(`/${id}`, eventData);
     } catch (error) {
       console.error('更新演出活动失败:', error)
       throw error
@@ -74,7 +99,7 @@ export class EventService {
   // 删除演出活动
   static async deleteEvent(id: number) {
     try {
-      return await eventAxios.delete(`/api/events/${id}`);
+      return await eventApi.delete(`/${id}`);
     } catch (error) {
       console.error('删除演出活动失败:', error)
       throw error
@@ -84,7 +109,7 @@ export class EventService {
   // 批量删除演出活动
   static async batchDeleteEvents(eventIds: number[]) {
     try {
-      return await eventAxios.post('/api/events/batch_delete', {
+      return await eventApi.post('/batch_delete', {
         event_ids: eventIds
       });
     } catch (error) {
@@ -97,7 +122,7 @@ export class EventService {
   static async uploadPoster(formData: FormData) {
     try {
       console.log('EventService.uploadPoster 被调用')
-      const result = await eventAxios.post('/api/events/upload_poster', formData, {
+      const result = await eventApi.post('/upload_poster', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

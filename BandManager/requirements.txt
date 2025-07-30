@@ -19,3 +19,4 @@ SQLAlchemy==2.0.41
 typing_extensions==4.14.1
 Werkzeug @ file:///C:/b/abs_c7bupijx2_/croot/werkzeug_1737448709012/work
 wheel==0.45.1
+PyJWT==2.8.0

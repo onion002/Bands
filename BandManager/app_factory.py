@@ -103,10 +103,14 @@ def register_blueprints(app):
         from api.bands import bands_bp
         from api.members import members_bp
         from api.events import events_bp
+        from api.auth import auth_bp
+        from api.stats import stats_bp
 
         app.register_blueprint(bands_bp, url_prefix='/api/bands')
         app.register_blueprint(members_bp, url_prefix='/api/members')
         app.register_blueprint(events_bp, url_prefix='/api/events')
+        app.register_blueprint(auth_bp, url_prefix='/api/auth')
+        app.register_blueprint(stats_bp, url_prefix='/api/stats')
 
         if not is_reloader_process():
             print("✅ 蓝图注册成功")

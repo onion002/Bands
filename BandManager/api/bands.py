@@ -8,6 +8,7 @@ from sqlalchemy import text
 from datetime import datetime
 import logging
 from sqlalchemy.exc import IntegrityError
+from auth_decorators import require_auth, require_admin, optional_auth, get_current_user, apply_user_filter, set_owner_for_creation
 
 # 创建蓝图
 bands_bp = Blueprint('bands', __name__, url_prefix='/api/bands')
@@ -177,9 +178,15 @@ def delete_band_related_images(band):
         return deleted_files
 
 @bands_bp.route('/', methods=['GET'])
+@require_admin
 def get_bands():
+    """获取当前管理员的乐队列表"""
     try:
-        bands = Band.query.all()
+        current_user = get_current_user()
+        query = Band.query
+        query = apply_user_filter(query, Band)
+        bands = query.all()
+
         results = [{
             'id': band.id,
             'name': band.name,
@@ -195,10 +202,49 @@ def get_bands():
         logging.error(f"获取乐队列表失败: {str(e)}", exc_info=True)
         return jsonify({'error': '服务器内部错误'}), 500
 
+@bands_bp.route('/public/<username>', methods=['GET'])
+def get_public_bands(username):
+    """获取指定管理员的公开乐队列表"""
+    try:
+        from models import User
+        # 查找管理员用户
+        admin_user = User.query.filter_by(username=username, user_type='admin').first()
+        if not admin_user:
+            return jsonify({'error': '管理员用户不存在'}), 404
+
+        # 获取该管理员的乐队
+        bands = Band.query.filter_by(owner_id=admin_user.id).all()
+
+        results = [{
+            'id': band.id,
+            'name': band.name,
+            'year': band.year,
+            'genre': band.genre,
+            'member_count': band.member_count,
+            'bio': band.bio,
+            'banner_image_url': band.banner_image_url,
+            'primary_color': band.primary_color,
+            'admin_username': username
+        } for band in bands]
+
+        return jsonify({
+            'items': results,
+            'total': len(results),
+            'admin_info': {
+                'username': admin_user.username,
+                'display_name': admin_user.display_name
+            }
+        })
+    except Exception as e:
+        logging.error(f"获取公开乐队列表失败: {str(e)}", exc_info=True)
+        return jsonify({'error': '服务器内部错误'}), 500
+
 @bands_bp.route('/', methods=['POST'])
+@require_admin
 def create_band():
     """创建新乐队"""
     try:
+        current_user = get_current_user()
         # 检查是否为表单数据（可能包含文件）
         if 'file' in request.files:
             # 表单数据模式
@@ -256,7 +302,8 @@ def create_band():
                 genre=form_data.get('genre'),
                 member_count=member_count_int,
                 bio=form_data.get('bio', ''),
-                banner_image_url=file_path
+                banner_image_url=file_path,
+                owner_id=current_user.id
             )
             
             db.session.add(new_band)
@@ -315,7 +362,8 @@ def create_band():
                 genre=data.get('genre'),
                 member_count=member_count_int,
                 bio=data.get('bio', ''),
-                banner_image_url=banner_image_url
+                banner_image_url=banner_image_url,
+                owner_id=current_user.id
             )
             
             # 保存到数据库
@@ -339,10 +387,12 @@ def create_band():
         return jsonify({'error': '创建乐队失败'}), 500
 
 @bands_bp.route('/<int:band_id>', methods=['GET'])
+@require_admin
 def get_band(band_id):
     """获取单个乐队详情"""
     try:
-        band = Band.query.get(band_id)
+        current_user = get_current_user()
+        band = Band.query.filter_by(id=band_id, owner_id=current_user.id).first()
         if not band:
             return jsonify({'error': '乐队不存在'}), 404
             
@@ -361,10 +411,12 @@ def get_band(band_id):
         return jsonify({'error': '服务器内部错误'}), 500
 
 @bands_bp.route('/<int:band_id>', methods=['PUT'])
+@require_admin
 def update_band(band_id):
     """更新乐队信息"""
     try:
-        band = Band.query.get(band_id)
+        current_user = get_current_user()
+        band = Band.query.filter_by(id=band_id, owner_id=current_user.id).first()
         if not band:
             return jsonify({'error': '乐队不存在'}), 404
             
@@ -455,10 +507,12 @@ def update_band(band_id):
         return jsonify({'error': f'更新乐队失败: {str(e)}'}), 500
 
 @bands_bp.route('/<int:band_id>', methods=['DELETE'])
+@require_admin
 def delete_band(band_id):
     """删除乐队（物理删除所有相关图片和成员图片）"""
     try:
-        band = Band.query.get(band_id)
+        current_user = get_current_user()
+        band = Band.query.filter_by(id=band_id, owner_id=current_user.id).first()
         if not band:
             return jsonify({'error': '乐队不存在'}), 404
 

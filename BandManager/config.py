@@ -18,6 +18,10 @@ class Config:
     MAX_CONTENT_LENGTH = 8 * 1024 * 1024  # 8MB
     API_BASE_URL = os.environ.get('API_BASE_URL') or 'http://localhost:5000'
 
+    # ====== 认证配置 ======
+    DEVELOPER_SECRET_KEYS = os.environ.get('DEVELOPER_SECRET_KEYS') or 'dev-key-123,admin-key-456,oninon466'
+    JWT_EXPIRATION_HOURS = int(os.environ.get('JWT_EXPIRATION_HOURS', 24))
+
     # ====== 开发调试配置 ======
     SQLALCHEMY_ECHO = os.environ.get('FLASK_ENV') != 'production'  # 生产环境不打印SQL
     DEBUG = os.environ.get('FLASK_ENV') != 'production'  # 生产环境关闭调试

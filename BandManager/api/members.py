@@ -5,6 +5,7 @@ from datetime import datetime
 from models import db, Member, Band
 from sqlalchemy.exc import SQLAlchemyError
 import logging
+from auth_decorators import require_auth, require_admin, optional_auth, get_current_user, apply_user_filter, set_owner_for_creation
 
 members_bp = Blueprint('members', __name__, url_prefix='/api/members')
 
@@ -18,8 +19,10 @@ def allowed_file(filename):
 
 # 获取所有成员（分页，可选band_id筛选）
 @members_bp.route('/', methods=['GET'])
+@require_admin
 def get_all_members():
     try:
+        current_user = get_current_user()
         # 可选乐队筛选
         band_id = request.args.get('band_id', type=int)
         page = request.args.get('page', 1, type=int)
@@ -27,8 +30,12 @@ def get_all_members():
         page = max(1, page)
         per_page = max(1, min(per_page, 100))
 
-        query = Member.query
+        query = Member.query.filter_by(owner_id=current_user.id)
         if band_id:
+            # 确保乐队也属于当前用户
+            band = Band.query.filter_by(id=band_id, owner_id=current_user.id).first()
+            if not band:
+                return jsonify({'error': '乐队不存在或无权限访问'}), 404
             query = query.filter_by(band_id=band_id)
         pagination = query.order_by(Member.join_date.desc()).paginate(page=page, per_page=per_page, error_out=False)
         members = [member.to_dict() for member in pagination.items]
@@ -37,6 +44,48 @@ def get_all_members():
             'total': pagination.total,
             'pages': pagination.pages,
             'current_page': pagination.page
+        })
+    except Exception as e:
+        logging.error(f"获取成员列表失败: {str(e)}", exc_info=True)
+        return jsonify({'error': '服务器内部错误'}), 500
+
+@members_bp.route('/public/<username>', methods=['GET'])
+def get_public_members(username):
+    """获取指定管理员的公开成员列表"""
+    try:
+        from models import User
+        # 查找管理员用户
+        admin_user = User.query.filter_by(username=username, user_type='admin').first()
+        if not admin_user:
+            return jsonify({'error': '管理员用户不存在'}), 404
+
+        # 可选乐队筛选
+        band_id = request.args.get('band_id', type=int)
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        page = max(1, page)
+        per_page = max(1, min(per_page, 100))
+
+        query = Member.query.filter_by(owner_id=admin_user.id)
+        if band_id:
+            # 确保乐队也属于该管理员
+            band = Band.query.filter_by(id=band_id, owner_id=admin_user.id).first()
+            if not band:
+                return jsonify({'error': '乐队不存在'}), 404
+            query = query.filter_by(band_id=band_id)
+
+        pagination = query.order_by(Member.join_date.desc()).paginate(page=page, per_page=per_page, error_out=False)
+        members = [member.to_dict() for member in pagination.items]
+
+        return jsonify({
+            'items': members,
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'current_page': pagination.page,
+            'admin_info': {
+                'username': admin_user.username,
+                'display_name': admin_user.display_name
+            }
         })
     except Exception as e:
         logging.exception("获取所有成员失败")
@@ -83,10 +132,12 @@ def get_band_members(band_id):
 
 # 创建新成员
 @members_bp.route('/', methods=['POST'])
+@require_admin
 def create_member():
     try:
+        current_user = get_current_user()
         data = request.json
-        
+
         # 验证必要字段
         required_fields = ['name', 'join_date', 'band_id']
         if not data or not all(field in data for field in required_fields):
@@ -107,12 +158,19 @@ def create_member():
         band_id = data.get('band_id')
         if not name or not band_id:
             return jsonify({'error': '缺少必要字段: name 或 band_id'}), 400
+
+        # 验证乐队是否属于当前用户
+        band = Band.query.filter_by(id=band_id, owner_id=current_user.id).first()
+        if not band:
+            return jsonify({'error': '乐队不存在或无权限访问'}), 404
+
         new_member = Member(
             name=name,
             role=data.get('role'),
             join_date=join_date,
             band_id=band_id,
-            avatar_url=data.get('avatar_url')  # 支持头像URL
+            avatar_url=data.get('avatar_url'),  # 支持头像URL
+            owner_id=current_user.id
         )  # type: ignore
         
         db.session.add(new_member)

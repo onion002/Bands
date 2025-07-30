@@ -6,6 +6,7 @@ import glob
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from werkzeug.utils import secure_filename
 from models import db, Event, Band
+from auth_decorators import require_auth, require_admin, optional_auth, get_current_user, apply_user_filter, set_owner_for_creation
 
 # 创建蓝图
 events_bp = Blueprint('events', __name__)
@@ -119,8 +120,10 @@ def delete_event_related_images(event):
 
 # 获取所有演出活动（分页）
 @events_bp.route('/', methods=['GET'])
+@require_admin
 def get_all_events():
     try:
+        current_user = get_current_user()
         # 获取分页参数
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
@@ -130,11 +133,15 @@ def get_all_events():
         page = max(1, page)
         per_page = max(1, min(per_page, 100))
         
-        # 构建查询
-        query = Event.query.filter_by(is_deleted=False)
-        
+        # 构建查询 - 只查询当前用户的活动
+        query = Event.query.filter_by(is_deleted=False, owner_id=current_user.id)
+
         # 按乐队筛选
         if band_id:
+            # 确保乐队也属于当前用户
+            band = Band.query.filter_by(id=band_id, owner_id=current_user.id).first()
+            if not band:
+                return jsonify({'error': '乐队不存在或无权限访问'}), 404
             query = query.filter_by(band_id=band_id)
         
         # 按状态筛选
@@ -192,20 +199,23 @@ def get_band_events(band_id):
 
 # 创建新演出活动
 @events_bp.route('/', methods=['POST'])
+@require_admin
 def create_event():
     try:
+        current_user = get_current_user()
         data = request.json
-        
+
         print(f"接收到的创建活动数据: {data}")
-        
+
         # 验证必要字段
         required_fields = ['title', 'event_date', 'band_id']
         if not data or not all(field in data for field in required_fields):
             return jsonify({'error': '缺少必要字段: title, event_date 或 band_id'}), 400
-        
-        # 验证乐队是否存在
-        if not Band.query.get(data['band_id']):
-            return jsonify({'error': '乐队不存在'}), 404
+
+        # 验证乐队是否存在且属于当前用户
+        band = Band.query.filter_by(id=data['band_id'], owner_id=current_user.id).first()
+        if not band:
+            return jsonify({'error': '乐队不存在或无权限访问'}), 404
         
         # 转换日期格式
         try:
@@ -224,7 +234,8 @@ def create_event():
             capacity=data.get('capacity'),
             status=data.get('status', 'upcoming'),
             band_id=data.get('band_id'),
-            poster_image_url=data.get('poster_image_url')  # 确保这里正确获取
+            poster_image_url=data.get('poster_image_url'),  # 确保这里正确获取
+            owner_id=current_user.id
         )
         
         print(f"创建的活动对象 - 海报URL: {new_event.poster_image_url}")
