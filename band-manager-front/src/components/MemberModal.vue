@@ -256,6 +256,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 @use '@/assets/scss/variables' as *;
+@use 'sass:color';
 
 .modal-overlay {
   position: fixed;
@@ -488,7 +489,7 @@ onMounted(() => {
   box-shadow: 0 4px 15px rgba($primary, 0.3);
 
   &:hover {
-    background: linear-gradient(135deg, darken($primary, 10%), darken($secondary, 10%));
+    background: linear-gradient(135deg, color.adjust($primary, $lightness: -10%), color.adjust($secondary, $lightness: -10%));
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba($primary, 0.4);
   }
@@ -592,7 +593,7 @@ select {
   box-shadow: 0 4px 15px rgba($primary, 0.3);
 
   &:hover {
-    background: linear-gradient(135deg, darken($primary, 10%), darken($secondary, 10%));
+    background: linear-gradient(135deg, color.adjust($primary, $lightness: -10%), color.adjust($secondary, $lightness: -10%));
     box-shadow: 0 6px 20px rgba($primary, 0.4);
     transform: translateY(-2px);
   }

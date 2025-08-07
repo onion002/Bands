@@ -14,7 +14,7 @@
 @mixin transition-optimized($properties: transform, $duration: $transition-normal, $easing: cubic-bezier(0.4, 0, 0.2, 1)) {
   transition: #{$properties} #{$duration} #{$easing};
   will-change: #{$properties};
-  
+
   &:not(:hover):not(:focus):not(:active) {
     will-change: auto;
   }
@@ -259,8 +259,12 @@
   }
 }
 
-// 🎨 响应式动画控制
-@mixin respect-motion-preference {
+// 🎨 响应式动画控制 - 已内联到 optimize-animations 中
+
+// 🚀 性能优化工具
+@mixin optimize-animations {
+  @include hardware-acceleration;
+
   @media (prefers-reduced-motion: reduce) {
     * {
       animation-duration: 0.01ms !important;
@@ -270,24 +274,18 @@
   }
 }
 
-// 🚀 性能优化工具
-@mixin optimize-animations {
-  @include hardware-acceleration;
-  @include respect-motion-preference;
-}
-
 // 🎯 组合动画混合器
 @mixin interactive-card {
-  @include optimize-animations;
-  @include hover-lift;
   @include transition-optimized(transform box-shadow border-color);
+  @include hover-lift;
+  @include optimize-animations;
 }
 
 @mixin animated-button {
-  @include optimize-animations;
-  @include hover-lift(2px);
   @include transition-optimized(transform box-shadow background-color);
-  
+  @include hover-lift(2px);
+  @include optimize-animations;
+
   &:active {
     transform: translateY(0) translateZ(0);
     transition-duration: 0.1s;

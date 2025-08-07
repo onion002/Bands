@@ -25,6 +25,17 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0', // 生产预览也允许外部访问
       port: 3000
     },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          quietDeps: true, // 静默依赖警告
+          silenceDeprecations: ['legacy-js-api', 'mixed-decls', 'global-builtin', 'color-functions'], // 静默特定弃用警告
+          logger: {
+            warn: () => {} // 完全静默警告
+          }
+        }
+      }
+    },
     build: {
       outDir: 'dist',
       assetsDir: 'assets',
