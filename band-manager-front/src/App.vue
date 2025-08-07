@@ -29,6 +29,6 @@ import NavHeader from '@/components/NavHeader.vue'
   min-height: calc(100vh - 80px);
 }
 
-// 🌟 Font Awesome 图标支持
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css');
+// 🌟 Font Awesome 图标支持 - 升级到6.4.0版本
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 </style>

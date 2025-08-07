@@ -24,6 +24,13 @@ const routes = [
     meta: { requiresGuest: true }
   },
 
+  // 图标测试页面
+  {
+    path: '/icon-test',
+    name: 'IconTest',
+    component: () => import('@/views/IconTestView.vue')
+  },
+
   // 管理员仪表板
   {
     path: '/dashboard',
