@@ -1,0 +1,348 @@
+// src/assets/scss/components.scss
+@use 'variables' as *;
+
+// 🎵 导航头部样式
+.nav-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba($dark, 0.8);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba($primary, 0.2);
+  transition: all $transition-normal ease;
+  
+  .nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: $white;
+    
+    .brand-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      background: $gradient-primary;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+    
+    .brand-text {
+      font-family: $font-family-display;
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+  }
+  
+  .nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    
+    .nav-link {
+      color: $gray-300;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color $transition-normal ease;
+      position: relative;
+      
+      &:hover {
+        color: $primary;
+      }
+      
+      &.active {
+        color: $primary;
+        
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: -0.5rem;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: $primary;
+          border-radius: 1px;
+        }
+      }
+    }
+  }
+  
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: $white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: $border-radius-sm;
+    transition: background $transition-fast ease;
+    
+    &:hover {
+      background: rgba($white, 0.1);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .nav-menu {
+      display: none;
+    }
+    
+    .mobile-menu-btn {
+      display: block;
+    }
+  }
+}
+
+// 🎨 页面头部样式
+.page-header {
+  padding: 2rem 0;
+  text-align: center;
+  
+  h1 {
+    font-family: $font-family-display;
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 700;
+    margin: 0 0 1rem;
+    letter-spacing: -0.02em;
+    
+    .gradient-text {
+      background: $gradient-primary;
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+  }
+  
+  p {
+    color: $gray-400;
+    font-size: 1.125rem;
+    margin: 0;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+}
+
+// 🎵 乐队卡片样式
+.band-card {
+  background: $dark;
+  border: $border-light;
+  border-radius: $border-radius-xl;
+  overflow: hidden;
+  transition: all $transition-normal ease;
+  position: relative;
+  cursor: pointer;
+  
+  &:hover {
+    border-color: rgba($primary, 0.5);
+    transform: scale(1.02);
+    box-shadow: $shadow-primary;
+    
+    .band-image img {
+      transform: scale(1.1);
+    }
+    
+    .band-title {
+      color: $primary;
+    }
+  }
+  
+  .band-image {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform $transition-slow ease;
+    }
+    
+    .image-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba($dark, 0.8), transparent);
+    }
+    
+    .band-genre {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba($primary, 0.9);
+      color: $white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  }
+  
+  .band-content {
+    padding: 1.5rem;
+    
+    .band-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+      color: $white;
+      transition: color $transition-normal ease;
+    }
+    
+    .band-year {
+      color: $primary;
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+    }
+    
+    .band-bio {
+      color: $gray-400;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      margin-bottom: 1rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .band-stats {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      
+      .member-count {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: $gray-400;
+        font-size: 0.875rem;
+        
+        i {
+          color: $primary;
+        }
+      }
+      
+      .band-actions {
+        display: flex;
+        gap: 0.5rem;
+        
+        button {
+          background: none;
+          border: none;
+          color: $gray-400;
+          cursor: pointer;
+          padding: 0.5rem;
+          border-radius: $border-radius-sm;
+          transition: all $transition-fast ease;
+          
+          &:hover {
+            color: $primary;
+            background: rgba($primary, 0.1);
+          }
+        }
+      }
+    }
+  }
+}
+
+// 🎯 筛选区域样式
+.filter-section {
+  background: rgba($darkgray, 0.7);
+  backdrop-filter: blur(8px);
+  border: $border-light;
+  border-radius: $border-radius-xl;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-width: 200px;
+      
+      label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: $gray-300;
+      }
+      
+      select, input {
+        padding: 0.5rem 0.75rem;
+        background: rgba($lightgray, 0.3);
+        border: 1px solid rgba($lightgray, 0.5);
+        border-radius: $border-radius-sm;
+        color: $white;
+        font-size: 0.875rem;
+        
+        &:focus {
+          outline: none;
+          border-color: $primary;
+          box-shadow: 0 0 0 3px rgba($primary, 0.1);
+        }
+      }
+    }
+    
+    .filter-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-left: auto;
+    }
+  }
+}
+
+// 🌟 空状态样式
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  
+  .empty-icon {
+    font-size: 4rem;
+    color: $gray-500;
+    margin-bottom: 1rem;
+  }
+  
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: $gray-300;
+    margin: 0 0 0.5rem;
+  }
+  
+  p {
+    color: $gray-400;
+    margin: 0 0 2rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

@@ -183,7 +183,7 @@ onUnmounted(() => {
       width: 100%;
       height: 100%;
       gap: 2px; /* 极小的间隙 */
-      
+
       .band-card {
         flex: 1;
         height: 100%;
@@ -191,15 +191,25 @@ onUnmounted(() => {
         overflow: hidden;
         position: relative;
         cursor: pointer;
-        transition: 
+        // 性能优化的过渡效果
+        transition:
           transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-          z-index 0.5s;
-        
-        /* 悬停放大效果 - 刚好填满间隙 */
+          z-index 0.5s,
+          box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        will-change: transform;
+        // 启用硬件加速
+        transform: translateZ(0);
+        backface-visibility: hidden;
+
+        /* 优化的悬停效果 */
         &:hover {
-          transform: scale(1.01);
+          transform: scale(1.01) translateZ(0);
           z-index: 5;
           box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        &:not(:hover) {
+          will-change: auto;
         }
         
         .image-container {
@@ -224,7 +234,10 @@ onUnmounted(() => {
               .music-symbol {
                 font-size: 4rem;
                 margin-bottom: 10px;
-                animation: pulse 2s infinite;
+                // 使用优化的脉冲动画
+                animation: optimized-pulse 2s ease-in-out infinite;
+                will-change: transform;
+                transform: translateZ(0);
               }
               
               span {
@@ -266,9 +279,19 @@ onUnmounted(() => {
   }
 }
 
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.1); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.8; }
+// 优化的脉冲动画 - 使用 transform3d 和硬件加速
+@keyframes optimized-pulse {
+  0% {
+    transform: scale3d(1, 1, 1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale3d(1.1, 1.1, 1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale3d(1, 1, 1);
+    opacity: 0.8;
+  }
 }
 </style>

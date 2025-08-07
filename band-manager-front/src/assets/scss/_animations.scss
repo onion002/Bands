@@ -1,0 +1,569 @@
+// 🎨 优化的动画系统
+// 性能优化的动画和过渡效果
+
+@use 'variables' as *;
+
+// 🚀 性能优化的基础设置
+* {
+  // 启用硬件加速
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+// 🎯 动画性能优化类
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+.will-change-auto {
+  will-change: auto;
+}
+
+// 🌟 核心动画关键帧 - 使用 transform 而非 layout 属性
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateZ(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 30px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -30px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translate3d(-30px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translate3d(30px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translate3d(0, 100%, 0);
+    visibility: visible;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translate3d(0, -100%, 0);
+    visibility: visible;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale3d(0.3, 0.3, 0.3);
+  }
+  50% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+}
+
+@keyframes scaleOut {
+  from {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+  to {
+    opacity: 0;
+    transform: scale3d(0.3, 0.3, 0.3);
+  }
+}
+
+// 🎵 音乐主题动画
+@keyframes pulse {
+  0%, 100% {
+    transform: scale3d(1, 1, 1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale3d(1.05, 1.05, 1.05);
+    opacity: 0.8;
+  }
+}
+
+@keyframes glow {
+  0% {
+    text-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 15px $primary,
+      0 0 20px $primary;
+  }
+  100% {
+    text-shadow: 
+      0 0 10px currentColor,
+      0 0 20px currentColor,
+      0 0 30px $primary,
+      0 0 40px $primary;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -30px, 0);
+  }
+  70% {
+    transform: translate3d(0, -15px, 0);
+  }
+  90% {
+    transform: translate3d(0, -4px, 0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translate3d(-10px, 0, 0);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translate3d(10px, 0, 0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// 🌈 光效动画
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+// 🎨 背景动画
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes backgroundFloat {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate3d(30px, -30px, 0) rotate(120deg);
+  }
+  66% {
+    transform: translate3d(-20px, 20px, 0) rotate(240deg);
+  }
+}
+
+// 🎯 实用动画类
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.animate-fade-in-down {
+  animation: fadeInDown 0.6s ease-out;
+}
+
+.animate-fade-in-left {
+  animation: fadeInLeft 0.6s ease-out;
+}
+
+.animate-fade-in-right {
+  animation: fadeInRight 0.6s ease-out;
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.5s ease-out;
+}
+
+.animate-slide-in-down {
+  animation: slideInDown 0.5s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.4s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-bounce {
+  animation: bounce 1s ease-in-out;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 400% 400%;
+  animation: gradientShift 4s ease infinite;
+}
+
+// 🚀 性能优化的过渡效果
+.transition-all {
+  transition: all $transition-normal cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-transform {
+  transition: transform $transition-normal cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-opacity {
+  transition: opacity $transition-normal cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-colors {
+  transition: color $transition-normal cubic-bezier(0.4, 0, 0.2, 1),
+              background-color $transition-normal cubic-bezier(0.4, 0, 0.2, 1),
+              border-color $transition-normal cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// 🎨 缓动函数
+.ease-in-out-back {
+  transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.ease-in-out-circ {
+  transition-timing-function: cubic-bezier(0.785, 0.135, 0.15, 0.86);
+}
+
+.ease-in-out-expo {
+  transition-timing-function: cubic-bezier(1, 0, 0, 1);
+}
+
+// 🎵 音乐可视化动画
+@keyframes musicBars {
+  0%, 100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes waveform {
+  0% {
+    transform: scaleY(0.5) scaleX(1);
+  }
+  25% {
+    transform: scaleY(1) scaleX(0.9);
+  }
+  50% {
+    transform: scaleY(0.3) scaleX(1.1);
+  }
+  75% {
+    transform: scaleY(0.8) scaleX(0.95);
+  }
+  100% {
+    transform: scaleY(0.5) scaleX(1);
+  }
+}
+
+@keyframes vinyl {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// 🌟 高级交互动画
+@keyframes morphButton {
+  0% {
+    border-radius: $border-radius-lg;
+    transform: scale(1);
+  }
+  50% {
+    border-radius: 50px;
+    transform: scale(1.05);
+  }
+  100% {
+    border-radius: $border-radius-lg;
+    transform: scale(1);
+  }
+}
+
+@keyframes cardFlip {
+  0% {
+    transform: perspective(1000px) rotateY(0);
+  }
+  50% {
+    transform: perspective(1000px) rotateY(-90deg);
+  }
+  100% {
+    transform: perspective(1000px) rotateY(0);
+  }
+}
+
+@keyframes slideReveal {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+// 🎨 粒子效果动画
+@keyframes particleFloat {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--random-x, 100px), var(--random-y, -100px), 0) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+// 🌈 彩虹效果
+@keyframes rainbow {
+  0% { color: #ff0000; }
+  16.66% { color: #ff8000; }
+  33.33% { color: #ffff00; }
+  50% { color: #00ff00; }
+  66.66% { color: #0080ff; }
+  83.33% { color: #8000ff; }
+  100% { color: #ff0000; }
+}
+
+// 🎯 高级动画类
+.animate-music-bars {
+  animation: musicBars 1s ease-in-out infinite;
+
+  &:nth-child(2) { animation-delay: 0.1s; }
+  &:nth-child(3) { animation-delay: 0.2s; }
+  &:nth-child(4) { animation-delay: 0.3s; }
+  &:nth-child(5) { animation-delay: 0.4s; }
+}
+
+.animate-waveform {
+  animation: waveform 2s ease-in-out infinite;
+}
+
+.animate-vinyl {
+  animation: vinyl 3s linear infinite;
+}
+
+.animate-morph-button {
+  animation: morphButton 0.6s ease-in-out;
+}
+
+.animate-card-flip {
+  animation: cardFlip 0.8s ease-in-out;
+}
+
+.animate-slide-reveal {
+  animation: slideReveal 0.7s ease-out;
+}
+
+.animate-particle-float {
+  animation: particleFloat 3s ease-out infinite;
+}
+
+.animate-rainbow {
+  animation: rainbow 3s linear infinite;
+}
+
+// 🚀 性能优化的悬停效果
+.hover-lift {
+  transition: transform $transition-normal cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-4px) translateZ(0);
+  }
+}
+
+.hover-scale {
+  transition: transform $transition-normal cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: scale(1.05) translateZ(0);
+  }
+}
+
+.hover-glow {
+  transition: box-shadow $transition-normal cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    box-shadow: 0 0 20px rgba($primary, 0.4);
+  }
+}
+
+.hover-rotate {
+  transition: transform $transition-normal cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: rotate(5deg) translateZ(0);
+  }
+}
+
+// 🎨 加载动画
+@keyframes loading-dots {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.loading-dots {
+  display: inline-flex;
+  gap: 4px;
+
+  span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: loading-dots 1.4s ease-in-out infinite;
+
+    &:nth-child(1) { animation-delay: -0.32s; }
+    &:nth-child(2) { animation-delay: -0.16s; }
+    &:nth-child(3) { animation-delay: 0s; }
+  }
+}
+
+// 🌟 响应式动画控制
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// 🎯 动画延迟类
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-500 { animation-delay: 0.5s; }
+.delay-700 { animation-delay: 0.7s; }
+.delay-1000 { animation-delay: 1s; }

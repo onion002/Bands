@@ -1,197 +1,271 @@
 <template>
-  <!-- 成员管理页面主容器 -->
   <div class="member-management">
-    <div class="content-container">
-      <!-- 页面标题和操作按钮区域 -->
-      <PageHeader
-        title="成员管理"
-        :batch-mode="batchMode"
-        :selected-count="selectedMembers.length"
-        item-type="成员"
-        add-button-text="添加新成员"
-        add-button-class="add-member-btn"
-        @title-click="goToHome"
-        @back-click="goToHome"
-        @batch-toggle="toggleBatchMode"
-        @add-click="openCreateModal"
-        @select-all="selectAll"
-        @clear-selection="clearSelection"
-        @batch-delete="batchDeleteMembers"
-      />
+    <!-- 🎵 页面头部 -->
+    <div class="page-header">
+      <h1>
+        <span class="gradient-text">成员管理</span>
+      </h1>
+      <p>管理乐队成员信息，打造完美团队</p>
+    </div>
 
-      <!-- 筛选区域 -->
-      <FilterSection
-        select-label="按乐队筛选"
-        :select-value="selectedBandId"
-        select-placeholder="全部乐队"
-        :select-options="bands.map(band => ({ value: band.id, label: band.name }))"
-        search-label="搜索成员"
-        :search-value="searchKeyword"
-        search-placeholder="输入成员姓名或角色"
-        @select-change="handleBandChange"
-        @search-input="handleSearchInput"
-      />
+    <!-- 🎨 操作工具栏 -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button
+          v-if="!batchMode"
+          @click="openCreateModal"
+          class="btn btn-primary"
+        >
+          <i class="fa fa-plus"></i>
+          添加新成员
+        </button>
 
-      <!-- 加载状态指示器 -->
-      <div v-if="loading" class="loading-state">
-        <i class="fas fa-spinner fa-spin"></i> 加载中...
+        <button
+          v-if="members.length > 0"
+          @click="toggleBatchMode"
+          class="btn btn-outline"
+        >
+          <i class="fa fa-check-square"></i>
+          {{ batchMode ? '退出批量' : '批量操作' }}
+        </button>
       </div>
 
-      <!-- 错误提示区域 -->
-      <div v-if="error" class="error-state">
-        {{ error }}
-        <button @click="fetchMembers">重试</button>
+      <div class="toolbar-right" v-if="batchMode && selectedMembers.length > 0">
+        <span class="selection-count">已选择 {{ selectedMembers.length }} 个成员</span>
+        <button @click="selectAll" class="btn btn-outline btn-sm">全选</button>
+        <button @click="clearSelection" class="btn btn-outline btn-sm">清空</button>
+        <button @click="batchDeleteMembers" class="btn btn-danger btn-sm">
+          <i class="fa fa-trash"></i>
+          批量删除
+        </button>
       </div>
+    </div>
 
-      <!-- 数据为空时的提示 -->
-      <EmptyState
-        v-if="!loading && filteredMembers.length === 0"
-        icon-class="fas fa-users"
-        :message="selectedBandId ? '该乐队暂无成员' : '暂无成员数据'"
-        button-text="添加第一个成员"
-        button-icon="fas fa-plus"
-        @button-click="openCreateModal"
-      />
+    <!-- 🎯 筛选区域 -->
+    <div class="filter-section">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>所属乐队</label>
+          <select v-model="selectedBandId" @change="handleBandChange" class="form-control">
+            <option value="">全部乐队</option>
+            <option v-for="band in bands" :key="band.id" :value="band.id">
+              {{ band.name }}
+            </option>
+          </select>
+        </div>
 
-      <!-- 成员列表展示 -->
-      <div v-if="!loading && filteredMembers.length > 0" class="member-list">
-        <div v-for="member in paginatedMembers" :key="member.id" class="member-item">
-          <div class="member-card" :class="{ 'batch-mode': batchMode }">
-            <!-- 批量删除模式下显示复选框 -->
-            <div v-show="batchMode" class="member-checkbox">
-              <input 
-                type="checkbox" 
-                :value="member.id" 
-                v-model="selectedMembers"
-              >
+        <div class="filter-group">
+          <label>搜索成员</label>
+          <input
+            v-model="searchKeyword"
+            @input="handleSearchInput"
+            type="text"
+            placeholder="输入成员姓名或角色..."
+            class="form-control"
+          />
+        </div>
+
+        <div class="filter-actions">
+          <button @click="resetFilters" class="btn btn-outline btn-sm">
+            <i class="fa fa-refresh"></i>
+            重置
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🔄 加载状态 -->
+    <div v-if="loading" class="loading-section">
+      <div class="loading-content">
+        <div class="loading-spinner animate-pulse-slow">
+          <i class="fa fa-spinner fa-spin"></i>
+        </div>
+        <p>正在加载成员信息...</p>
+      </div>
+    </div>
+
+    <!-- ⚠️ 错误状态 -->
+    <div v-else-if="error" class="error-section">
+      <div class="error-content">
+        <i class="fa fa-exclamation-triangle"></i>
+        <h3>加载失败</h3>
+        <p>{{ error }}</p>
+        <button @click="fetchMembers" class="btn btn-primary">
+          <i class="fa fa-refresh"></i>
+          重新加载
+        </button>
+      </div>
+    </div>
+
+    <!-- 🌟 空状态 -->
+    <div v-else-if="filteredMembers.length === 0" class="empty-state">
+      <div class="empty-icon">
+        <i class="fa fa-users"></i>
+      </div>
+      <h3>{{ selectedBandId ? '该乐队暂无成员' : '还没有成员' }}</h3>
+      <p>{{ selectedBandId ? '为这个乐队添加第一个成员' : '开始添加您的第一个乐队成员' }}</p>
+      <button @click="openCreateModal" class="btn btn-primary">
+        <i class="fa fa-plus"></i>
+        添加成员
+      </button>
+    </div>
+
+    <!-- 🎵 成员网格展示 -->
+    <div v-else class="members-grid">
+      <div
+        v-for="member in paginatedMembers"
+        :key="member.id"
+        class="member-item"
+        :class="{ 'selected': batchMode && selectedMembers.includes(member.id) }"
+      >
+        <!-- 批量选择复选框 -->
+        <div v-if="batchMode" class="batch-checkbox">
+          <input
+            type="checkbox"
+            :value="member.id"
+            v-model="selectedMembers"
+            class="checkbox"
+          />
+        </div>
+
+        <!-- 成员卡片 -->
+        <div class="member-card card card-interactive">
+          <!-- 成员头像 -->
+          <div class="member-avatar">
+            <img
+              v-if="member.avatar_url"
+              :src="getAvatarUrl(member.avatar_url)"
+              :alt="member.name"
+              class="avatar-image"
+            />
+            <div v-else class="avatar-placeholder">
+              <i class="fa fa-user"></i>
             </div>
-            
-            <!-- 成员头像区域 -->
-            <div class="member-image">
-              <div class="avatar-wrapper">
-                <img
-                  v-if="member.avatar_url"
-                  :src="getAvatarUrl(member.avatar_url)"
-                  class="member-avatar-image"
-                  :alt="member.name"
-                >
-                <div v-else class="avatar-placeholder">
-                  <i class="fas fa-user"></i>
-                  <span>成员头像</span>
-                </div>
-              </div>
+
+            <!-- 在线状态指示器 -->
+            <div class="status-indicator"></div>
+          </div>
+
+          <!-- 成员信息 -->
+          <div class="member-content">
+            <h3 class="member-name">{{ member.name }}</h3>
+            <div class="member-role">{{ member.role || '未设置角色' }}</div>
+            <div class="member-band">
+              <i class="fa fa-music"></i>
+              {{ member.band_name }}
             </div>
-            
-            <!-- 成员信息区域 -->
-            <div class="member-info">
-              <h3 class="member-name">{{ member.name }}</h3>
-              <p class="member-role">{{ member.role || '未设置角色' }}</p>
-              <p class="member-band">所属乐队: {{ member.band_name }}</p>
-              <p class="member-date">加入日期: {{ formatDate(member.join_date) }}</p>
-              
-              <!-- 非批量模式下显示操作按钮 -->
-              <div v-if="!batchMode" class="member-actions">
-                <div class="action-btn-group">
-                  <button @click="editMember(member)" class="action-btn edit">
-                    <i class="fas fa-edit"></i> 编辑
-                  </button>
-                  <button @click="deleteMember(member)" class="action-btn delete">
-                    <i class="fas fa-trash"></i> 删除
-                  </button>
-                </div>
-              </div>
+            <div class="member-date">
+              <i class="fa fa-calendar"></i>
+              {{ formatDate(member.join_date) }}
+            </div>
+
+            <!-- 操作按钮 -->
+            <div v-if="!batchMode" class="member-actions">
+              <button @click="editMember(member)" class="action-btn" title="编辑">
+                <i class="fa fa-edit"></i>
+              </button>
+              <button @click="openUploadModal(member)" class="action-btn" title="上传头像">
+                <i class="fa fa-camera"></i>
+              </button>
+              <button @click="deleteMember(member)" class="action-btn delete" title="删除">
+                <i class="fa fa-trash"></i>
+              </button>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- 分页控件 -->
-      <div v-if="totalPages > 1" class="pagination">
-        <button
-          @click="changePage(currentPage - 1)"
-          :disabled="currentPage <= 1"
-          class="page-btn"
-        >
-          <i class="fas fa-chevron-left"></i>
-        </button>
+    <!-- 🎯 分页控件 -->
+    <div v-if="totalPages > 1" class="pagination">
+      <button
+        @click="changePage(currentPage - 1)"
+        :disabled="currentPage <= 1"
+        class="btn btn-outline"
+      >
+        <i class="fa fa-chevron-left"></i>
+        上一页
+      </button>
 
+      <div class="page-numbers">
         <span class="page-info">
-          第 {{ currentPage }} 页，共 {{ totalPages }} 页
+          第 {{ currentPage }} 页 / 共 {{ totalPages }} 页
         </span>
-
-        <button
-          @click="changePage(currentPage + 1)"
-          :disabled="currentPage >= totalPages"
-          class="page-btn"
-        >
-          <i class="fas fa-chevron-right"></i>
-        </button>
       </div>
 
-      <!-- 添加成员模态框 -->
-      <MemberModal
-        v-if="showCreateModal"
-        mode="add"
-        @close="closeCreateModal"
-        @save="createNewMember"
-      />
-
-      <!-- 编辑成员模态框 -->
-      <MemberModal
-        v-if="showEditModal"
-        :member="selectedMember"
-        mode="edit"
-        @close="closeEditModal"
-        @save="updateMember"
-      />
+      <button
+        @click="changePage(currentPage + 1)"
+        :disabled="currentPage >= totalPages"
+        class="btn btn-outline"
+      >
+        下一页
+        <i class="fa fa-chevron-right"></i>
+      </button>
     </div>
+
+    <!-- 🎵 模态框组件 -->
+    <MemberModal
+      v-if="showCreateModal"
+      mode="add"
+      @close="closeCreateModal"
+      @save="createNewMember"
+    />
+
+    <MemberModal
+      v-if="showEditModal"
+      :member="selectedMember"
+      mode="edit"
+      @close="closeEditModal"
+      @save="updateMember"
+    />
+
+    <!-- 🌟 上传模态框 -->
+    <UploadModal
+      v-if="showUploadModal"
+      title="上传成员头像"
+      :upload-api="(file) => MemberService.uploadMemberAvatar(selectedMember?.id, file)"
+      accept="image/*"
+      :max-size="5"
+      url-field="avatar_url"
+      @close="closeUploadModal"
+      @uploaded="handleUploadSuccess"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-// 引入 Vue 相关 API
 import { ref, onMounted, computed } from 'vue'
-// 引入路由
-import { useRouter } from 'vue-router'
-// 引入成员相关 API 服务
 import { MemberService } from '@/api/memberService'
 import { BandService } from '@/api/bandService'
-// 引入成员信息编辑模态框组件
 import MemberModal from '@/components/MemberModal.vue'
-// 引入可复用组件
-import PageHeader from '@/components/PageHeader.vue'
-import FilterSection from '@/components/FilterSection.vue'
-import EmptyState from '@/components/EmptyState.vue'
-// 引入类型定义
+import UploadModal from '@/components/UploadModal.vue'
 import type { Member, Band } from '@/types'
 
-// 路由实例
-const router = useRouter()
-
-// 数据状态
+// 🎵 数据状态
 const members = ref<Member[]>([])
 const bands = ref<Band[]>([])
 const loading = ref(false)
 const error = ref('')
 
-// 筛选和搜索状态
+// 🎨 模态框状态
+const showCreateModal = ref(false)
+const showEditModal = ref(false)
+const showUploadModal = ref(false)
+const selectedMember = ref<Member | null>(null)
+
+// 🎯 筛选和搜索状态
 const selectedBandId = ref('')
 const searchKeyword = ref('')
 
-// 分页状态
-const currentPage = ref(1)
-const pageSize = ref(6) 
-
-// 模态框状态
-const showCreateModal = ref(false)
-const showEditModal = ref(false)
-const selectedMember = ref<Member | null>(null)
-
-// 批量删除相关状态
+// 🔄 批量操作状态
 const batchMode = ref(false)
 const selectedMembers = ref<number[]>([])
 
-// 计算属性：筛选后的成员列表
+// 📄 分页状态
+const currentPage = ref(1)
+const itemsPerPage = 12
+
+// 🎨 计算属性
 const filteredMembers = computed(() => {
   let result = members.value
 
@@ -213,25 +287,21 @@ const filteredMembers = computed(() => {
   return result
 })
 
-// 计算属性：分页后的成员列表
 const paginatedMembers = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return filteredMembers.value.slice(start, end)
+  const start = (currentPage.value - 1) * itemsPerPage
+  return filteredMembers.value.slice(start, start + itemsPerPage)
 })
 
-// 计算属性：总页数
 const totalPages = computed(() => {
-  return Math.ceil(filteredMembers.value.length / pageSize.value)
+  return Math.ceil(filteredMembers.value.length / itemsPerPage)
 })
 
-// 获取成员列表数据
+// 🔄 API 调用函数
 const fetchMembers = async () => {
   try {
     loading.value = true
     error.value = ''
-
-    const result = await MemberService.getAllMembers(1, 1000) // 获取所有成员
+    const result = await MemberService.getAllMembers(1, 1000)
     members.value = Array.isArray(result.items) ? result.items : []
   } catch (err: any) {
     error.value = '获取成员列表失败: ' + err.message
@@ -241,7 +311,6 @@ const fetchMembers = async () => {
   }
 }
 
-// 获取乐队列表
 const fetchBands = async () => {
   try {
     const result = await BandService.getBands()
@@ -251,79 +320,91 @@ const fetchBands = async () => {
   }
 }
 
-// 跳转到主页
-const goToHome = () => {
-  router.push('/')
+// 🎯 事件处理函数
+const handleBandChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  selectedBandId.value = target.value
+  currentPage.value = 1
 }
 
-// 格式化日期
+const handleSearchInput = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  searchKeyword.value = target.value
+  currentPage.value = 1
+}
+
+const resetFilters = () => {
+  selectedBandId.value = ''
+  searchKeyword.value = ''
+  currentPage.value = 1
+}
+
 const formatDate = (dateString: string) => {
   if (!dateString) return '未设置'
   const date = new Date(dateString)
   return date.toLocaleDateString('zh-CN')
 }
 
-// 处理乐队筛选
-const handleBandChange = (value: string | number) => {
-  selectedBandId.value = value as string
-  currentPage.value = 1 // 重置到第一页
+const getAvatarUrl = (avatarUrl: string) => {
+  if (!avatarUrl) return ''
+  if (avatarUrl.startsWith('http')) return avatarUrl
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+  return API_BASE_URL + avatarUrl
 }
 
-// 处理搜索输入
-const handleSearchInput = (value: string) => {
-  searchKeyword.value = value
-  currentPage.value = 1 // 重置到第一页
-}
-
-// 分页切换
 const changePage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
   }
 }
 
-// 打开添加成员模态框
+// 🎵 模态框控制函数
 const openCreateModal = () => {
   selectedMember.value = null
   showCreateModal.value = true
 }
 
-// 关闭添加成员模态框
 const closeCreateModal = () => {
   showCreateModal.value = false
 }
 
-// 创建新成员
+const openUploadModal = (member: Member) => {
+  selectedMember.value = member
+  showUploadModal.value = true
+}
+
+const closeUploadModal = () => {
+  showUploadModal.value = false
+  selectedMember.value = null
+}
+
+const closeEditModal = () => {
+  showEditModal.value = false
+  selectedMember.value = null
+}
+
+// 🎨 成员操作函数
 const createNewMember = async (memberData: any) => {
   try {
-    // 先创建成员，始终传递 avatar_url 字段
     const result = await MemberService.createMember({
       name: memberData.name,
       role: memberData.role,
       join_date: memberData.join_date,
       band_id: memberData.band_id,
-      avatar_url: memberData.avatar_url // 关键：无论有无头像都传递
+      avatar_url: memberData.avatar_url
     })
 
-    // 如果有头像文件，上传头像
     if (memberData.avatarFile && result.id) {
       try {
         await MemberService.uploadMemberAvatar(result.id, memberData.avatarFile)
-        console.log('头像上传成功')
       } catch (avatarErr: any) {
         console.error('头像上传失败:', avatarErr)
-        // 头像上传失败不影响成员创建
       }
     }
 
-    // 刷新成员列表
     await fetchMembers()
-
-    // 关闭模态框
     closeCreateModal()
 
-    // 显示成功提示
-    console.log('成员创建成功')
   } catch (err: any) {
     console.error('创建成员失败:', err)
     const errorMessage = err.response?.data?.error || err.message || '未知错误'
@@ -331,51 +412,33 @@ const createNewMember = async (memberData: any) => {
   }
 }
 
-// 编辑成员
 const editMember = (member: Member) => {
   selectedMember.value = member
   showEditModal.value = true
 }
 
-// 关闭编辑成员模态框
-const closeEditModal = () => {
-  showEditModal.value = false
-  selectedMember.value = null
-}
-
-// 更新成员信息
 const updateMember = async (memberData: any) => {
   try {
     if (!selectedMember.value) return
 
-    // 先更新成员基本信息，始终传递 avatar_url 字段
     await MemberService.updateMember(selectedMember.value.id, {
       name: memberData.name,
       role: memberData.role,
       join_date: memberData.join_date,
       band_id: memberData.band_id,
-      avatar_url: memberData.avatar_url // 关键：无论有无头像都传递
+      avatar_url: memberData.avatar_url
     })
 
-    // 如果有新的头像文件，上传头像
     if (memberData.avatarFile) {
       try {
         await MemberService.uploadMemberAvatar(selectedMember.value.id, memberData.avatarFile)
-        console.log('头像更新成功')
       } catch (avatarErr: any) {
         console.error('头像更新失败:', avatarErr)
-        // 头像更新失败不影响成员信息更新
       }
     }
 
-    // 刷新成员列表
     await fetchMembers()
-
-    // 关闭模态框
     closeEditModal()
-
-    // 显示成功提示
-    console.log('成员信息更新成功')
   } catch (err: any) {
     console.error('更新成员失败:', err)
     const errorMessage = err.response?.data?.error || err.message || '未知错误'
@@ -383,7 +446,6 @@ const updateMember = async (memberData: any) => {
   }
 }
 
-// 删除成员
 const deleteMember = async (member: Member) => {
   if (!confirm(`确定要删除成员 "${member.name}" 吗？此操作不可撤销。`)) {
     return
@@ -391,19 +453,19 @@ const deleteMember = async (member: Member) => {
 
   try {
     await MemberService.deleteMember(member.id)
-
-    // 刷新成员列表
     await fetchMembers()
-
-    // 显示成功提示
-    console.log('成员删除成功')
   } catch (err: any) {
     console.error('删除成员失败:', err)
     error.value = '删除成员失败: ' + err.message
   }
 }
 
-// 切换批量删除模式
+const handleUploadSuccess = () => {
+  fetchMembers()
+  closeUploadModal()
+}
+
+// 🔄 批量操作函数
 const toggleBatchMode = () => {
   batchMode.value = !batchMode.value
   if (!batchMode.value) {
@@ -411,42 +473,37 @@ const toggleBatchMode = () => {
   }
 }
 
-// 全选
 const selectAll = () => {
   selectedMembers.value = paginatedMembers.value.map(member => member.id)
 }
 
-// 清空选择
 const clearSelection = () => {
   selectedMembers.value = []
 }
 
-// 批量删除成员
 const batchDeleteMembers = async () => {
   if (selectedMembers.value.length === 0) return
-  
+
   const memberNames = selectedMembers.value.map(id => {
     const member = members.value.find(m => m.id === id)
     return member?.name || '未知'
   }).join('、')
-  
+
   if (!confirm(`确定要删除以下 ${selectedMembers.value.length} 个成员吗？\n${memberNames}\n\n此操作不可撤销。`)) {
     return
   }
 
   try {
     loading.value = true
-    
-    const deletePromises = selectedMembers.value.map(id => 
+
+    const deletePromises = selectedMembers.value.map(id =>
       MemberService.deleteMember(id)
     )
-    
+
     await Promise.all(deletePromises)
-    
+
     selectedMembers.value = []
     await fetchMembers()
-    
-    console.log('批量删除成员成功')
   } catch (err: any) {
     console.error('批量删除成员失败:', err)
     error.value = '批量删除成员失败: ' + err.message
@@ -455,15 +512,7 @@ const batchDeleteMembers = async () => {
   }
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-
-function getAvatarUrl(avatar_url: string | undefined) {
-  if (!avatar_url) return '';
-  if (avatar_url.startsWith('http')) return avatar_url;
-  return API_BASE_URL + avatar_url;
-}
-
-// 组件挂载时获取数据
+// 🔄 组件挂载
 onMounted(async () => {
   await Promise.all([
     fetchMembers(),
@@ -473,349 +522,280 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-/* 主容器样式，参照演出活动管理界面 */
+@use '@/assets/scss/variables' as *;
+
 .member-management {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  color: white;
   min-height: 100vh;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  position: relative;
-  overflow-y: auto;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 15px;
-}
-
-/* 内容容器 - 居中显示 */
-.content-container {
-  max-width: 1200px;
-  width: 100%;
+  padding: 2rem;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 20px;
-  background: transparent;
-  min-height: calc(100vh - 120px);
-  box-sizing: border-box;
-  position: relative;
-  z-index: 1;
-}
 
-.member-card {
-  background: #222;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease;
-  position: relative;
-}
-
-.member-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(229, 57, 53, 0.2);
-}
-
-.member-checkbox {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  z-index: 10;
-}
-
-.member-checkbox input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  accent-color: #ff9800;
-}
-
-
-
-/* 状态指示器样式（加载、错误），内容区加较小左右内边距 */
-.loading-state, .error-state {
-  text-align: center;
-  padding: 50px 4px; /* 上下和左右内边距 */
-  font-size: 1.2rem;
-  i {
-    font-size: 3rem; /* 图标大号显示 */
-    margin-bottom: 15px;
-    color: #e53935; /* 图标高亮色 */
-  }
-  button {
-    margin-top: 15px;
-    padding: 10px 20px;
-    background: linear-gradient(to right, #e53935, #e35d5b);
-    color: white;
-    border: none;
-    border-radius: 30px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
+  @media (max-width: 768px) {
+    padding: 1rem;
   }
 }
 
-/* 错误状态下的按钮样式，背景色更深 */
-.error-state {
-  button {
-    background: #333;
-  }
-}
-
-/* 成员列表区域，内容区加较小左右内边距 */
-.member-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* 自适应列宽 */
-  gap: 25px; /* 卡片间距 */
-  padding: 0 4px 20px 4px; /* 减少底部内边距，减小纵向间距 */
-  .member-item {
-    /* 单个成员卡片 */
-    .member-card {
-      background: #222; /* 卡片背景 */
-      border-radius: 8px; /* 圆角 */
-      overflow: hidden;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* 阴影 */
-      transition: transform 0.3s ease;
-      position: relative; /* 关键：为绝对定位提供上下文 */
-      
-      &:hover {
-        transform: translateY(-5px); /* 悬停上浮 */
-        box-shadow: 0 8px 20px rgba(229, 57, 53, 0.2); /* 悬停阴影 */
-      }
-
-      &.batch-mode {
-        .member-actions {
-          display: none; /* 批量模式下隐藏单个操作按钮 */
-        }
-      }
-      
-      .member-checkbox {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-        z-index: 10;
-        
-        input[type="checkbox"] {
-          width: 20px;
-          height: 20px;
-          cursor: pointer;
-          accent-color: #ff9800;
-        }
-      }
-
-      /* 成员头像区域 */
-      .member-image {
-        height: 200px;
-        background: #333;
-        position: relative;
-        overflow: hidden;
-
-        .avatar-wrapper {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          .member-avatar-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-          }
-
-          .avatar-placeholder {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #888;
-            font-size: 0.9rem;
-
-            i {
-              font-size: 3rem;
-              margin-bottom: 10px;
-              color: #666;
-            }
-          }
-        }
-      }
-
-      /* 成员信息区域 */
-      .member-info {
-        padding: 15px 15px 60px 15px; /* 底部多留空间给按钮 */
-        flex: 1 1 auto;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-
-        .member-name {
-          font-size: 1.5rem;
-          font-weight: bold;
-          color: #e53935;
-          margin: 0 0 5px 0;
-          text-align: left;
-        }
-
-        .member-role {
-          font-size: 1rem;
-          color: #ccc;
-          margin: 0 0 5px 0;
-          text-align: left;
-        }
-
-        .member-band {
-          font-size: 0.9rem;
-          color: #aaa;
-          margin: 0 0 5px 0;
-          text-align: left;
-        }
-
-        .member-date {
-          font-size: 0.9rem;
-          color: #aaa;
-          margin: 0;
-          text-align: left;
-        }
-
-        /* 操作按钮区域 */
-        .member-actions {
-          /* 保证按钮区和文字区有足够间距 */
-          margin-top: 18px;
-        }
-      }
-
-      .member-actions {
-        position: absolute;
-        right: 15px;
-        bottom: 15px;
-        display: flex;
-        align-items: center;
-
-        .action-btn-group {
-          display: flex;
-          gap: 10px;
-
-          .action-btn {
-            flex: 1;
-            padding: 8px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-
-            &.edit {
-              background: linear-gradient(to right, #2196f3, #1976d2);
-              color: white;
-
-              &:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
-              }
-            }
-
-            &.delete {
-              background: linear-gradient(to right, #dc3545, #c82333);
-              color: white;
-
-              &:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-/* 分页控件样式 */
-.pagination {
+// 🎨 工具栏样式
+.toolbar {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  gap: 15px;
-  padding: 30px 4px; /* 减少左右内边距 */
-  margin-top: 20px;
-}
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba($darkgray, 0.7);
+  backdrop-filter: blur(8px);
+  border: $border-light;
+  border-radius: $border-radius-xl;
 
-.page-btn {
-  padding: 10px 15px;
-  border: 1px solid #555; /* 深色边框 */
-  background: #333; /* 深色背景 */
-  color: white;
-  border-radius: 30px; /* 圆角按钮 */
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 500;
-  &:hover:not(:disabled) {
-    background: linear-gradient(to right, #e53935, #e35d5b); /* 红色渐变悬停 */
-    border-color: #e53935;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(229, 57, 53, 0.3);
-  }
-  &:disabled {
-    background: #555;
-    color: #888;
-    cursor: not-allowed;
-    border-color: #555;
-  }
-}
-
-.page-info {
-  font-weight: 500;
-  color: white; /* 白色文字 */
-  font-size: 1rem;
-}
-
-/* 响应式设计 */
-@media (max-width: 1024px) {
-  .member-list {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
-  }
-}
-@media (max-width: 768px) {
-  .member-management {
-    padding-left: 15px;
-    padding-right: 15px;
+  .toolbar-left {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
   }
 
-  .member-list {
-    grid-template-columns: 1fr;
-    gap: 15px;
-  }
-  .member-item .member-card .member-image {
-    height: 150px;
-  }
-  .member-item .member-card .member-info {
-    padding: 12px;
-    .member-name {
-      font-size: 1.3rem;
-    }
-    .member-actions {
-      flex-direction: column;
-      gap: 8px;
-      .action-btn {
-        width: 100%;
-        justify-content: center;
-      }
+  .toolbar-right {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+
+    .selection-count {
+      color: $primary;
+      font-weight: 500;
+      font-size: 0.875rem;
     }
   }
-  .pagination {
+
+  @media (max-width: 768px) {
     flex-direction: column;
-    gap: 10px;
-    .page-btn {
+    gap: 1rem;
+
+    .toolbar-left,
+    .toolbar-right {
       width: 100%;
       justify-content: center;
     }
   }
 }
+
+// 🎵 成员网格样式
+.members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .member-item {
+    position: relative;
+
+    &.selected {
+      transform: scale(0.98);
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border: 2px solid $primary;
+        border-radius: $border-radius-xl;
+        pointer-events: none;
+        z-index: 1;
+      }
+    }
+
+    .batch-checkbox {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      z-index: 10;
+
+      .checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: $primary;
+        border-radius: 4px;
+      }
+    }
+  }
+}
+
+// 🎨 成员卡片样式
+.member-card {
+  padding: 2rem;
+  text-align: center;
+
+  .member-avatar {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 1.5rem;
+
+    .avatar-image {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid rgba($primary, 0.3);
+      transition: all $transition-normal ease;
+    }
+
+    .avatar-placeholder {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: rgba($lightgray, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid rgba($primary, 0.3);
+
+      i {
+        font-size: 2.5rem;
+        color: $gray-400;
+      }
+    }
+
+    .status-indicator {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      width: 16px;
+      height: 16px;
+      background: #10b981;
+      border-radius: 50%;
+      border: 2px solid $darkgray;
+    }
+  }
+
+  .member-content {
+    .member-name {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+      color: $white;
+    }
+
+    .member-role {
+      color: $primary;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+    }
+
+    .member-band,
+    .member-date {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      color: $gray-400;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+
+      i {
+        color: $primary;
+        width: 16px;
+      }
+    }
+
+    .member-actions {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+
+      .action-btn {
+        background: none;
+        border: none;
+        color: $gray-400;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: $border-radius-sm;
+        transition: all $transition-fast ease;
+
+        &:hover {
+          color: $primary;
+          background: rgba($primary, 0.1);
+        }
+
+        &.delete:hover {
+          color: #ef4444;
+          background: rgba(#ef4444, 0.1);
+        }
+      }
+    }
+  }
+
+  &:hover {
+    .member-avatar .avatar-image {
+      border-color: rgba($primary, 0.6);
+      transform: scale(1.05);
+    }
+  }
+}
+
+// 🎯 分页样式
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  margin-top: 3rem;
+
+  .page-numbers {
+    .page-info {
+      color: $gray-300;
+      font-size: 0.875rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+// 🔄 加载和错误状态
+.loading-section,
+.error-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+
+  .loading-content,
+  .error-content {
+    text-align: center;
+
+    .loading-spinner {
+      font-size: 3rem;
+      color: $primary;
+      margin-bottom: 1rem;
+    }
+
+    i {
+      font-size: 3rem;
+      color: #ef4444;
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+      color: $white;
+    }
+
+    p {
+      color: $gray-400;
+      margin: 0 0 2rem;
+    }
+  }
+}
+
+
 </style>

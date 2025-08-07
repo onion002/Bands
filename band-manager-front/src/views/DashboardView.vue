@@ -1,136 +1,156 @@
 <template>
   <div class="dashboard">
-    <!-- 顶部导航 -->
-    <nav class="dashboard-nav">
-      <div class="nav-content">
-        <div class="nav-left">
-          <h1 class="nav-title">
-            <i class="fas fa-music"></i>
-            乐队管理系统
-          </h1>
-        </div>
-        <div class="nav-right">
-          <div class="user-info">
-            <span class="welcome-text">欢迎，{{ authStore.displayName }}</span>
-            <div class="user-menu">
-              <button class="user-avatar" @click="showUserMenu = !showUserMenu">
-                <i class="fas fa-user-circle"></i>
-              </button>
-              <div v-if="showUserMenu" class="user-dropdown">
-                <router-link to="/profile" class="dropdown-item">
-                  <i class="fas fa-user"></i>
-                  个人资料
-                </router-link>
-                <button @click="handleLogout" class="dropdown-item">
-                  <i class="fas fa-sign-out-alt"></i>
-                  退出登录
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+    <!-- 🎵 页面头部 -->
+    <div class="page-header">
+      <h1>
+        <span class="gradient-text">管理员仪表板</span>
+      </h1>
+      <p>欢迎回来，{{ authStore.displayName }}！管理您的音乐世界</p>
+    </div>
+
+    <!-- ⚠️ 错误提示 -->
+    <div v-if="error" class="error-section">
+      <div class="error-content">
+        <i class="fa fa-exclamation-triangle"></i>
+        <h3>加载失败</h3>
+        <p>{{ error }}</p>
+        <button @click="loadStats" class="btn btn-primary">
+          <i class="fa fa-refresh"></i>
+          重新加载
+        </button>
       </div>
-    </nav>
+    </div>
 
-    <!-- 主要内容 -->
-    <div class="dashboard-content">
-      <!-- 欢迎区域 -->
-      <div class="welcome-section">
-        <h2>管理员仪表板</h2>
-        <p>管理您的乐队、成员和活动信息</p>
-      </div>
-
-      <!-- 错误提示 -->
-      <div v-if="error" class="error-message">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span>{{ error }}</span>
-        <button @click="loadStats" class="retry-btn">重试</button>
-      </div>
-
-      <!-- 统计卡片 -->
-      <div class="stats-grid">
-        <div class="stat-card" :class="{ loading }">
-          <div class="stat-icon bands">
-            <i class="fas fa-music"></i>
-          </div>
-          <div class="stat-content">
-            <h3>{{ loading ? '...' : stats.bands }}</h3>
-            <p>乐队数量</p>
-          </div>
+    <!-- 🎨 统计卡片网格 -->
+    <div class="stats-grid">
+      <div class="stat-card card card-interactive" :class="{ loading }">
+        <div class="stat-icon bands">
+          <i class="fa fa-music"></i>
         </div>
-
-        <div class="stat-card" :class="{ loading }">
-          <div class="stat-icon members">
-            <i class="fas fa-users"></i>
-          </div>
-          <div class="stat-content">
-            <h3>{{ loading ? '...' : stats.members }}</h3>
-            <p>成员总数</p>
-          </div>
-        </div>
-
-        <div class="stat-card" :class="{ loading }">
-          <div class="stat-icon events">
-            <i class="fas fa-calendar-alt"></i>
-          </div>
-          <div class="stat-content">
-            <h3>{{ loading ? '...' : stats.events }}</h3>
-            <p>活动数量</p>
-          </div>
-        </div>
-
-        <div class="stat-card" :class="{ loading }">
-          <div class="stat-icon active">
-            <i class="fas fa-chart-line"></i>
-          </div>
-          <div class="stat-content">
-            <h3>{{ loading ? '...' : stats.activeEvents }}</h3>
-            <p>进行中活动</p>
+        <div class="stat-content">
+          <div class="stat-number">{{ loading ? '...' : stats.bands }}</div>
+          <div class="stat-label">乐队数量</div>
+          <div class="stat-trend">
+            <i class="fa fa-arrow-up"></i>
+            <span>+12%</span>
           </div>
         </div>
       </div>
 
-      <!-- 快速操作 -->
-      <div class="quick-actions">
-        <h3>快速操作</h3>
-        <div class="action-grid">
-          <router-link to="/bands" class="action-card">
-            <i class="fas fa-plus-circle"></i>
-            <span>添加乐队</span>
-          </router-link>
-          
-          <router-link to="/members" class="action-card">
-            <i class="fas fa-user-plus"></i>
-            <span>添加成员</span>
-          </router-link>
-          
-          <router-link to="/events" class="action-card">
-            <i class="fas fa-calendar-plus"></i>
-            <span>创建活动</span>
-          </router-link>
-          
-          <router-link to="/gallery" class="action-card">
-            <i class="fas fa-images"></i>
-            <span>图片管理</span>
-          </router-link>
+      <div class="stat-card card card-interactive" :class="{ loading }">
+        <div class="stat-icon members">
+          <i class="fa fa-users"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-number">{{ loading ? '...' : stats.members }}</div>
+          <div class="stat-label">成员总数</div>
+          <div class="stat-trend">
+            <i class="fa fa-arrow-up"></i>
+            <span>+8%</span>
+          </div>
         </div>
       </div>
 
-      <!-- 最近活动 -->
-      <div class="recent-section">
-        <h3>最近活动</h3>
-        <div class="recent-list">
-          <div v-if="recentActivities.length === 0" class="empty-state">
-            <i class="fas fa-inbox"></i>
-            <p>暂无最近活动</p>
+      <div class="stat-card card card-interactive" :class="{ loading }">
+        <div class="stat-icon events">
+          <i class="fa fa-calendar"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-number">{{ loading ? '...' : stats.events }}</div>
+          <div class="stat-label">活动数量</div>
+          <div class="stat-trend">
+            <i class="fa fa-arrow-up"></i>
+            <span>+15%</span>
           </div>
-          <div v-else v-for="activity in recentActivities" :key="activity.id" class="activity-item">
-            <div class="activity-icon">
+        </div>
+      </div>
+
+      <div class="stat-card card card-interactive" :class="{ loading }">
+        <div class="stat-icon active">
+          <i class="fa fa-chart-line"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-number">{{ loading ? '...' : stats.activeEvents }}</div>
+          <div class="stat-label">进行中活动</div>
+          <div class="stat-trend">
+            <i class="fa fa-arrow-up"></i>
+            <span>+5%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🚀 快速操作区域 -->
+    <div class="quick-actions-section">
+      <h2 class="section-title">
+        <i class="fa fa-bolt"></i>
+        快速操作
+      </h2>
+      <div class="actions-grid">
+        <router-link to="/bands" class="action-card card card-interactive">
+          <div class="action-icon bands">
+            <i class="fa fa-plus-circle"></i>
+          </div>
+          <div class="action-content">
+            <h3>添加乐队</h3>
+            <p>创建新的乐队信息</p>
+          </div>
+        </router-link>
+
+        <router-link to="/members" class="action-card card card-interactive">
+          <div class="action-icon members">
+            <i class="fa fa-user-plus"></i>
+          </div>
+          <div class="action-content">
+            <h3>添加成员</h3>
+            <p>为乐队添加新成员</p>
+          </div>
+        </router-link>
+
+        <router-link to="/events" class="action-card card card-interactive">
+          <div class="action-icon events">
+            <i class="fa fa-calendar-plus"></i>
+          </div>
+          <div class="action-content">
+            <h3>创建活动</h3>
+            <p>安排新的演出活动</p>
+          </div>
+        </router-link>
+
+        <router-link to="/gallery" class="action-card card card-interactive">
+          <div class="action-icon gallery">
+            <i class="fa fa-images"></i>
+          </div>
+          <div class="action-content">
+            <h3>图片管理</h3>
+            <p>管理乐队相关图片</p>
+          </div>
+        </router-link>
+      </div>
+    </div>
+
+    <!-- 📈 最近活动时间线 -->
+    <div class="recent-activities-section">
+      <h2 class="section-title">
+        <i class="fa fa-clock"></i>
+        最近活动
+      </h2>
+      <div class="activities-timeline">
+        <div v-if="recentActivities.length === 0" class="empty-state">
+          <div class="empty-icon">
+            <i class="fa fa-inbox"></i>
+          </div>
+          <h3>暂无最近活动</h3>
+          <p>开始管理您的乐队，活动记录将在这里显示</p>
+        </div>
+        <div v-else class="timeline">
+          <div v-for="activity in recentActivities" :key="activity.id" class="timeline-item">
+            <div class="timeline-marker">
               <i :class="activity.icon"></i>
             </div>
-            <div class="activity-content">
-              <p class="activity-text">{{ activity.text }}</p>
-              <span class="activity-time">{{ activity.time }}</span>
+            <div class="timeline-content card">
+              <div class="activity-text">{{ activity.text }}</div>
+              <div class="activity-time">{{ activity.time }}</div>
             </div>
           </div>
         </div>
@@ -141,11 +161,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { getDashboardStats, getRecentActivities, type DashboardStats, type RecentActivity } from '@/api/statsService'
 
-const router = useRouter()
 const authStore = useAuthStore()
 
 // 界面状态
@@ -164,11 +182,7 @@ const stats = ref<DashboardStats>({
 // 最近活动
 const recentActivities = ref<RecentActivity[]>([])
 
-// 处理登出
-const handleLogout = () => {
-  authStore.logout()
-  router.push('/auth/login')
-}
+
 
 // 加载统计数据
 const loadStats = async () => {
@@ -229,337 +243,293 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '@/assets/scss/variables' as *;
+
 .dashboard {
   min-height: 100vh;
-  background: #f7fafc;
-}
-
-.dashboard-nav {
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 1rem 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.nav-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.nav-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #2d3748;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0;
-}
-
-.nav-title i {
-  color: #667eea;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.welcome-text {
-  color: #4a5568;
-  font-weight: 500;
-}
-
-.user-menu {
-  position: relative;
-}
-
-.user-avatar {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #667eea;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 50%;
-  transition: background 0.2s;
-}
-
-.user-avatar:hover {
-  background: rgba(102, 126, 234, 0.1);
-}
-
-.user-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-width: 150px;
-  z-index: 1000;
-}
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  color: #4a5568;
-  text-decoration: none;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.dropdown-item:hover {
-  background: #f7fafc;
-}
-
-.dashboard-content {
-  max-width: 1200px;
-  margin: 0 auto;
   padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 }
 
-.welcome-section {
-  margin-bottom: 2rem;
-}
-
-.welcome-section h2 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #2d3748;
-  margin-bottom: 0.5rem;
-}
-
-.welcome-section p {
-  color: #718096;
-  font-size: 1.1rem;
-}
-
-.error-message {
-  background: #fed7d7;
-  border: 1px solid #fc8181;
-  color: #c53030;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.retry-btn {
-  background: #c53030;
-  color: white;
-  border: none;
-  padding: 0.25rem 0.75rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  margin-left: auto;
-}
-
-.retry-btn:hover {
-  background: #9c2626;
-}
-
+// 🎨 统计卡片网格
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
   margin-bottom: 3rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
 }
 
 .stat-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-}
-
-.stat-card.loading {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-.stat-card.loading .stat-content h3 {
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  color: white;
-}
-
-.stat-icon.bands { background: linear-gradient(135deg, #667eea, #764ba2); }
-.stat-icon.members { background: linear-gradient(135deg, #f093fb, #f5576c); }
-.stat-icon.events { background: linear-gradient(135deg, #4facfe, #00f2fe); }
-.stat-icon.active { background: linear-gradient(135deg, #43e97b, #38f9d7); }
-
-.stat-content h3 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #2d3748;
-  margin: 0 0 0.25rem 0;
-}
-
-.stat-content p {
-  color: #718096;
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-.quick-actions, .recent-section {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.quick-actions h3, .recent-section h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 1rem;
-}
-
-.action-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-.action-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1.5rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
-  text-decoration: none;
-  color: #4a5568;
-  transition: all 0.2s;
-}
-
-.action-card:hover {
-  border-color: #667eea;
-  color: #667eea;
-  transform: translateY(-2px);
-}
-
-.action-card i {
-  font-size: 2rem;
-}
-
-.recent-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.empty-state {
-  text-align: center;
+  gap: 1.5rem;
   padding: 2rem;
-  color: #a0aec0;
+
+  &.loading {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .stat-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: $white;
+
+    &.bands {
+      background: linear-gradient(135deg, $primary, rgba($primary, 0.7));
+    }
+
+    &.members {
+      background: linear-gradient(135deg, $secondary, rgba($secondary, 0.7));
+    }
+
+    &.events {
+      background: linear-gradient(135deg, #10b981, rgba(#10b981, 0.7));
+    }
+
+    &.active {
+      background: linear-gradient(135deg, #f59e0b, rgba(#f59e0b, 0.7));
+    }
+  }
+
+  .stat-content {
+    flex: 1;
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: $white;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      color: $gray-400;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .stat-trend {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      color: #10b981;
+
+      i {
+        font-size: 0.75rem;
+      }
+    }
+  }
 }
 
-.empty-state i {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+// 🚀 快速操作区域
+.quick-actions-section {
+  margin-bottom: 3rem;
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: $white;
+    margin-bottom: 2rem;
+
+    i {
+      color: $primary;
+    }
+  }
+
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .action-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: inherit;
+
+    .action-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: $white;
+
+      &.bands {
+        background: rgba($primary, 0.2);
+        color: $primary;
+      }
+
+      &.members {
+        background: rgba($secondary, 0.2);
+        color: $secondary;
+      }
+
+      &.events {
+        background: rgba(#10b981, 0.2);
+        color: #10b981;
+      }
+
+      &.gallery {
+        background: rgba(#f59e0b, 0.2);
+        color: #f59e0b;
+      }
+    }
+
+    .action-content {
+      h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: $white;
+        margin: 0 0 0.25rem;
+      }
+
+      p {
+        color: $gray-400;
+        font-size: 0.875rem;
+        margin: 0;
+      }
+    }
+
+    &:hover {
+      .action-icon {
+        transform: scale(1.1);
+      }
+    }
+  }
 }
 
-.activity-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  transition: background 0.2s;
+// 📈 最近活动时间线
+.recent-activities-section {
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: $white;
+    margin-bottom: 2rem;
+
+    i {
+      color: $primary;
+    }
+  }
+
+  .activities-timeline {
+    .timeline {
+      position: relative;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 20px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: rgba($primary, 0.3);
+      }
+
+      .timeline-item {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+
+        .timeline-marker {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: $primary;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: $white;
+          font-size: 1rem;
+          z-index: 1;
+          flex-shrink: 0;
+        }
+
+        .timeline-content {
+          flex: 1;
+          padding: 1rem;
+
+          .activity-text {
+            color: $white;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+          }
+
+          .activity-time {
+            color: $gray-400;
+            font-size: 0.875rem;
+          }
+        }
+      }
+    }
+  }
 }
 
-.activity-item:hover {
-  background: #f7fafc;
-}
-
-.activity-icon {
-  width: 40px;
-  height: 40px;
-  background: #667eea;
-  color: white;
-  border-radius: 50%;
+// 🔄 加载和错误状态
+.error-section {
   display: flex;
   align-items: center;
   justify-content: center;
-}
+  min-height: 200px;
+  margin-bottom: 2rem;
 
-.activity-content {
-  flex: 1;
-}
+  .error-content {
+    text-align: center;
 
-.activity-text {
-  margin: 0 0 0.25rem 0;
-  color: #2d3748;
-  font-weight: 500;
-}
+    i {
+      font-size: 3rem;
+      color: #ef4444;
+      margin-bottom: 1rem;
+    }
 
-.activity-time {
-  color: #a0aec0;
-  font-size: 0.8rem;
-}
+    h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+      color: $white;
+    }
 
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .nav-content {
-    padding: 0 1rem;
-  }
-  
-  .dashboard-content {
-    padding: 1rem;
-  }
-  
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .action-grid {
-    grid-template-columns: repeat(2, 1fr);
+    p {
+      color: $gray-400;
+      margin: 0 0 2rem;
+    }
   }
 }
+
+
 </style>

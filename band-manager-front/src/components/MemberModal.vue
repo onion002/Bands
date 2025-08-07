@@ -254,266 +254,370 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '@/assets/scss/variables' as *;
+
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
+  inset: 0;
+  background: rgba($dark, 0.8);
+  backdrop-filter: blur(4px);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   z-index: 1000;
+  padding: 2rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 }
 
 .modal-container {
-  background: linear-gradient(135deg, #1e1e2e, #2c2c3e);
-  border-radius: 12px;
-  width: 500px;
+  background: linear-gradient(135deg, rgba($darkgray, 0.95), rgba($lightgray, 0.9));
+  backdrop-filter: blur(20px);
+  border-radius: $border-radius-xl;
+  width: 550px;
   max-width: 90vw;
-  max-height: auto;
-  overflow-y: auto;
-  overflow-x: hidden;
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(229, 57, 53, 0.3);
-  box-sizing: border-box;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow:
+    0 25px 50px rgba($dark, 0.5),
+    0 0 0 1px rgba($primary, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: modalSlideIn $transition-normal ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
-  background: rgba(229, 57, 53, 0.8);
-}
+  padding: 2rem 2rem 1rem;
+  background: linear-gradient(135deg, rgba($primary, 0.1), rgba($secondary, 0.05));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 
-.modal-header h2 {
-  margin: 0;
-  color: white;
-  font-size: 1.6rem;
+  h2 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    background: $gradient-primary;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 2px 10px rgba($primary, 0.3);
+  }
 }
 
 .close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: $gray-400;
   cursor: pointer;
-  color: white;
-  padding: 5px;
-  border-radius: 4px;
-  transition: background-color 0.2s, transform 0.3s;
-}
-.close-btn:hover {
-  background-color: rgba(255,255,255,0.1);
-  color: #fff;
-  transform: rotate(90deg);
+  padding: 0.75rem;
+  border-radius: 50%;
+  transition: all $transition-fast ease;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+
+  &:hover {
+    color: $white;
+    background: rgba($primary, 0.2);
+    border-color: rgba($primary, 0.4);
+    transform: rotate(90deg);
+  }
 }
 
 .modal-body {
-  padding: 20px;
-  box-sizing: border-box;
+  padding: 2rem;
+  max-height: 60vh;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($primary, 0.5);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba($primary, 0.7);
+    }
+  }
 }
 
 .form-group {
-  margin-bottom: 16px;
-  width: 100%;
-  max-width: 400px;
-  min-width: 200px;
-  margin-left: auto;
-  margin-right: auto;
-  box-sizing: border-box;
-}
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #ccc;
-}
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  max-width: 400px;
-  min-width: 200px;
-  margin-left: auto;
-  margin-right: auto;
-  display: block;
-  box-sizing: border-box;
-  padding: 12px 15px;
-  border: none;
-  border-radius: 6px;
-  background: rgba(255,255,255,0.15);
-  color: white;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-}
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  background: rgba(255,255,255,0.15);
-  box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.5);
+  margin-bottom: 1.5rem;
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: $white;
+    font-size: 0.875rem;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    background: rgba($lightgray, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: $border-radius-lg;
+    color: $white;
+    font-size: 0.9rem;
+    transition: all $transition-normal ease;
+    backdrop-filter: blur(10px);
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $primary;
+      background: rgba($lightgray, 0.6);
+      box-shadow:
+        0 0 0 3px rgba($primary, 0.15),
+        0 4px 12px rgba($primary, 0.1);
+      transform: translateY(-1px);
+    }
+
+    &:hover:not(:focus) {
+      border-color: rgba(255, 255, 255, 0.25);
+      background: rgba($lightgray, 0.5);
+    }
+  }
 }
 
-/* 头像上传区域样式适配深色 */
+// 🌟 头像上传区域
 .avatar-section {
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: $border-radius-lg;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
 .avatar-upload-area {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 15px;
+  gap: 1.5rem;
+
+  input[type="file"] {
+    display: none;
+  }
 }
-.avatar-upload-area input[type="file"] {
-  display: none;
-}
+
 .avatar-preview {
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #23232e;
+  background: rgba($primary, 0.1);
+  border: 3px solid rgba($primary, 0.3);
+  transition: all $transition-normal ease;
+  position: relative;
+
+  &:hover {
+    border-color: rgba($primary, 0.5);
+    transform: scale(1.05);
+  }
+
+  .avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .avatar-placeholder {
+    color: rgba($primary, 0.7);
+    font-size: 2.5rem;
+  }
 }
-.avatar-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.avatar-placeholder {
-  color: #888;
-  font-size: 2rem;
-}
+
 .avatar-actions {
   display: flex;
-  gap: 10px;
+  gap: 1rem;
   flex-wrap: wrap;
   justify-content: center;
 }
+
 .upload-avatar-btn,
 .remove-avatar-btn {
-  padding: 8px 16px;
+  padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 50px;
   cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s;
+  font-weight: 600;
+  font-size: 0.875rem;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 0.5rem;
 }
+
 .upload-avatar-btn {
-  background: linear-gradient(to right, #1976d2, #2196f3);
+  background: linear-gradient(135deg, $primary, $secondary);
   color: white;
+  box-shadow: 0 4px 15px rgba($primary, 0.3);
+
+  &:hover {
+    background: linear-gradient(135deg, darken($primary, 10%), darken($secondary, 10%));
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba($primary, 0.4);
+  }
 }
-.upload-avatar-btn:hover {
-  background: #1565c0;
-}
+
 .remove-avatar-btn {
-  background: rgba(229, 57, 53, 0.8);
+  background: rgba(239, 68, 68, 0.8);
   color: white;
-}
-.remove-avatar-btn:hover {
-  background: #b71c1c;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+
+  &:hover {
+    background: rgba(239, 68, 68, 1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+  }
 }
 
-.form-group select {
-  background: #23232e;
-  color: #fff;
-}
-.form-group select option {
-  background: #23232e;
-  color: #fff;
+// 选择框样式
+select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 3rem;
+  cursor: pointer;
+
+  option {
+    background: $darkgray;
+    color: $white;
+    padding: 0.5rem;
+  }
 }
 
-/* 只保留原生 input[type=date] 的深色样式，删除无用的第三方日期组件样式 */
+// 日期输入框样式
 .custom-date-input[type="date"] {
-  background: #23232e;
-  color: #fff;
-  border: none;
-  width: 100%;
-  max-width: 400px;
-  min-width: 200px;
-  margin-left: auto;
-  margin-right: auto;
-  display: block;
-  box-sizing: border-box;
-  padding: 12px 15px;
-  font-size: 1rem;
-  height: 43px;
-  border-radius: 6px;
-}
-.custom-date-input[type="date"]::-webkit-input-placeholder { color: #888; }
-.custom-date-input[type="date"]::-moz-placeholder { color: #888; }
-.custom-date-input[type="date"]:-ms-input-placeholder { color: #888; }
-.custom-date-input[type="date"]::placeholder { color: #888; }
+  &::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+  }
 
-.form-group input[type="text"] {
-  background: #23232e;
-  color: #fff;
-  border: none;
-  width: 100%;
-  max-width: 400px;
-  min-width: 200px;
-  margin-left: auto;
-  margin-right: auto;
-  display: block;
-  box-sizing: border-box;
-  padding: 12px 15px;
-  font-size: 1rem;
-  height: 43px;
-  border-radius: 6px;
+  &::-webkit-input-placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  &::-moz-placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  &:-ms-input-placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
 }
 
+// 表单按钮区域
 .form-buttons {
   display: flex;
   justify-content: flex-end;
-  gap: 15px;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #333;
-}
-.cancel-btn,
-.save-btn {
-  padding: 12px 30px;
-  border: none;
-  border-radius: 30px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-}
-.cancel-btn {
-  background: rgba(255,255,255,0.1);
-  color: #ccc;
-}
-.cancel-btn:hover {
-  background: rgba(255,255,255,0.2);
-}
-.save-btn {
-  background: linear-gradient(to right, #e53935, #e35d5b);
-  color: white;
-}
-.save-btn:hover {
-  box-shadow: 0 5px 15px rgba(229, 57, 53, 0.4);
-  transform: translateY(-2px);
+  gap: 1rem;
+  margin-top: 2rem;
+  padding: 1rem 2rem 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    padding: 1rem;
+  }
 }
 
-@media (max-width: 600px) {
-  .modal-container {
-    width: 98vw;
-    max-width: 98vw;
-    min-width: 0;
-    padding: 0;
+.cancel-btn,
+.save-btn {
+  padding: 0.875rem 2rem;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all $transition-normal ease;
+  min-width: 120px;
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
   }
+}
+
+.save-btn {
+  background: linear-gradient(135deg, $primary, $secondary);
+  color: white;
+  box-shadow: 0 4px 15px rgba($primary, 0.3);
+
+  &:hover {
+    background: linear-gradient(135deg, darken($primary, 10%), darken($secondary, 10%));
+    box-shadow: 0 6px 20px rgba($primary, 0.4);
+    transform: translateY(-2px);
+  }
+
+  &:disabled {
+    background: rgba(255, 255, 255, 0.2);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-container {
+    width: 95vw;
+    margin: 1rem;
+  }
+
+  .modal-header,
   .modal-body {
-    padding: 10px;
+    padding: 1.5rem;
+  }
+
+  .form-buttons {
+    padding: 1rem 1.5rem 1.5rem;
   }
 }
 </style>

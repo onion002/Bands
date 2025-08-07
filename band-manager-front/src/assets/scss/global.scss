@@ -1,21 +1,183 @@
 // src/assets/scss/global.scss
 @use 'variables' as *;
+@use 'animations' as *;
 
+// 🎨 Google Fonts 导入
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@500;600;700;800&display=swap');
 
+// 🌟 全局重置和基础样式
+* {
+  box-sizing: border-box;
+}
 
+html {
+  scroll-behavior: smooth;
+}
 
 body {
-  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-family: $font-family-base;
   color: $text-color;
+  background-color: $dark;
   margin: 0;
   padding: 0;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  // 添加噪点纹理背景
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGZpbHRlcj0idXJsKCNhKSIgb3BhY2l0eT0iLjA1IiBkPSJNMCAwaDMwMHYzMDBIMHoiLz48L3N2Zz4=');
+}
+
+// 🎯 滚动条样式
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: $darkgray;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $lightgray;
+  border-radius: 4px;
+
+  &:hover {
+    background: rgba($primary, 0.6);
+  }
+}
+
+// 隐藏滚动条的工具类
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// 🌟 通用工具类
+.text-gradient {
+  background: $gradient-primary;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.bg-noise {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyZTJlMmUiIGZpbGwtb3BhY2l0eT0iLjEiPjxwYXRoIGQ9Ik0zNiAxOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMC0xOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMTggMGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHoiLz48L2c+PC9nPjwvc3ZnPg==');
+}
+
+.backdrop-blur {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+// 🎨 优化的动画类 - 现在从 _animations.scss 导入
+// 移除重复的动画定义，使用优化版本
+
+// 🎯 优化的按钮样式
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: $border-radius-lg;
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-decoration: none;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  // 性能优化：只过渡必要的属性
+  transition:
+    transform $transition-normal cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow $transition-normal cubic-bezier(0.4, 0, 0.2, 1),
+    background-color $transition-normal cubic-bezier(0.4, 0, 0.2, 1);
+  // 启用硬件加速
+  will-change: transform;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    will-change: auto;
+  }
+
+  // 主要按钮
+  &.btn-primary {
+    background: $primary;
+    color: $white;
+
+    &:hover:not(:disabled) {
+      background: rgba($primary, 0.9);
+      transform: translateY(-2px) translateZ(0);
+      box-shadow: $shadow-primary;
+    }
+
+    &:active {
+      transform: translateY(0) translateZ(0);
+      transition-duration: 0.1s;
+    }
+  }
+
+  // 次要按钮
+  &.btn-secondary {
+    background: transparent;
+    color: $white;
+    border: 2px solid $secondary;
+
+    &:hover:not(:disabled) {
+      background: rgba($secondary, 0.1);
+      transform: translateY(-2px);
+      box-shadow: $shadow-secondary;
+    }
+  }
+
+  // 轮廓按钮
+  &.btn-outline {
+    background: transparent;
+    color: $gray-300;
+    border: 1px solid rgba($white, 0.2);
+
+    &:hover:not(:disabled) {
+      background: rgba($white, 0.1);
+      color: $white;
+      border-color: rgba($white, 0.3);
+    }
+  }
+
+  // 危险按钮
+  &.btn-danger {
+    background: #ef4444;
+    color: $white;
+
+    &:hover:not(:disabled) {
+      background: #dc2626;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+    }
+  }
+
+  // 大小变体
+  &.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  &.btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+  }
 }
 
 @media (max-width: 1200px) {
   .band-showcase {
     .showcase-container {
       width: 95%;
-      
+
       .band-card {
         flex: 0 0 45%; /* 平板设备显示两个 */
       }
@@ -67,9 +229,171 @@ body {
   }
 }
 
+// 🎨 优化的卡片样式
+.card {
+  background: $darkgray;
+  border: $border-light;
+  border-radius: $border-radius-xl;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  // 性能优化：分离过渡属性
+  transition:
+    transform $transition-normal cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow $transition-normal cubic-bezier(0.4, 0, 0.2, 1),
+    border-color $transition-normal cubic-bezier(0.4, 0, 0.2, 1);
+  // 启用硬件加速
+  will-change: transform;
+
+  &:hover {
+    border-color: rgba($primary, 0.5);
+    transform: translateY(-4px) translateZ(0);
+    box-shadow: $shadow-dark;
+  }
+
+  &.card-interactive {
+    cursor: pointer;
+
+    &:hover {
+      transform: scale(1.02) translateZ(0);
+      box-shadow: $shadow-primary;
+    }
+  }
+
+  &.card-dark {
+    background: $dark;
+  }
+
+  &.card-gradient {
+    background: $gradient-dark;
+  }
+
+  // 动画完成后清理 will-change
+  &:not(:hover) {
+    will-change: auto;
+  }
+}
+
+// 🎯 表单样式
+.form-group {
+  margin-bottom: 1.5rem;
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: $gray-300;
+    font-size: 0.875rem;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba($lightgray, 0.3);
+    border: 1px solid rgba($lightgray, 0.5);
+    border-radius: $border-radius-md;
+    color: $white;
+    font-size: 0.875rem;
+    transition: all $transition-normal ease;
+
+    &:focus {
+      outline: none;
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.1);
+      background: rgba($lightgray, 0.5);
+    }
+
+    &::placeholder {
+      color: $gray-400;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  select.form-control {
+    cursor: pointer;
+  }
+}
+
+// 🌟 模态框样式
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba($dark, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal {
+  background: $darkgray;
+  border: $border-light;
+  border-radius: $border-radius-xl;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+
+  .modal-header {
+    padding: 1.5rem 1.5rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    h3 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: $white;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: $gray-400;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 50%;
+      transition: all $transition-fast ease;
+
+      &:hover {
+        color: $white;
+        background: rgba($white, 0.1);
+      }
+    }
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+
+  .modal-footer {
+    padding: 0 1.5rem 1.5rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+  }
+}
+
 .band-management {
-  background-color: #111;
-  color: white;
+  background-color: $dark;
+  color: $white;
   min-height: 100vh;
   padding: 20px;
   position: relative;

@@ -1,36 +1,34 @@
 <template>
-  <div id="app">
-    <!-- 导航栏容器 -->
-    <div class="nav-container">
-      <NavHeader />
-    </div>
-    
-    <!-- 主内容区 -->
-    <main>
-      <router-view></router-view>
+  <div id="app" class="bg-noise">
+    <!-- 🎵 导航头部 -->
+    <NavHeader />
+
+    <!-- 🎨 主内容区域 -->
+    <main class="main-content">
+      <router-view />
     </main>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import NavHeader from '@/components/NavHeader.vue'
 </script>
 
-<style>
+<style lang="scss">
+@use '@/assets/scss/variables' as *;
+
 #app {
-  font-family: Arial, sans-serif;
-  width: 100%;
+  min-height: 100vh;
+  background: $dark;
+  color: $white;
+  font-family: $font-family-base;
 }
 
-.nav-container {
-  position: relative;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 1000;
+.main-content {
+  padding-top: 80px; // 为固定导航栏留出空间
+  min-height: calc(100vh - 80px);
 }
 
-main {
-  width: 100%;
-}
+// 🌟 Font Awesome 图标支持
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css');
 </style>

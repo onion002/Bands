@@ -1,3 +1,45 @@
 // src/assets/scss/_variables.scss
-$primary-color: #409eff;
-$text-color: #333;
+// 🎨 Musician 风格颜色系统
+$primary: #ff2a6d;        // 霓虹粉
+$secondary: #05d9e8;      // 霓虹蓝
+$dark: #121212;           // 深色背景
+$darkgray: #1e1e1e;       // 深灰色
+$lightgray: #2d2d2d;      // 浅灰色
+$white: #ffffff;          // 白色
+$gray-300: #d1d5db;       // 浅灰文字
+$gray-400: #9ca3af;       // 中灰文字
+$gray-500: #6b7280;       // 深灰文字
+
+// 兼容性变量
+$primary-color: $primary;
+$text-color: $white;
+$background-color: $dark;
+
+// 渐变色
+$gradient-primary: linear-gradient(135deg, $primary, $secondary);
+$gradient-dark: linear-gradient(135deg, $dark, $darkgray);
+
+// 阴影
+$shadow-primary: 0 10px 25px rgba(255, 42, 109, 0.2);
+$shadow-secondary: 0 10px 25px rgba(5, 217, 232, 0.2);
+$shadow-dark: 0 10px 25px rgba(0, 0, 0, 0.3);
+
+// 边框
+$border-primary: 1px solid rgba(255, 42, 109, 0.3);
+$border-secondary: 1px solid rgba(5, 217, 232, 0.3);
+$border-light: 1px solid rgba(255, 255, 255, 0.1);
+
+// 字体
+$font-family-base: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+$font-family-display: 'Montserrat', 'Inter', sans-serif;
+
+// 动画时长
+$transition-fast: 0.2s;
+$transition-normal: 0.3s;
+$transition-slow: 0.5s;
+
+// 圆角
+$border-radius-sm: 0.5rem;
+$border-radius-md: 0.75rem;
+$border-radius-lg: 1rem;
+$border-radius-xl: 1.5rem;

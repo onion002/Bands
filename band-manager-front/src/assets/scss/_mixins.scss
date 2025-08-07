@@ -1,0 +1,300 @@
+// 🎨 动画和过渡效果混合器
+// 性能优化的动画混合器系统
+
+@use 'variables' as *;
+
+// 🚀 硬件加速混合器
+@mixin hardware-acceleration {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+// 🎯 性能优化的过渡效果
+@mixin transition-optimized($properties: transform, $duration: $transition-normal, $easing: cubic-bezier(0.4, 0, 0.2, 1)) {
+  transition: #{$properties} #{$duration} #{$easing};
+  will-change: #{$properties};
+  
+  &:not(:hover):not(:focus):not(:active) {
+    will-change: auto;
+  }
+}
+
+// 🌟 悬停效果混合器
+@mixin hover-lift($distance: 4px, $shadow: $shadow-dark) {
+  @include transition-optimized(transform box-shadow);
+  
+  &:hover {
+    transform: translateY(-#{$distance}) translateZ(0);
+    box-shadow: #{$shadow};
+  }
+}
+
+@mixin hover-scale($scale: 1.05, $shadow: $shadow-primary) {
+  @include transition-optimized(transform box-shadow);
+  
+  &:hover {
+    transform: scale(#{$scale}) translateZ(0);
+    box-shadow: #{$shadow};
+  }
+}
+
+@mixin hover-glow($color: $primary, $intensity: 0.4) {
+  @include transition-optimized(box-shadow);
+  
+  &:hover {
+    box-shadow: 0 0 20px rgba(#{$color}, #{$intensity});
+  }
+}
+
+@mixin hover-rotate($angle: 5deg) {
+  @include transition-optimized(transform);
+  
+  &:hover {
+    transform: rotate(#{$angle}) translateZ(0);
+  }
+}
+
+// 🎵 音乐主题动画关键帧
+@keyframes music-pulse {
+  0%, 100% {
+    transform: scale3d(1, 1, 1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale3d(1.05, 1.05, 1.05);
+    opacity: 0.8;
+  }
+}
+
+@keyframes vinyl-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes waveform {
+  0% { transform: scaleY(0.5) scaleX(1); }
+  25% { transform: scaleY(1) scaleX(0.9); }
+  50% { transform: scaleY(0.3) scaleX(1.1); }
+  75% { transform: scaleY(0.8) scaleX(0.95); }
+  100% { transform: scaleY(0.5) scaleX(1); }
+}
+
+// 🎵 音乐主题动画混合器
+@mixin music-pulse($duration: 2s, $scale: 1.05) {
+  animation: music-pulse #{$duration} ease-in-out infinite;
+}
+
+@mixin vinyl-spin($duration: 3s) {
+  animation: vinyl-spin #{$duration} linear infinite;
+}
+
+@mixin waveform-animation($duration: 2s) {
+  animation: waveform #{$duration} ease-in-out infinite;
+}
+
+// 🌈 光效动画关键帧
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+// 🌈 光效动画混合器
+@mixin shimmer-effect($duration: 2s, $color: rgba(255, 255, 255, 0.3)) {
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #{$color}, transparent);
+    animation: shimmer #{$duration} ease-in-out infinite;
+  }
+}
+
+@keyframes text-glow {
+  0% {
+    text-shadow:
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 15px rgba(255, 255, 255, 0.5),
+      0 0 20px rgba(255, 255, 255, 0.5);
+  }
+  100% {
+    text-shadow:
+      0 0 10px currentColor,
+      0 0 20px currentColor,
+      0 0 30px rgba(255, 255, 255, 0.75),
+      0 0 40px rgba(255, 255, 255, 0.75);
+  }
+}
+
+@mixin glow-text($color: $primary, $intensity: 0.5) {
+  text-shadow:
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px rgba(#{$color}, #{$intensity}),
+    0 0 20px rgba(#{$color}, #{$intensity});
+  animation: text-glow 2s ease-in-out infinite alternate;
+}
+
+// 🎨 进入动画关键帧
+@keyframes fade-in-up {
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fade-in-left {
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+// 🎨 进入动画混合器
+@mixin fade-in-up($duration: 0.6s, $distance: 30px, $delay: 0s) {
+  opacity: 0;
+  transform: translate3d(0, #{$distance}, 0);
+  animation: fade-in-up #{$duration} ease-out #{$delay} forwards;
+}
+
+@mixin fade-in-left($duration: 0.6s, $distance: 30px, $delay: 0s) {
+  opacity: 0;
+  transform: translate3d(-#{$distance}, 0, 0);
+  animation: fade-in-left #{$duration} ease-out #{$delay} forwards;
+}
+
+@keyframes scale-in {
+  50% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+}
+
+@keyframes modal-enter {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes modal-backdrop {
+  to {
+    opacity: 1;
+  }
+}
+
+@mixin scale-in($duration: 0.4s, $scale: 0.3, $delay: 0s) {
+  opacity: 0;
+  transform: scale3d(#{$scale}, #{$scale}, #{$scale});
+  animation: scale-in #{$duration} ease-out #{$delay} forwards;
+}
+
+// 🎯 模态框动画混合器
+@mixin modal-enter($duration: 0.3s) {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.95);
+  animation: modal-enter #{$duration} ease-out forwards;
+}
+
+@mixin modal-backdrop($duration: 0.3s) {
+  opacity: 0;
+  animation: modal-backdrop #{$duration} ease-out forwards;
+}
+
+// 🌟 加载动画关键帧
+@keyframes loading-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes loading-dots {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+// 🌟 加载动画混合器
+@mixin loading-spinner($size: 20px, $color: $primary, $duration: 1s) {
+  width: #{$size};
+  height: #{$size};
+  border: 2px solid rgba(#{$color}, 0.3);
+  border-top: 2px solid #{$color};
+  border-radius: 50%;
+  animation: loading-spin #{$duration} linear infinite;
+}
+
+@mixin loading-dots($color: $primary, $size: 8px, $duration: 1.4s) {
+  display: inline-flex;
+  gap: 4px;
+
+  span {
+    width: #{$size};
+    height: #{$size};
+    border-radius: 50%;
+    background: #{$color};
+    animation: loading-dots #{$duration} ease-in-out infinite;
+
+    &:nth-child(1) { animation-delay: -0.32s; }
+    &:nth-child(2) { animation-delay: -0.16s; }
+    &:nth-child(3) { animation-delay: 0s; }
+  }
+}
+
+// 🎨 响应式动画控制
+@mixin respect-motion-preference {
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+// 🚀 性能优化工具
+@mixin optimize-animations {
+  @include hardware-acceleration;
+  @include respect-motion-preference;
+}
+
+// 🎯 组合动画混合器
+@mixin interactive-card {
+  @include optimize-animations;
+  @include hover-lift;
+  @include transition-optimized(transform box-shadow border-color);
+}
+
+@mixin animated-button {
+  @include optimize-animations;
+  @include hover-lift(2px);
+  @include transition-optimized(transform box-shadow background-color);
+  
+  &:active {
+    transform: translateY(0) translateZ(0);
+    transition-duration: 0.1s;
+  }
+}
+
+@mixin music-visualizer-bar($index: 1) {
+  @include music-pulse(1s + ($index * 0.1s), 1 + ($index * 0.1));
+  animation-delay: $index * 0.1s;
+}

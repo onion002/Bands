@@ -1,263 +1,293 @@
 <template>
   <div class="event-management">
-    <div class="content-container">
-      <!-- 页面标题和操作按钮区域 -->
-      <PageHeader
-        title="演出活动管理"
-        :batch-mode="batchMode"
-        :selected-count="selectedEvents.length"
-        item-type="演出活动"
-        add-button-text="添加新活动"
-        add-button-class="add-event-btn"
-        @title-click="goToHome"
-        @back-click="goToHome"
-        @batch-toggle="toggleBatchMode"
-        @add-click="openCreateModal"
-        @select-all="selectAll"
-        @clear-selection="clearSelection"
-        @batch-delete="batchDeleteEvents"
-      />
+    <!-- 🎵 页面头部 -->
+    <div class="page-header">
+      <h1>
+        <span class="gradient-text">演出活动管理</span>
+      </h1>
+      <p>管理您的演出活动，创造精彩的音乐体验</p>
+    </div>
 
-      <!-- 筛选区域 -->
-      <FilterSection
-        select-label="按乐队筛选"
-        :select-value="selectedBandId"
-        select-placeholder="全部乐队"
-        :select-options="bandSelectOptions"
-        search-label="搜索活动"
-        :search-value="searchKeyword"
-        search-placeholder="输入活动标题或场地"
-        @select-change="handleBandChange"
-        @search-input="handleSearchInput"
-      />
+    <!-- 🎨 操作工具栏 -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button
+          v-if="!batchMode"
+          @click="openCreateModal"
+          class="btn btn-primary"
+        >
+          <i class="fa fa-plus"></i>
+          添加新活动
+        </button>
 
-      <!-- 状态筛选区域 -->
-      <div class="status-filter-section">
-        <div class="status-buttons">
-          <button 
-            class="status-btn" 
-            :class="{ active: selectedStatus === '' }"
-            @click="handleStatusChange('')"
-          >
-            全部状态
-          </button>
-          <button 
-            class="status-btn" 
-            :class="{ active: selectedStatus === 'upcoming' }"
-            @click="handleStatusChange('upcoming')"
-          >
-            即将开始
-          </button>
-          <button 
-            class="status-btn" 
-            :class="{ active: selectedStatus === 'ongoing' }"
-            @click="handleStatusChange('ongoing')"
-          >
-            进行中
-          </button>
-          <button 
-            class="status-btn" 
-            :class="{ active: selectedStatus === 'completed' }"
-            @click="handleStatusChange('completed')"
-          >
-            已完成
-          </button>
-          <button 
-            class="status-btn" 
-            :class="{ active: selectedStatus === 'cancelled' }"
-            @click="handleStatusChange('cancelled')"
-          >
-            已取消
+        <button
+          v-if="events.length > 0"
+          @click="toggleBatchMode"
+          class="btn btn-outline"
+        >
+          <i class="fa fa-check-square"></i>
+          {{ batchMode ? '退出批量' : '批量操作' }}
+        </button>
+      </div>
+
+      <div class="toolbar-right" v-if="batchMode && selectedEvents.length > 0">
+        <span class="selection-count">已选择 {{ selectedEvents.length }} 个活动</span>
+        <button @click="selectAll" class="btn btn-outline btn-sm">全选</button>
+        <button @click="clearSelection" class="btn btn-outline btn-sm">清空</button>
+        <button @click="batchDeleteEvents" class="btn btn-danger btn-sm">
+          <i class="fa fa-trash"></i>
+          批量删除
+        </button>
+      </div>
+    </div>
+
+    <!-- 🎯 筛选区域 -->
+    <div class="filter-section">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>所属乐队</label>
+          <select v-model="selectedBandId" @change="handleBandChange" class="form-control">
+            <option value="">全部乐队</option>
+            <option v-for="option in bandSelectOptions" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>活动状态</label>
+          <select v-model="selectedStatus" @change="handleStatusChange" class="form-control">
+            <option value="">全部状态</option>
+            <option value="upcoming">即将开始</option>
+            <option value="ongoing">进行中</option>
+            <option value="completed">已完成</option>
+            <option value="cancelled">已取消</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>搜索活动</label>
+          <input
+            v-model="searchKeyword"
+            @input="handleSearchInput"
+            type="text"
+            placeholder="输入活动标题或场地..."
+            class="form-control"
+          />
+        </div>
+
+        <div class="filter-actions">
+          <button @click="resetFilters" class="btn btn-outline btn-sm">
+            <i class="fa fa-refresh"></i>
+            重置
           </button>
         </div>
       </div>
-
-      <!-- 加载状态指示器 -->
-      <div v-if="loading" class="loading-state">
-        <i class="fas fa-spinner fa-spin"></i> 加载中...
+    </div>
+    <!-- 🔄 加载状态 -->
+    <div v-if="loading" class="loading-section">
+      <div class="loading-content">
+        <div class="loading-spinner animate-pulse-slow">
+          <i class="fa fa-spinner fa-spin"></i>
+        </div>
+        <p>正在加载活动信息...</p>
       </div>
+    </div>
 
-      <!-- 错误提示区域 -->
-      <div v-if="error" class="error-state">
-        {{ error }}
-        <button @click="fetchEvents">重试</button>
+    <!-- ⚠️ 错误状态 -->
+    <div v-else-if="error" class="error-section">
+      <div class="error-content">
+        <i class="fa fa-exclamation-triangle"></i>
+        <h3>加载失败</h3>
+        <p>{{ error }}</p>
+        <button @click="fetchEvents" class="btn btn-primary">
+          <i class="fa fa-refresh"></i>
+          重新加载
+        </button>
       </div>
+    </div>
 
-      <!-- 数据为空时的提示 -->
-      <EmptyState
-        v-if="!loading && events.length === 0"
-        icon-class="fas fa-calendar-alt"
-        message="暂无演出活动数据"
-        button-text="添加第一个活动"
-        button-icon="fas fa-plus"
-        @button-click="openCreateModal"
-      />
+    <!-- 🌟 空状态 -->
+    <div v-else-if="events.length === 0" class="empty-state">
+      <div class="empty-icon">
+        <i class="fa fa-calendar"></i>
+      </div>
+      <h3>还没有活动</h3>
+      <p>开始创建您的第一个演出活动</p>
+      <button @click="openCreateModal" class="btn btn-primary">
+        <i class="fa fa-plus"></i>
+        创建活动
+      </button>
+    </div>
 
-      <!-- 演出活动列表展示 -->
-      <div v-if="!loading && filteredEvents.length > 0" class="event-list">
-        <div v-for="event in paginatedEvents" :key="event.id" class="event-item">
-          <div class="event-card" :class="{ 'batch-mode': batchMode }">
-            <!-- 批量删除模式下显示复选框 -->
-            <div v-show="batchMode" class="event-checkbox">
-              <input
-                type="checkbox"
-                :value="event.id"
-                v-model="selectedEvents"
-              >
+    <!-- 🎵 活动网格展示 -->
+    <div v-else class="events-grid">
+      <div
+        v-for="event in paginatedEvents"
+        :key="event.id"
+        class="event-item"
+        :class="{ 'selected': batchMode && selectedEvents.includes(event.id) }"
+      >
+        <!-- 批量选择复选框 -->
+        <div v-if="batchMode" class="batch-checkbox">
+          <input
+            type="checkbox"
+            :value="event.id"
+            v-model="selectedEvents"
+            class="checkbox"
+          />
+        </div>
+
+        <!-- 活动卡片 -->
+        <div class="event-card card card-interactive">
+          <!-- 活动海报 -->
+          <div class="event-poster">
+            <img
+              v-if="event.poster_image_url"
+              :src="event.poster_image_url"
+              :alt="event.title"
+              class="poster-image"
+              @error="handlePosterError"
+            />
+            <div v-else class="poster-placeholder">
+              <i class="fa fa-calendar"></i>
+              <span>{{ event.title }}</span>
             </div>
 
-            <!-- 左侧活动海报区域 -->
-            <div class="event-image">
-              <div class="poster-wrapper">
-                <img
-                  v-if="event.poster_image_url"
-                  :src="event.poster_image_url"
-                  class="event-poster-image"
-                  :alt="event.title"
-                  @error="handlePosterError"
-                >
-                <div v-else class="poster-placeholder">
-                  <i class="fas fa-calendar-alt"></i>
-                  <span>活动海报</span>
-                </div>
-              </div>
+            <!-- 状态标签 -->
+            <div class="event-status" :class="`status-${event.status}`">
+              {{ getStatusText(event.status) }}
             </div>
 
-            <!-- 右侧活动信息区域 -->
-            <div class="event-info">
-              <div class="event-header">
-                <h3 class="event-name">{{ event.title }}</h3>
-                <p class="event-band">{{ event.band_name }}</p>
-              </div>
+            <!-- 价格标签 -->
+            <div class="event-price">¥{{ event.ticket_price || 120 }}</div>
+          </div>
 
-              <div class="event-details">
-                <p v-if="event.venue" class="event-venue">
-                  <i class="fas fa-map-marker-alt"></i>
-                  {{ event.venue }}{{ event.address ? ' | ' + event.address : '' }}
-                </p>
-                <p class="event-date">
-                  <i class="fas fa-clock"></i>
-                  {{ formatEventDate(event.event_date) }}
-                </p>
-              </div>
+          <!-- 活动信息 -->
+          <div class="event-content">
+            <h3 class="event-title">{{ event.title }}</h3>
+            <div class="event-band">
+              <i class="fa fa-music"></i>
+              {{ event.band_name }}
+            </div>
+            <div class="event-venue">
+              <i class="fa fa-map-marker"></i>
+              {{ event.venue || '待定场地' }}
+            </div>
+            <div class="event-date">
+              <i class="fa fa-clock"></i>
+              {{ formatEventDate(event.event_date) }}
+            </div>
 
-              <div class="event-footer">
-                <div class="event-meta">
-                  <span class="event-status" :class="`status-${event.status}`">
-                    {{ getStatusText(event.status) }}
-                  </span>
-                  <span class="event-price">¥{{ event.ticket_price || 120 }}</span>
-                </div>
-
-                <div class="event-actions" v-if="!batchMode">
-                  <button class="action-btn edit" @click="openEditModal(event)">
-                    <i class="fas fa-edit"></i>
-                    编辑
-                  </button>
-                  <button class="action-btn delete" @click="deleteEvent(event)">
-                    <i class="fas fa-trash"></i>
-                    删除
-                  </button>
-                </div>
-              </div>
+            <!-- 操作按钮 -->
+            <div v-if="!batchMode" class="event-actions">
+              <button @click="openEditModal(event)" class="action-btn" title="编辑">
+                <i class="fa fa-edit"></i>
+              </button>
+              <button @click="openUploadModal(event)" class="action-btn" title="上传海报">
+                <i class="fa fa-image"></i>
+              </button>
+              <button @click="deleteEvent(event)" class="action-btn delete" title="删除">
+                <i class="fa fa-trash"></i>
+              </button>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- 分页控件 -->
-      <div v-if="totalPages > 1" class="pagination">
-        <button
-          @click="changePage(currentPage - 1)"
-          :disabled="currentPage <= 1"
-          class="page-btn"
-        >
-          <i class="fas fa-chevron-left"></i>
-        </button>
+    <!-- 🎯 分页控件 -->
+    <div v-if="totalPages > 1" class="pagination">
+      <button
+        @click="changePage(currentPage - 1)"
+        :disabled="currentPage <= 1"
+        class="btn btn-outline"
+      >
+        <i class="fa fa-chevron-left"></i>
+        上一页
+      </button>
 
+      <div class="page-numbers">
         <span class="page-info">
-          第 {{ currentPage }} 页，共 {{ totalPages }} 页
+          第 {{ currentPage }} 页 / 共 {{ totalPages }} 页
         </span>
-
-        <button
-          @click="changePage(currentPage + 1)"
-          :disabled="currentPage >= totalPages"
-          class="page-btn"
-        >
-          <i class="fas fa-chevron-right"></i>
-        </button>
       </div>
 
-      <!-- 演出活动模态框 -->
-      <EventModal
-        v-if="showCreateModal"
-        :event="null"
-        mode="add"
-        @close="showCreateModal = false"
-        @submit="handleCreateEvent"
-      />
-
-      <EventModal
-        v-if="showEditModal"
-        :event="selectedEvent"
-        mode="edit"
-        @close="showEditModal = false"
-        @submit="handleUpdateEvent"
-      />
+      <button
+        @click="changePage(currentPage + 1)"
+        :disabled="currentPage >= totalPages"
+        class="btn btn-outline"
+      >
+        下一页
+        <i class="fa fa-chevron-right"></i>
+      </button>
     </div>
+
+    <!-- 🎵 模态框组件 -->
+    <EventModal
+      v-if="showCreateModal"
+      :event="null"
+      mode="add"
+      @close="showCreateModal = false"
+      @submit="handleCreateEvent"
+    />
+
+    <EventModal
+      v-if="showEditModal"
+      :event="selectedEvent"
+      mode="edit"
+      @close="showEditModal = false"
+      @submit="handleUpdateEvent"
+    />
+
+    <!-- 🌟 上传模态框 -->
+    <UploadModal
+      v-if="showUploadModal"
+      title="上传活动海报"
+      :upload-api="(file) => EventService.uploadEventPoster(selectedEvent?.id, file)"
+      accept="image/*"
+      :max-size="5"
+      url-field="poster_image_url"
+      @close="closeUploadModal"
+      @uploaded="handleUploadSuccess"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-// 引入 Vue 相关 API
 import { ref, onMounted, computed } from 'vue'
-// 引入路由
-import { useRouter } from 'vue-router'
-// 引入演出活动相关 API 服务
 import { EventService } from '@/api/eventService'
 import { BandService } from '@/api/bandService'
-// 引入演出活动信息编辑模态框组件
 import EventModal from '@/components/EventModal.vue'
-// 引入可复用组件
-import PageHeader from '@/components/PageHeader.vue'
-import FilterSection from '@/components/FilterSection.vue'
-import EmptyState from '@/components/EmptyState.vue'
-// 引入类型
+import UploadModal from '@/components/UploadModal.vue'
 import type { Event } from '@/types'
 
-// 路由实例
-const router = useRouter()
-// 演出活动列表数据
+// 🎵 数据状态
 const events = ref<Event[]>([])
-// 乐队列表数据
 const bands = ref<any[]>([])
-// 加载状态
 const loading = ref(false)
-// 错误信息
 const error = ref('')
-// 控制添加活动模态框显示
-const showCreateModal = ref(false)
-// 控制编辑活动模态框显示
-const showEditModal = ref(false)
 
-// 当前选中的活动（用于编辑）
+// 🎨 模态框状态
+const showCreateModal = ref(false)
+const showEditModal = ref(false)
+const showUploadModal = ref(false)
 const selectedEvent = ref<Event | null>(null)
 
-// 批量操作相关
-const batchMode = ref(false)
-const selectedEvents = ref<number[]>([])
-
-// 筛选相关
+// 🎯 筛选和搜索状态
 const selectedBandId = ref('')
 const selectedStatus = ref('')
 const searchKeyword = ref('')
 
-// 分页相关
-const currentPage = ref(1)
-const pageSize = ref(10)
-const totalEvents = ref(0)
+// 🔄 批量操作状态
+const batchMode = ref(false)
+const selectedEvents = ref<number[]>([])
 
-// 计算属性：乐队选择选项
+// 📄 分页状态
+const currentPage = ref(1)
+const itemsPerPage = 12
+
+// 🎨 计算属性
 const bandSelectOptions = computed(() => {
   return (bands.value || []).map(band => ({
     value: band.id.toString(),
@@ -265,7 +295,6 @@ const bandSelectOptions = computed(() => {
   }))
 })
 
-// 计算属性：筛选后的活动列表
 const filteredEvents = computed(() => {
   let filtered = events.value
 
@@ -292,73 +321,43 @@ const filteredEvents = computed(() => {
   return filtered
 })
 
-// 计算属性：分页后的活动列表
 const paginatedEvents = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return filteredEvents.value.slice(start, end)
+  const start = (currentPage.value - 1) * itemsPerPage
+  return filteredEvents.value.slice(start, start + itemsPerPage)
 })
 
-// 计算属性：总页数
 const totalPages = computed(() => {
-  return Math.ceil(filteredEvents.value.length / pageSize.value)
+  return Math.ceil(filteredEvents.value.length / itemsPerPage)
 })
 
-// 获取演出活动列表
+// 🔄 API 调用函数
 const fetchEvents = async () => {
   try {
     loading.value = true
     error.value = ''
-    console.log('开始获取演出活动列表...')
     const result = await EventService.getAllEvents()
-    console.log('活动API响应:', result)
-    console.log('响应类型:', typeof result)
-    console.log('响应是否有items:', result && 'items' in result)
-    console.log('items是否为数组:', Array.isArray(result?.items))
 
     if (result && result.items && Array.isArray(result.items)) {
       events.value = result.items
-      totalEvents.value = result.total || result.items.length
-      console.log('成功设置活动数据，数量:', result.items.length)
     } else {
-      console.error('意外的API响应格式:', result)
       events.value = []
-      totalEvents.value = 0
     }
   } catch (err: any) {
-    console.error('获取演出活动失败:', err)
-    error.value = err?.error || err?.message || '获取演出活动列表失败，请检查网络连接'
+    error.value = err?.error || err?.message || '获取演出活动列表失败'
     events.value = []
-    totalEvents.value = 0
   } finally {
     loading.value = false
-    console.log('fetchEvents完成，loading:', loading.value, 'events数量:', events.value.length)
   }
 }
 
-// 获取乐队列表
 const fetchBands = async () => {
   try {
-    console.log('开始获取乐队列表...')
     const result = await BandService.getBands()
-    console.log('乐队API响应:', result)
-
-    if (result) {
-      // BandService使用了axios拦截器，返回的是解包后的数据
-      if (result.items && Array.isArray(result.items)) {
-        bands.value = result.items
-        console.log('成功获取乐队列表，数量:', result.items.length)
-      } else if (Array.isArray(result)) {
-        bands.value = result
-        console.log('成功获取乐队列表（数组格式），数量:', result.length)
-      } else {
-        console.error('意外的乐队API响应格式:', result)
-        console.log('乐队响应类型:', typeof result)
-        console.log('乐队响应内容:', JSON.stringify(result, null, 2))
-        bands.value = []
-      }
+    if (result && result.items && Array.isArray(result.items)) {
+      bands.value = result.items
+    } else if (Array.isArray(result)) {
+      bands.value = result
     } else {
-      console.error('乐队API响应为空:', result)
       bands.value = []
     }
   } catch (err) {
@@ -367,76 +366,70 @@ const fetchBands = async () => {
   }
 }
 
-// 返回主页
-const goToHome = () => {
-  router.push('/')
+// 🎯 事件处理函数
+const handleBandChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  selectedBandId.value = target.value
+  currentPage.value = 1
 }
 
-// 切换批量模式
-const toggleBatchMode = () => {
-  batchMode.value = !batchMode.value
-  if (!batchMode.value) {
-    selectedEvents.value = []
+const handleStatusChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  selectedStatus.value = target.value
+  currentPage.value = 1
+}
+
+const handleSearchInput = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  searchKeyword.value = target.value
+  currentPage.value = 1
+}
+
+const resetFilters = () => {
+  selectedBandId.value = ''
+  selectedStatus.value = ''
+  searchKeyword.value = ''
+  currentPage.value = 1
+}
+
+const changePage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
   }
 }
 
-// 全选
-const selectAll = () => {
-  selectedEvents.value = events.value.map(event => event.id)
-}
-
-// 清空选择
-const clearSelection = () => {
-  selectedEvents.value = []
-}
-
-// 切换活动选择状态
-const toggleEventSelection = (eventId: number) => {
-  const index = selectedEvents.value.indexOf(eventId)
-  if (index > -1) {
-    selectedEvents.value.splice(index, 1)
-  } else {
-    selectedEvents.value.push(eventId)
-  }
-}
-
-// 处理活动点击
-const handleEventClick = (event: Event) => {
-  if (batchMode.value) {
-    toggleEventSelection(event.id)
-  } else {
-    // 可以添加查看活动详情的逻辑
-    console.log('查看活动详情:', event)
-  }
-}
-
-
-
-// 打开创建模态框
+// 🎵 模态框控制函数
 const openCreateModal = () => {
   showCreateModal.value = true
 }
 
-// 打开编辑模态框
 const openEditModal = (event: Event) => {
   selectedEvent.value = event
   showEditModal.value = true
 }
 
-// 处理创建活动
+const openUploadModal = (event: Event) => {
+  selectedEvent.value = event
+  showUploadModal.value = true
+}
+
+const closeUploadModal = () => {
+  showUploadModal.value = false
+  selectedEvent.value = null
+}
+
+// 🎨 活动操作函数
 const handleCreateEvent = async (eventData: any) => {
   try {
     await EventService.createEvent(eventData)
     showCreateModal.value = false
     await fetchEvents()
-    // 可以添加成功提示
   } catch (err: any) {
     console.error('创建活动失败:', err)
-    // 可以添加错误提示
+    error.value = '创建活动失败: ' + (err.message || '未知错误')
   }
 }
 
-// 处理更新活动
 const handleUpdateEvent = async (eventData: any) => {
   try {
     if (selectedEvent.value) {
@@ -444,80 +437,78 @@ const handleUpdateEvent = async (eventData: any) => {
       showEditModal.value = false
       selectedEvent.value = null
       await fetchEvents()
-      // 可以添加成功提示
     }
   } catch (err: any) {
     console.error('更新活动失败:', err)
-    // 可以添加错误提示
+    error.value = '更新活动失败: ' + (err.message || '未知错误')
   }
 }
 
-// 删除单个活动
 const deleteEvent = async (event: Event) => {
-  if (confirm(`确定删除活动 "${event.title}" 吗？`)) {
+  if (confirm(`确定删除活动 "${event.title}" 吗？此操作不可撤销。`)) {
     try {
       await EventService.deleteEvent(event.id)
       await fetchEvents()
-      // 可以添加成功提示
     } catch (err: any) {
       console.error('删除活动失败:', err)
-      // 可以添加错误提示
+      error.value = '删除活动失败: ' + (err.message || '未知错误')
     }
   }
 }
 
-// 批量删除活动
-const batchDeleteEvents = async () => {
-  if (selectedEvents.value.length === 0) {
-    alert('请选择要删除的活动')
-    return
-  }
+const handleUploadSuccess = () => {
+  fetchEvents()
+  closeUploadModal()
+}
 
-  if (confirm(`确定删除选中的 ${selectedEvents.value.length} 个活动吗？`)) {
+// 🔄 批量操作函数
+const toggleBatchMode = () => {
+  batchMode.value = !batchMode.value
+  if (!batchMode.value) {
+    selectedEvents.value = []
+  }
+}
+
+const selectAll = () => {
+  selectedEvents.value = paginatedEvents.value.map(event => event.id)
+}
+
+const clearSelection = () => {
+  selectedEvents.value = []
+}
+
+const batchDeleteEvents = async () => {
+  if (selectedEvents.value.length === 0) return
+
+  const eventNames = selectedEvents.value.map(id => {
+    const event = events.value.find(e => e.id === id)
+    return event?.title || '未知'
+  }).join('、')
+
+  if (confirm(`确定要删除以下 ${selectedEvents.value.length} 个活动吗？\n${eventNames}\n\n此操作不可撤销。`)) {
     try {
-      await EventService.batchDeleteEvents(selectedEvents.value)
+      loading.value = true
+
+      const deletePromises = selectedEvents.value.map(id =>
+        EventService.deleteEvent(id)
+      )
+
+      await Promise.all(deletePromises)
+
       selectedEvents.value = []
-      batchMode.value = false
       await fetchEvents()
-      // 可以添加成功提示
     } catch (err: any) {
       console.error('批量删除活动失败:', err)
-      // 可以添加错误提示
+      error.value = '批量删除活动失败: ' + (err.message || '未知错误')
+    } finally {
+      loading.value = false
     }
   }
 }
 
-// 处理乐队筛选变化
-const handleBandChange = (bandId: string | number) => {
-  selectedBandId.value = String(bandId)
-  currentPage.value = 1
-  // 暂时注释掉，使用前端筛选
-  // fetchEvents()
-}
-
-// 处理状态筛选变化
-const handleStatusChange = (status: string) => {
-  selectedStatus.value = status
-  currentPage.value = 1
-  // 暂时注释掉，使用前端筛选
-  // fetchEvents()
-}
-
-// 处理搜索输入
-const handleSearchInput = (keyword: string) => {
-  searchKeyword.value = keyword
-  // 搜索是在前端进行的，不需要重新请求
-}
-
-// 分页切换
-const changePage = (page: number) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
-  }
-}
-
-// 格式化活动日期
+// 🎨 工具函数
 const formatEventDate = (dateString: string) => {
+  if (!dateString) return '待定'
   const date = new Date(dateString)
   return date.toLocaleString('zh-CN', {
     year: 'numeric',
@@ -528,7 +519,6 @@ const formatEventDate = (dateString: string) => {
   })
 }
 
-// 获取状态文本
 const getStatusText = (status: string) => {
   const statusMap: Record<string, string> = {
     upcoming: '即将开始',
@@ -539,11 +529,15 @@ const getStatusText = (status: string) => {
   return statusMap[status] || status
 }
 
-// 处理海报图片加载错误
-const handlePosterError = (event: any) => {
-  // 可以设置默认图片或隐藏图片
-  console.log('海报图片加载失败:', event)
+const handlePosterError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  img.style.display = 'none'
+  console.warn('海报加载失败:', img.src)
 }
+
+
+
+
 
 
 
@@ -564,562 +558,264 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-/* 主容器样式 */
+@use '@/assets/scss/variables' as *;
+
 .event-management {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  color: white;
   min-height: 100vh;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  position: relative;
-  overflow-y: auto;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 15px;
-}
-
-/* 内容容器 - 居中显示 */
-.content-container {
-  max-width: 1200px;
-  width: 100%;
+  padding: 2rem;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 20px;
-  background: transparent;
-  min-height: calc(100vh - 120px);
-  box-sizing: border-box;
-  position: relative;
-  z-index: 1;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 }
 
-/* 页面标题区域 */
-.section-header {
+// 🎨 工具栏样式
+.toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba($darkgray, 0.7);
+  backdrop-filter: blur(8px);
+  border: $border-light;
+  border-radius: $border-radius-xl;
 
-  h1 {
-    font-size: 2.5rem;
-    font-weight: bold;
-    margin: 0;
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .button-group {
+  .toolbar-left {
     display: flex;
-    gap: 15px;
-  }
-
-  button {
-    padding: 12px 24px;
-    border: none;
-    border-radius: 8px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
+    gap: 1rem;
     align-items: center;
-    gap: 8px;
-
-    &.back-button {
-      background: rgba(255, 255, 255, 0.1);
-      color: white;
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.2);
-      }
-    }
-
-    &.add-event-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-      }
-    }
-  }
-}
-
-/* 加载和错误状态 */
-.loading-state, .error-state {
-  text-align: center;
-  padding: 50px 4px;
-  font-size: 1.2rem;
-  
-  i {
-    font-size: 3rem;
-    margin-bottom: 15px;
-    color: #e53935;
-  }
-  
-  button {
-    margin-top: 15px;
-    padding: 10px 20px;
-    background: linear-gradient(to right, #e53935, #e35d5b);
-    color: white;
-    border: none;
-    border-radius: 30px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(229, 57, 53, 0.3);
-    }
-  }
-}
-
-.error-state {
-  button {
-    background: #333;
-    
-    &:hover {
-      background: #444;
-    }
-  }
-}
-
-/* 活动列表 */
-.event-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 0 4px 20px 4px;
-}
-
-.event-card {
-  background: linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
-  position: relative;
-  display: flex;
-  min-height: 160px;
-
-  &:hover {
-    box-shadow: 0 8px 30px rgba(229, 57, 53, 0.2);
-    transform: translateY(-3px);
-    border-color: rgba(229, 57, 53, 0.3);
   }
 
-  &.batch-mode {
-    .event-actions {
-      display: none;
+  .toolbar-right {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+
+    .selection-count {
+      color: $primary;
+      font-weight: 500;
+      font-size: 0.875rem;
     }
   }
 
-  .event-checkbox {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    z-index: 10;
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
 
-    input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      accent-color: #e53935;
-    }
-  }
-
-  /* 左侧图片区域 */
-  .event-image {
-    flex-shrink: 0;
-    width: 200px;
-    height: 205px;
-    position: relative;
-    overflow: hidden;
-    border-radius: 8px 0 0 8px;
-
-    .poster-wrapper {
+    .toolbar-left,
+    .toolbar-right {
       width: 100%;
-      height: 205px;
+      justify-content: center;
+    }
+  }
+}
+
+// 🎵 活动网格样式
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .event-item {
+    position: relative;
+
+    &.selected {
+      transform: scale(0.98);
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border: 2px solid $primary;
+        border-radius: $border-radius-xl;
+        pointer-events: none;
+        z-index: 1;
+      }
+    }
+
+    .batch-checkbox {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      z-index: 10;
+
+      .checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: $primary;
+        border-radius: 4px;
+      }
+    }
+  }
+}
+
+// 🎨 活动卡片样式
+.event-card {
+  overflow: hidden;
+
+  .event-poster {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+
+    .poster-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform $transition-slow ease;
+    }
+
+    .poster-placeholder {
+      width: 100%;
+      height: 100%;
+      background: rgba($lightgray, 0.3);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      color: $gray-400;
 
-      .event-poster-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+      i {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+        color: $primary;
       }
 
-      .poster-placeholder {
-        width: 100%;
-        height: 205px;
-        background: linear-gradient(135deg, #333 0%, #444 100%);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: #888;
-        font-size: 0.9rem;
-
-        i {
-          font-size: 2.5rem;
-          margin-bottom: 8px;
-          color: #666;
-        }
+      span {
+        font-weight: 500;
+        text-align: center;
+        padding: 0 1rem;
       }
+    }
+
+    .event-status {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+
+      &.status-upcoming {
+        background: rgba(#10b981, 0.9);
+        color: $white;
+      }
+
+      &.status-ongoing {
+        background: rgba($primary, 0.9);
+        color: $white;
+      }
+
+      &.status-completed {
+        background: rgba($gray-500, 0.9);
+        color: $white;
+      }
+
+      &.status-cancelled {
+        background: rgba(#ef4444, 0.9);
+        color: $white;
+      }
+    }
+
+    .event-price {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba($secondary, 0.9);
+      color: $white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
     }
   }
 
-  /* 右侧信息区域 */
-  .event-info {
-    flex: 1;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    color: #fff;
-    position: relative;
+  .event-content {
+    padding: 1.5rem;
 
-    .event-header {
-      .event-name {
-        font-size: 1.4rem;
-        font-weight: 600;
-        color: #fff;
-        margin: 0 0 8px 0;
-        line-height: 1.3;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-      }
-
-      .event-band {
-        font-size: 0.95rem;
-        color: #ccc;
-        margin: 0 0 6px 0;
-        
-        &::before {
-          content: "艺人：";
-          color: #999;
-        }
-      }
+    .event-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0 0 0.75rem;
+      color: $white;
+      line-height: 1.3;
     }
 
-    .event-details {
-      margin: 8px 0;
-
-      .event-venue {
-        font-size: 0.9rem;
-        color: #bbb;
-        margin: 0 0 4px 0;
-        display: flex;
-        align-items: center;
-
-        i {
-          color: #e53935;
-          margin-right: 6px;
-          width: 14px;
-        }
-      }
-
-      .event-date {
-        font-size: 0.9rem;
-        color: #bbb;
-        margin: 0;
-        display: flex;
-        align-items: center;
-
-        i {
-          color: #e53935;
-          margin-right: 6px;
-          width: 14px;
-        }
-      }
-    }
-
-    .event-footer {
+    .event-band,
+    .event-venue,
+    .event-date {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-top: auto;
-      padding-top: 12px;
+      gap: 0.5rem;
+      color: $gray-400;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
 
-      .event-meta {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-
-        .event-status {
-          display: inline-block;
-          padding: 4px 10px;
-          border-radius: 4px;
-          font-size: 0.8rem;
-          font-weight: 500;
-          border: 1px solid;
-
-          &.status-upcoming {
-            background: rgba(82, 196, 26, 0.2);
-            color: #52c41a;
-            border-color: rgba(82, 196, 26, 0.4);
-          }
-
-          &.status-ongoing {
-            background: rgba(250, 140, 22, 0.2);
-            color: #fa8c16;
-            border-color: rgba(250, 140, 22, 0.4);
-          }
-
-          &.status-completed {
-            background: rgba(140, 140, 140, 0.2);
-            color: #8c8c8c;
-            border-color: rgba(140, 140, 140, 0.4);
-          }
-
-          &.status-cancelled {
-            background: rgba(255, 77, 79, 0.2);
-            color: #ff4d4f;
-            border-color: rgba(255, 77, 79, 0.4);
-          }
-        }
-
-        .event-price {
-          font-size: 1.2rem;
-          font-weight: 600;
-          color: #ff9800;
-          text-shadow: 0 0 10px rgba(255, 152, 0, 0.3);
-
-          &::before {
-            content: "¥";
-          }
-
-          &::after {
-            content: "起";
-            font-size: 0.8rem;
-            font-weight: normal;
-            margin-left: 2px;
-          }
-        }
-      }
-
-      .event-actions {
-        display: flex;
-        gap: 8px;
-
-        .action-btn {
-          padding: 8px 14px;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          background: rgba(255, 255, 255, 0.1);
-          color: #fff;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 0.85rem;
-          font-weight: 500;
-          transition: all 0.3s ease;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          backdrop-filter: blur(10px);
-
-          &:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.4);
-            transform: translateY(-2px);
-          }
-
-          &.edit {
-            &:hover {
-              background: linear-gradient(135deg, #2196f3, #1976d2);
-              border-color: #2196f3;
-              box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
-            }
-          }
-
-          &.delete {
-            &:hover {
-              background: linear-gradient(135deg, #f44336, #d32f2f);
-              border-color: #f44336;
-              box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
-            }
-          }
-
-          i {
-            font-size: 0.8rem;
-          }
-        }
+      i {
+        color: $primary;
+        width: 16px;
+        flex-shrink: 0;
       }
     }
-  }
-}
 
-/* 分页控件样式 */
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 15px;
-  padding: 30px 4px;
-  margin-top: 20px;
-
-  .page-btn {
-    padding: 10px 15px;
-    border: 1px solid #555;
-    background: #333;
-    color: white;
-    border-radius: 30px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: 500;
-
-    &:hover:not(:disabled) {
-      background: linear-gradient(to right, #e53935, #e35d5b);
-      border-color: #e53935;
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(229, 57, 53, 0.3);
-    }
-
-    &:disabled {
-      background: #555;
-      color: #888;
-      cursor: not-allowed;
-      border-color: #555;
-    }
-  }
-
-  .page-info {
-    font-weight: 500;
-    color: white;
-    font-size: 1rem;
-  }
-}
-
-/* 响应式设计 */
-@media (max-width: 1024px) {
-  .event-list {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-  }
-}
-
-@media (max-width: 768px) {
-  .event-management {
-    padding-left: 15px;
-    padding-right: 15px;
-  }
-
-  .event-list {
-    grid-template-columns: 1fr;
-    gap: 15px;
-  }
-
-  .event-card {
-    .event-poster {
-      height: 150px;
-    }
-
-    .event-info {
-      padding: 12px;
-
-      .event-title {
-        font-size: 1.3rem;
-      }
+    .event-band {
+      color: $secondary;
+      font-weight: 500;
     }
 
     .event-actions {
-      flex-direction: column;
-      gap: 8px;
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
 
       .action-btn {
-        width: 100%;
-        justify-content: center;
+        background: none;
+        border: none;
+        color: $gray-400;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: $border-radius-sm;
+        transition: all $transition-fast ease;
+
+        &:hover {
+          color: $primary;
+          background: rgba($primary, 0.1);
+        }
+
+        &.delete:hover {
+          color: #ef4444;
+          background: rgba(#ef4444, 0.1);
+        }
       }
     }
   }
 
-  .pagination {
-    flex-direction: column;
-    gap: 10px;
+  &:hover {
+    .event-poster .poster-image {
+      transform: scale(1.1);
+    }
 
-    .page-btn {
-      width: 100%;
-      justify-content: center;
+    .event-title {
+      color: $primary;
     }
   }
 }
 
-/* 状态筛选区域 */
-.status-filter-section {
-  margin-bottom: 20px;
-  padding: 0 4px;
 
-  .status-buttons {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
 
-    .status-btn {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.1);
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      white-space: nowrap;
 
-      &:hover {
-        background: rgba(255, 255, 255, 0.15);
-        color: rgba(255, 255, 255, 0.9);
-      }
-
-      &.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-      }
-    }
-  }
-}
-
-/* 活动状态样式 */
-.event-status {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  border: 1px solid;
-
-  &.status-upcoming {
-    background: rgba(82, 196, 26, 0.2);
-    color: #52c41a;
-    border-color: rgba(82, 196, 26, 0.4);
-  }
-
-  &.status-ongoing {
-    background: rgba(250, 140, 22, 0.2);
-    color: #fa8c16;
-    border-color: rgba(250, 140, 22, 0.4);
-  }
-
-  &.status-completed {
-    background: rgba(140, 140, 140, 0.2);
-    color: #8c8c8c;
-    border-color: rgba(140, 140, 140, 0.4);
-  }
-
-  &.status-cancelled {
-    background: rgba(255, 77, 79, 0.2);
-    color: #ff4d4f;
-    border-color: rgba(255, 77, 79, 0.4);
-  }
-}
 </style>

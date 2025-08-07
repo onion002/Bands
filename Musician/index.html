@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>独立音乐人 | 个人品牌网站</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <!-- 自定义 Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#ff2a6d', // 霓虹粉
+            secondary: '#05d9e8', // 霓虹蓝
+            dark: '#121212', // 深色背景
+            darkgray: '#1e1e1e', // 深灰色
+            lightgray: '#2d2d2d', // 浅灰色
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Montserrat', 'sans-serif'],
+          },
+          animation: {
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'glow': 'glow 2s ease-in-out infinite alternate',
+          },
+          keyframes: {
+            glow: {
+              '0%': { 'text-shadow': '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #ff2a6d, 0 0 20px #ff2a6d' },
+              '100%': { 'text-shadow': '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #ff2a6d, 0 0 40px #ff2a6d' },
+            }
+          },
+        },
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .text-gradient {
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+      }
+      .bg-noise {
+        background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGZpbHRlcj0idXJsKCNhKSIgb3BhY2l0eT0iLjA1IiBkPSJNMCAwaDMwMHYzMDBIMHoiLz48L3N2Zz4=');
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .backdrop-blur {
+        backdrop-filter: blur(8px);
+      }
+    }
+  </style>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-dark text-white bg-noise font-sans">
+  <!-- 导航栏 -->
+  <header id="navbar" class="fixed top-0 w-full z-50 transition-all duration-300 bg-dark/80 backdrop-blur border-b border-primary/20">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <a href="#" class="flex items-center gap-2">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+          <i class="fa fa-music text-white"></i>
+        </div>
+        <span class="text-xl font-display font-bold tracking-wider animate-glow">SOUNDWAVE</span>
+      </a>
+      <!-- 桌面导航 -->
+      <nav class="hidden md:flex items-center gap-8">
+        <a href="#home" class="hover:text-primary transition-colors duration-300 font-medium">首页</a>
+        <a href="#music" class="hover:text-primary transition-colors duration-300 font-medium">音乐</a>
+        <a href="#shows" class="hover:text-primary transition-colors duration-300 font-medium">演出</a>
+        <a href="#behind" class="hover:text-primary transition-colors duration-300 font-medium">创作幕后</a>
+        <a href="#store" class="hover:text-primary transition-colors duration-300 font-medium">商店</a>
+        <a href="#contact" class="hover:text-primary transition-colors duration-300 font-medium">联系</a>
+      </nav>
+      <!-- 移动端菜单按钮 -->
+      <button id="menu-btn" class="md:hidden text-white focus:outline-none">
+        <i class="fa fa-bars text-2xl"></i>
+      </button>
+    </div>
+    <!-- 移动端导航菜单 -->
+    <div id="mobile-menu" class="hidden md:hidden bg-darkgray border-t border-primary/20 absolute w-full">
+      <div class="container mx-auto px-4 py-4 flex flex-col gap-4">
+        <a href="#home" class="hover:text-primary transition-colors duration-300 py-2 font-medium">首页</a>
+        <a href="#music" class="hover:text-primary transition-colors duration-300 py-2 font-medium">音乐</a>
+        <a href="#shows" class="hover:text-primary transition-colors duration-300 py-2 font-medium">演出</a>
+        <a href="#behind" class="hover:text-primary transition-colors duration-300 py-2 font-medium">创作幕后</a>
+        <a href="#store" class="hover:text-primary transition-colors duration-300 py-2 font-medium">商店</a>
+        <a href="#contact" class="hover:text-primary transition-colors duration-300 py-2 font-medium">联系</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- 首页英雄区域 -->
+  <section id="home" class="min-h-screen pt-20 flex items-center justify-center relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-dark/80 to-dark z-10"></div>
+    <!-- 背景视频/图像 -->
+    <div class="absolute inset-0 z-0">
+      <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 mix-blend-overlay"></div>
+      <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyZTJlMmUiIGZpbGwtb3BhY2l0eT0iLjEiPjxwYXRoIGQ9Ik0zNiAxOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMC0xOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMTggMGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30"></div>
+    </div>
+    <div class="container mx-auto px-4 py-16 z-20 text-center">
+      <h1 class="text-[clamp(2.5rem,10vw,5rem)] font-display font-bold leading-tight mb-6 tracking-tighter animate-glow">
+        <span class="block bg-gradient-to-r from-primary to-secondary text-gradient">独立音乐人</span>
+        <span class="block">个人品牌展示</span>
+      </h1>
+      <p class="text-[clamp(1rem,3vw,1.25rem)] text-gray-300 max-w-2xl mx-auto mb-10 leading-relaxed">
+        探索独特音乐世界，感受原创音乐魅力，连接艺术家与粉丝的桥梁
+      </p>
+      <div class="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mb-16">
+        <a href="#music" class="px-8 py-4 bg-primary hover:bg-primary/90 text-white rounded-full font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-primary/20">
+          聆听音乐
+        </a>
+        <a href="#shows" class="px-8 py-4 bg-transparent border-2 border-secondary hover:bg-secondary/10 text-white rounded-full font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-secondary/20">
+          查看演出
+        </a>
+      </div>
+      <!-- 音乐播放器预览 -->
+      <div class="max-w-3xl mx-auto bg-darkgray/70 backdrop-blur p-6 rounded-2xl border border-lightgray/50 shadow-2xl transform hover:scale-[1.02] transition-all duration-500">
+        <div class="flex flex-col sm:flex-row items-center gap-6">
+          <div class="w-32 h-32 sm:w-40 sm:h-40 rounded-lg overflow-hidden shadow-lg shadow-primary/30">
+            <img src="https://picsum.photos/400/400" alt="专辑封面" class="w-full h-full object-cover">
+          </div>
+          <div class="flex-1 text-left">
+            <h3 class="text-xl sm:text-2xl font-bold mb-1">主打单曲</h3>
+            <p class="text-primary font-medium mb-3">《城市霓虹》</p>
+            <div class="flex items-center gap-4 mb-4">
+              <button class="text-white hover:text-primary transition-colors duration-300 text-2xl sm:text-3xl">
+                <i class="fa fa-play-circle"></i>
+              </button>
+              <div class="flex-1 h-1 bg-lightgray rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-primary to-secondary" style="width: 35%"></div>
+              </div>
+              <span class="text-sm text-gray-400">1:23 / 3:45</span>
+            </div>
+            <div class="flex items-center gap-3 text-gray-400">
+              <button class="hover:text-white transition-colors duration-300"><i class="fa fa-step-backward"></i></button>
+              <button class="hover:text-white transition-colors duration-300"><i class="fa fa-pause"></i></button>
+              <button class="hover:text-white transition-colors duration-300"><i class="fa fa-step-forward"></i></button>
+              <button class="hover:text-white transition-colors duration-300"><i class="fa fa-volume-up"></i></button>
+              <button class="hover:text-white transition-colors duration-300"><i class="fa fa-random"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 向下滚动指示器 -->
+    <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-20 animate-bounce">
+      <a href="#music" class="text-white/70 hover:text-white transition-colors duration-300">
+        <i class="fa fa-angle-down text-3xl"></i>
+      </a>
+    </div>
+  </section>
+
+  <!-- 音乐作品区域 -->
+  <section id="music" class="py-20 bg-darkgray relative">
+    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyZTJlMmUiIGZpbGwtb3BhY2l0eT0iLjEiPjxwYXRoIGQ9Ik0zNiAxOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMC0xOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMTggMGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-20"></div>
+    <div class="container mx-auto px-4 relative z-10">
+      <div class="text-center mb-16">
+        <h2 class="text-[clamp(2rem,6vw,3rem)] font-display font-bold mb-4 tracking-tighter">
+          <span class="bg-gradient-to-r from-primary to-secondary text-gradient">音乐作品</span>
+        </h2>
+        <p class="text-gray-400 max-w-xl mx-auto">探索我的音乐世界，从专辑到单曲，每一首都讲述着独特的故事</p>
+      </div>
+
+      <!-- 音乐标签切换 -->
+      <div class="flex justify-center mb-12 overflow-x-auto scrollbar-hide pb-2">
+        <div class="flex gap-2 sm:gap-4 bg-dark/50 p-1 rounded-full backdrop-blur border border-lightgray/30">
+          <button class="px-6 py-2 rounded-full bg-primary text-white font-medium whitespace-nowrap">所有音乐</button>
+          <button class="px-6 py-2 rounded-full hover:bg-lightgray/30 text-gray-300 font-medium whitespace-nowrap transition-colors duration-300">专辑</button>
+          <button class="px-6 py-2 rounded-full hover:bg-lightgray/30 text-gray-300 font-medium whitespace-nowrap transition-colors duration-300">单曲</button>
+          <button class="px-6 py-2 rounded-full hover:bg-lightgray/30 text-gray-300 font-medium whitespace-nowrap transition-colors duration-300">热门</button>
+        </div>
+      </div>
+
+      <!-- 音乐卡片网格 -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-16">
+        <!-- 音乐卡片 1 -->
+        <div class="bg-dark rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/10 group">
+          <div class="relative overflow-hidden">
+            <img src="https://picsum.photos/400/400?random=1" alt="专辑封面" class="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110">
+            <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent opacity-70"></div>
+            <button class="absolute inset-0 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-4xl transform translate-y-4 group-hover:translate-y-0">
+              <i class="fa fa-play-circle"></i>
+            </button>
+          </div>
+          <div class="p-6">
+            <span class="text-xs text-primary uppercase tracking-wider font-semibold mb-2 block">专辑</span>
+            <h3 class="text-xl font-bold mb-1 group-hover:text-primary transition-colors duration-300">城市霓虹</h3>
+            <p class="text-gray-400 text-sm mb-4">2023年10月15日</p>
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-2">
+                <span class="text-gray-400 text-sm"><i class="fa fa-play"></i> 1.2M</span>
+                <span class="text-gray-400 text-sm"><i class="fa fa-heart"></i> 45K</span>
+              </div>
+              <button class="text-gray-400 hover:text-primary transition-colors duration-300">
+                <i class="fa fa-ellipsis-h"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 音乐卡片 2 -->
+        <div class="bg-dark rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/10 group">
+          <div class="relative overflow-hidden">
+            <img src="https://picsum.photos/400/400?random=2" alt="专辑封面" class="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110">
+            <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent opacity-70"></div>
+            <button class="absolute inset-0 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-4xl transform translate-y-4 group-hover:translate-y-0">
+              <i class="fa fa-play-circle"></i>
+            </button>
+          </div>
+          <div class="p-6">
+            <span class="text-xs text-secondary uppercase tracking-wider font-semibold mb-2 block">单曲</span>
+            <h3 class="text-xl font-bold mb-1 group-hover:text-secondary transition-colors duration-300">深夜旋律</h3>
+            <p class="text-gray-400 text-sm mb-4">2024年2月20日</p>
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-2">
+                <span class="text-gray-400 text-sm"><i class="fa fa-play"></i> 850K</span>
+                <span class="text-gray-400 text-sm"><i class="fa fa-heart"></i> 32K</span>
+              </div>
+              <button class="text-gray-400 hover:text-secondary transition-colors duration-300">
+                <i class="fa fa-ellipsis-h"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 音乐卡片 3 -->
+        <div class="bg-dark rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/10 group">
+          <div class="relative overflow-hidden">
+            <img src="https://picsum.photos/400/400?random=3" alt="专辑封面" class="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110">
+            <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent opacity-70"></div>
+            <button class="absolute inset-0 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-4xl transform translate-y-4 group-hover:translate-y-0">
+              <i class="fa fa-play-circle"></i>
+            </button>
+          </div>
+          <div class="p-6">
+            <span class="text-xs text-primary uppercase tracking-wider font-semibold mb-2 block">专辑</span>
+            <h3 class="text-xl font-bold mb-1 group-hover:text-primary transition-colors duration-300">孤独星球</h3>
+            <p class="text-gray-400 text-sm mb-4">2022年8月5日</p>
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-2">
+                <span class="text-gray-400 text-sm"><i class="fa fa-play"></i> 3.7M</span>
+                <span class="text-gray-400 text-sm"><i class="fa fa-heart"></i> 120K</span>
+              </div>
+              <button class="text-gray-400 hover:text-primary transition-colors duration-300">
+                <i class="fa fa-ellipsis-h"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 音乐卡片 4 -->
+        <div class="bg-dark rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/10 group">
+          <div class="relative overflow-hidden">
+            <img src="https://picsum.photos/400/400?random=4" alt="专辑封面" class="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110">
+            <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent opacity-70"></div>
+            <button class="absolute inset-0 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-4xl transform translate-y-4 group-hover:translate-y-0">
+              <i class="fa fa-play-circle"></i>
+            </button>
+          </div>
+          <div class="p-6">
+            <span class="text-xs text-secondary uppercase tracking-wider font-semibold mb-2 block">单曲</span>
+            <h3 class="text-xl font-bold mb-1 group-hover:text-secondary transition-colors duration-300">雨中即景</h3>
+            <p class="text-gray-400 text-sm mb-4">2023年6月12日</p>
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-2">
+                <span class="text-gray-400 text-sm"><i class="fa fa-play"></i> 2.1M</span>
+                <span class="text-gray-400 text-sm"><i class="fa fa-heart"></i> 78K</span>
+              </div>
+              <button class="text-gray-400 hover:text-secondary transition-colors duration-300">
+                <i class="fa fa-ellipsis-h"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spotify 播放器嵌入 -->
+      <div class="bg-dark rounded-2xl overflow-hidden border border-lightgray/30 p-6 mb-16 max-w-4xl mx-auto transform hover:scale-[1.01] transition-transform duration-500">
+        <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+          <i class="fa fa-spotify text-green-400"></i>
+          <span>在 Spotify 上关注我</span>
+        </h3>
+        <div class="aspect-[21/9] bg-black/50 rounded-lg flex items-center justify-center text-gray-500">
+          <!-- 这里将嵌入 Spotify 播放器 -->
+          <div class="text-center p-8">
+            <i class="fa fa-music text-5xl mb-4"></i>
+            <p>Spotify 播放器将在这里显示</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 最新单曲列表 -->
+      <div class="bg-dark rounded-2xl overflow-hidden border border-lightgray/30 p-6 max-w-4xl mx-auto">
+        <h3 class="text-xl font-bold mb-6">最新单曲</h3>
+        <ul class="space-y-4">
+          <!-- 单曲项 1 -->
+          <li class="flex items-center gap-4 p-3 rounded-lg hover:bg-lightgray/20 transition-colors duration-300">
+            <img src="https://picsum.photos/80/80?random=5" alt="单曲封面" class="w-12 h-12 rounded object-cover">
+            <div class="flex-1 min-w-0">
+              <h4 class="font-semibold truncate">深夜旋律</h4>
+              <p class="text-sm text-gray-400 truncate">2024年2月20日</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-sm text-gray-400">3:45</span>
+              <button class="text-primary hover:text-primary/80 transition-colors duration-300">
+                <i class="fa fa-play-circle"></i>
+              </button>
+            </div>
+          </li>
+
+          <!-- 单曲项 2 -->
+          <li class="flex items-center gap-4 p-3 rounded-lg hover:bg-lightgray/20 transition-colors duration-300">
+            <img src="https://picsum.photos/80/80?random=6" alt="单曲封面" class="w-12 h-12 rounded object-cover">
+            <div class="flex-1 min-w-0">
+              <h4 class="font-semibold truncate">雨中即景</h4>
+              <p class="text-sm text-gray-400 truncate">2023年6月12日</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-sm text-gray-400">4:12</span>
+              <button class="text-primary hover:text-primary/80 transition-colors duration-300">
+                <i class="fa fa-play-circle"></i>
+              </button>
+            </div>
+          </li>
+
+          <!-- 单曲项 3 -->
+          <li class="flex items-center gap-4 p-3 rounded-lg hover:bg-lightgray/20 transition-colors duration-300">
+            <img src="https://picsum.photos/80/80?random=7" alt="单曲封面" class="w-12 h-12 rounded object-cover">
+            <div class="flex-1 min-w-0">
+              <h4 class="font-semibold truncate">城市霓虹 (remix)</h4>
+              <p class="text-sm text-gray-400 truncate">2023年11月30日</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-sm text-gray-400">5:20</span>
+              <button class="text-primary hover:text-primary/80 transition-colors duration-300">
+                <i class="fa fa-play-circle"></i>
+              </button>
+            </div>
+          </li>
+
+          <!-- 单曲项 4 -->
+          <li class="flex items-center gap-4 p-3 rounded-lg hover:bg-lightgray/20 transition-colors duration-300">
+            <img src="https://picsum.photos/80/80?random=8" alt="单曲封面" class="w-12 h-12 rounded object-cover">
+            <div class="flex-1 min-w-0">
+              <h4 class="font-semibold truncate">孤独星球 (Acoustic)</h4>
+              <p class="text-sm text-gray-400 truncate">2022年10月5日</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-sm text-gray-400">3:15</span>
+              <button class="text-primary hover:text-primary/80 transition-colors duration-300">
+                <i class="fa fa-play-circle"></i>
+              </button>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 演出日程区域 -->
+  <section id="shows" class="py-20 bg-dark relative">
+    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyZTJlMmUiIGZpbGwtb3BhY2l0eT0iLjEiPjxwYXRoIGQ9Ik0zNiAxOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMC0xOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMTggMGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-20"></div>
+    <div class="container mx-auto px-4 relative z-10">
+      <div class="text-center mb-16">
+        <h2 class="text-[clamp(2rem,6vw,3rem)] font-display font-bold mb-4 tracking-tighter">
+          <span class="bg-gradient-to-r from-primary to-secondary text-gradient">演出日程</span>
+        </h2>
+        <p class="text-gray-400 max-w-xl mx-auto">查看我的最新演出安排，不要错过现场体验</p>
+      </div>
+
+      <!-- 演出时间表 -->
+      <div class="max-w-4xl mx-auto space-y-6 mb-16">
+        <!-- 演出项 1 -->
+        <div class="bg-darkgray rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.01]">
+          <div class="p-6 flex flex-col md:flex-row gap-6">
+            <div class="bg-primary/10 rounded-lg p-4 text-center md:w-1/4">
+              <div class="text-primary text-3xl font-bold">05</div>
+              <div class="text-gray-300 font-semibold">六月</div>
+              <div class="text-white font-semibold text-lg">2024</div>
+            </div>
+            <div class="md:w-3/4 flex flex-col justify-between">
+              <div>
+                <h3 class="text-xl font-bold mb-2 group-hover:text-primary transition-colors duration-300">上海草莓音乐节</h3>
+                <div class="flex flex-wrap gap-4 text-gray-400 mb-4">
+                  <div class="flex items-center gap-2"><i class="fa fa-map-marker text-primary"></i> 上海世博公园</div>
+                  <div class="flex items-center gap-2"><i class="fa fa-clock-o text-primary"></i> 19:30 - 21:00</div>
+                </div>
+                <p class="text-gray-300 mb-4">与众多音乐人一起，带来精彩现场表演</p>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
+                <span class="text-sm text-gray-400">预售票: ¥380 / 现场票: ¥480</span>
+                <a href="#" class="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-full font-medium transition-all duration-300 text-center">
+                  购票链接
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 演出项 2 -->
+        <div class="bg-darkgray rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.01]">
+          <div class="p-6 flex flex-col md:flex-row gap-6">
+            <div class="bg-primary/10 rounded-lg p-4 text-center md:w-1/4">
+              <div class="text-primary text-3xl font-bold">18</div>
+              <div class="text-gray-300 font-semibold">七月</div>
+              <div class="text-white font-semibold text-lg">2024</div>
+            </div>
+            <div class="md:w-3/4 flex flex-col justify-between">
+              <div>
+                <h3 class="text-xl font-bold mb-2 group-hover:text-primary transition-colors duration-300">北京个人专场</h3>
+                <div class="flex flex-wrap gap-4 text-gray-400 mb-4">
+                  <div class="flex items-center gap-2"><i class="fa fa-map-marker text-primary"></i> 北京愚公移山</div>
+                  <div class="flex items-center gap-2"><i class="fa fa-clock-o text-primary"></i> 20:00 - 22:00</div>
+                </div>
+                <p class="text-gray-300 mb-4">全新专辑首唱，特邀嘉宾惊喜亮相</p>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
+                <span class="text-sm text-gray-400">预售票: ¥280 / 现场票: ¥350</span>
+                <a href="#" class="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-full font-medium transition-all duration-300 text-center">
+                  购票链接
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 演出项 3 -->
+        <div class="bg-darkgray rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.01]">
+          <div class="p-6 flex flex-col md:flex-row gap-6">
+            <div class="bg-primary/10 rounded-lg p-4 text-center md:w-1/4">
+              <div class="text-primary text-3xl font-bold">02</div>
+              <div class="text-gray-300 font-semibold">八月</div>
+              <div class="text-white font-semibold text-lg">2024</div>
+            </div>
+            <div class="md:w-3/4 flex flex-col justify-between">
+              <div>
+                <h3 class="text-xl font-bold mb-2 group-hover:text-primary transition-colors duration-300">成都仙人掌音乐节</h3>
+                <div class="flex flex-wrap gap-4 text-gray-400 mb-4">
+                  <div class="flex items-center gap-2"><i class="fa fa-map-marker text-primary"></i> 成都蔚然花海</div>
+                  <div class="flex items-center gap-2"><i class="fa fa-clock-o text-primary"></i> 16:00 - 17:30</div>
+                </div>
+                <p class="text-gray-300 mb-4">夏日音乐盛宴，带来最热单曲表演</p>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
+                <span class="text-sm text-gray-400">预售票: ¥420 / 现场票: ¥520</span>
+                <a href="#" class="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-full font-medium transition-all duration-300 text-center">
+                  购票链接
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 演出项 4 -->
+        <div class="bg-darkgray rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.01]">
+          <div class="p-6 flex flex-col md:flex-row gap-6">
+            <div class="bg-primary/10 rounded-lg p-4 text-center md:w-1/4">
+              <div class="text-primary text-3xl font-bold">15</div>
+              <div class="text-gray-300 font-semibold">九月</div>
+              <div class="text-white font-semibold text-lg">2024</div>
+            </div>
+            <div class="md:w-3/4 flex flex-col justify-between">
+              <div>
+                <h3 class="text-xl font-bold mb-2 group-hover:text-primary transition-colors duration-300">广州个人巡演</h3>
+                <div class="flex flex-wrap gap-4 text-gray-400 mb-4">
+                  <div class="flex items-center gap-2"><i class="fa fa-map-marker text-primary"></i> 广州太空间</div>
+                  <div class="flex items-center gap-2"><i class="fa fa-clock-o text-primary"></i> 20:00 - 22:00</div>
+                </div>
+                <p class="text-gray-300 mb-4">新专辑全国巡演广州站</p>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
+                <span class="text-sm text-gray-400">预售票: ¥280 / 现场票: ¥350</span>
+                <a href="#" class="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-full font-medium transition-all duration-300 text-center">
+                  购票链接
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 巡演地图 -->
+      <div class="bg-darkgray rounded-2xl overflow-hidden border border-lightgray/30 p-6 max-w-5xl mx-auto">
+        <h3 class="text-xl font-bold mb-6">全国巡演地图</h3>
+        <div class="aspect-[16/9] bg-dark/50 rounded-lg flex items-center justify-center text-gray-500">
+          <!-- 这里将嵌入巡演地图 -->
+          <div class="text-center p-8">
+            <i class="fa fa-map-o text-5xl mb-4"></i>
+            <p>巡演地图将在这里显示</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 创作幕后区域 -->
+  <section id="behind" class="py-20 bg-darkgray relative">
+    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyZTJlMmUiIGZpbGwtb3BhY2l0eT0iLjEiPjxwYXRoIGQ9Ik0zNiAxOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMC0xOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMTggMGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-20"></div>
+    <div class="container mx-auto px-4 relative z-10">
+      <div class="text-center mb-16">
+        <h2 class="text-[clamp(2rem,6vw,3rem)] font-display font-bold mb-4 tracking-tighter">
+          <span class="bg-gradient-to-r from-primary to-secondary text-gradient">创作幕后</span>
+        </h2>
+        <p class="text-gray-400 max-w-xl mx-auto">探索音乐背后的故事，了解创作过程与灵感来源</p>
+      </div>
+
+      <!-- 创作幕后标签切换 -->
+      <div class="flex justify-center mb-12 overflow-x-auto scrollbar-hide pb-2">
+        <div class="flex gap-2 sm:gap-4 bg-dark/50 p-1 rounded-full backdrop-blur border border-lightgray/30">
+          <button class="px-6 py-2 rounded-full bg-primary text-white font-medium whitespace-nowrap">全部</button>
+          <button class="px-6 py-2 rounded-full hover:bg-lightgray/30 text-gray-300 font-medium whitespace-nowrap transition-colors duration-300">歌词草稿</button>
+          <button class="px-6 py-2 rounded-full hover:bg-lightgray/30 text-gray-300 font-medium whitespace-nowrap transition-colors duration-300">录音花絮</button>
+          <button class="px-6 py-2 rounded-full hover:bg-lightgray/30 text-gray-300 font-medium whitespace-nowrap transition-colors duration-300">灵感来源</button>
+        </div>
+      </div>
+
+      <!-- 横向滑动卡片 -->
+      <div class="relative mb-16">
+        <div class="overflow-x-auto scrollbar-hide pb-8 -mx-4 px-4">
+          <div class="flex gap-6 min-w-max">
+            <!-- 幕后故事卡片 1 -->
+            <div class="w-80 bg-dark rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.02]">
+              <div class="relative h-48 overflow-hidden">
+                <img src="https://picsum.photos/600/400?random=9" alt="歌词草稿" class="w-full h-full object-cover transition-transform duration-700 hover:scale-110">
+                <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent"></div>
+                <div class="absolute bottom-4 left-4 bg-primary/90 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                  歌词草稿
+                </div>
+              </div>
+              <div class="p-6">
+                <h3 class="text-xl font-bold mb-3 group-hover:text-primary transition-colors duration-300">城市霓虹的诞生</h3>
+                <p class="text-gray-400 mb-4 line-clamp-4">这首歌曲的灵感来源于深夜在城市中漫步的经历，霓虹灯光与孤独的对比，激发了创作的欲望。最初的歌词草稿写于一个雨夜的咖啡馆...</p>
+                <a href="#" class="text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors duration-300">
+                  阅读更多 <i class="fa fa-arrow-right text-sm"></i>
+                </a>
+              </div>
+            </div>
+
+            <!-- 幕后故事卡片 2 -->
+            <div class="w-80 bg-dark rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.02]">
+              <div class="relative h-48 overflow-hidden">
+                <img src="https://picsum.photos/600/400?random=10" alt="录音花絮" class="w-full h-full object-cover transition-transform duration-700 hover:scale-110">
+                <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent"></div>
+                <div class="absolute bottom-4 left-4 bg-secondary/90 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                  录音花絮
+                </div>
+              </div>
+              <div class="p-6">
+                <h3 class="text-xl font-bold mb-3 group-hover:text-secondary transition-colors duration-300">深夜录音室</h3>
+                <p class="text-gray-400 mb-4 line-clamp-4">为了捕捉最真实的情感，这首歌的主唱部分是在凌晨三点录制的。制作人建议关闭所有灯光，只留一盏小灯，让情绪更加集中...</p>
+                <a href="#" class="text-secondary hover:text-secondary/80 font-medium flex items-center gap-1 transition-colors duration-300">
+                  阅读更多 <i class="fa fa-arrow-right text-sm"></i>
+                </a>
+              </div>
+            </div>
+
+            <!-- 幕后故事卡片 3 -->
+            <div class="w-80 bg-dark rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.02]">
+              <div class="relative h-48 overflow-hidden">
+                <img src="https://picsum.photos/600/400?random=11" alt="灵感来源" class="w-full h-full object-cover transition-transform duration-700 hover:scale-110">
+                <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent"></div>
+                <div class="absolute bottom-4 left-4 bg-primary/90 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                  灵感来源
+                </div>
+              </div>
+              <div class="p-6">
+                <h3 class="text-xl font-bold mb-3 group-hover:text-primary transition-colors duration-300">老电影的启发</h3>
+                <p class="text-gray-400 mb-4 line-clamp-4">孤独星球这首歌的旋律灵感来自于一部70年代的法国电影配乐。我在一个深夜偶然看到这部电影，被其中的配乐深深打动...</p>
+                <a href="#" class="text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors duration-300">
+                  阅读更多 <i class="fa fa-arrow-right text-sm"></i>
+                </a>
+              </div>
+            </div>
+
+            <!-- 幕后故事卡片 4 -->
+            <div class="w-80 bg-dark rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.02]">
+              <div class="relative h-48 overflow-hidden">
+                <img src="https://picsum.photos/600/400?random=12" alt="歌词草稿" class="w-full h-full object-cover transition-transform duration-700 hover:scale-110">
+                <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent"></div>
+                <div class="absolute bottom-4 left-4 bg-secondary/90 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                  歌词草稿
+                </div>
+              </div>
+              <div class="p-6">
+                <h3 class="text-xl font-bold mb-3 group-hover:text-secondary transition-colors duration-300">雨中即景的修改历程</h3>
+                <p class="text-gray-400 mb-4 line-clamp-4">这首歌的歌词前后修改了17个版本，最初的版本更偏向于叙事，后来在制作人的建议下，更加注重情感的直接表达...</p>
+                <a href="#" class="text-secondary hover:text-secondary/80 font-medium flex items-center gap-1 transition-colors duration-300">
+                  阅读更多 <i class="fa fa-arrow-right text-sm"></i>
+                </a>
+              </div>
+            </div>
+
+            <!-- 幕后故事卡片 5 -->
+            <div class="w-80 bg-dark rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.02]">
+              <div class="relative h-48 overflow-hidden">
+                <img src="https://picsum.photos/600/400?random=13" alt="录音花絮" class="w-full h-full object-cover transition-transform duration-700 hover:scale-110">
+                <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent"></div>
+                <div class="absolute bottom-4 left-4 bg-primary/90 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                  录音花絮
+                </div>
+              </div>
+              <div class="p-6">
+                <h3 class="text-xl font-bold mb-3 group-hover:text-primary transition-colors duration-300">意外的乐器发现</h3>
+                <p class="text-gray-400 mb-4 line-clamp-4">在录制孤独星球时，我们在录音室的角落里发现了一把老吉他，它的音色充满了故事感，正好符合这首歌的气质...</p>
+                <a href="#" class="text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors duration-300">
+                  阅读更多 <i class="fa fa-arrow-right text-sm"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 滑动指示箭头 -->
+        <div class="absolute top-1/2 -left-4 transform -translate-y-1/2 hidden md:block">
+          <button class="w-10 h-10 rounded-full bg-dark border border-lightgray/30 flex items-center justify-center text-white hover:text-primary transition-colors duration-300">
+            <i class="fa fa-angle-left"></i>
+          </button>
+        </div>
+        <div class="absolute top-1/2 -right-4 transform -translate-y-1/2 hidden md:block">
+          <button class="w-10 h-10 rounded-full bg-dark border border-lightgray/30 flex items-center justify-center text-white hover:text-primary transition-colors duration-300">
+            <i class="fa fa-angle-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 歌词草稿展示 -->
+      <div class="bg-dark rounded-2xl overflow-hidden border border-lightgray/30 p-8 max-w-5xl mx-auto mb-16">
+        <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+          <i class="fa fa-music text-primary"></i>
+          <span>歌词草稿</span>
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="bg-lightgray/20 rounded-lg p-6 transform rotate-1 transition-transform duration-500 hover:rotate-0">
+            <h4 class="text-lg font-semibold mb-4 text-primary">城市霓虹 (初稿)</h4>
+            <pre class="text-gray-300 whitespace-pre-wrap font-mono text-sm leading-relaxed">深夜的街头 霓虹在闪烁
+孤独的身影 被拉长又缩短
+往事像电影 在眼前掠过
+谁在轻声唱 那首熟悉的歌
+
+城市的霓虹 照亮了寂寞
+回忆的碎片 在夜色中坠落
+我还在寻找 属于我的角落
+在这霓虹闪烁的城市 独自漂泊</pre>
+          </div>
+          <div class="bg-lightgray/20 rounded-lg p-6 transform -rotate-1 transition-transform duration-500 hover:rotate-0">
+            <h4 class="text-lg font-semibold mb-4 text-secondary">城市霓虹 (最终版)</h4>
+            <pre class="text-gray-300 whitespace-pre-wrap font-mono text-sm leading-relaxed">深夜的街头 霓虹在跳舞
+孤独的身影 被光影模糊
+往事像电影 画面在重复
+谁在老地方 弹奏着那首歌
+
+城市的霓虹 照亮了孤独
+回忆的碎片 在夜色中漂浮
+我还在寻找 心灵的归宿
+在这霓虹闪烁的城市 与自己独处</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- 录音室视频 -->
+      <div class="bg-dark rounded-2xl overflow-hidden border border-lightgray/30 p-6 max-w-5xl mx-auto">
+        <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+          <i class="fa fa-video-camera text-primary"></i>
+          <span>录音室花絮</span>
+        </h3>
+        <div class="aspect-video bg-darkgray rounded-lg flex items-center justify-center text-gray-500 relative overflow-hidden">
+          <!-- 视频缩略图 -->
+          <img src="https://picsum.photos/1280/720?random=14" alt="录音室花絮" class="w-full h-full object-cover opacity-60">
+          <!-- 播放按钮 -->
+          <div class="absolute inset-0 flex items-center justify-center">
+            <button class="w-20 h-20 rounded-full bg-primary/80 flex items-center justify-center text-white hover:bg-primary transition-colors duration-300 transform hover:scale-110">
+              <i class="fa fa-play text-2xl ml-1"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 专辑购买区域 -->
+  <section id="store" class="py-20 bg-dark relative">
+    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyZTJlMmUiIGZpbGwtb3BhY2l0eT0iLjEiPjxwYXRoIGQ9Ik0zNiAxOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMC0xOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMTggMGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-20"></div>
+    <div class="container mx-auto px-4 relative z-10">
+      <div class="text-center mb-16">
+        <h2 class="text-[clamp(2rem,6vw,3rem)] font-display font-bold mb-4 tracking-tighter">
+          <span class="bg-gradient-to-r from-primary to-secondary text-gradient">专辑商店</span>
+        </h2>
+        <p class="text-gray-400 max-w-xl mx-auto">购买我的实体专辑和周边产品，支持独立音乐</p>
+      </div>
+
+      <!-- 专辑商品网格 -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+        <!-- 专辑商品 1 -->
+        <div class="bg-darkgray rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.02] group relative">
+          <div class="relative overflow-hidden h-64">
+            <img src="https://picsum.photos/500/500?random=17" alt="T恤" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+            <div class="absolute top-4 right-4 bg-secondary/90 text-white text-sm font-semibold px-3 py-1 rounded-full">
+              新品
+            </div>
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-bold mb-1 group-hover:text-primary transition-colors duration-300">乐队logo T恤</h3>
+            <p class="text-gray-400 text-sm mb-4">纯棉材质，多种尺码可选</p>
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-2xl font-bold text-white">¥89</span>
+              <div class="flex items-center gap-1 text-yellow-400">
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star-o"></i>
+                <span class="text-gray-400 text-sm ml-1">(15)</span>
+              </div>
+            </div>
+            <button class="w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2">
+              <i class="fa fa-shopping-cart"></i> 加入购物车
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 其他周边产品 -->
+      <div class="bg-darkgray rounded-2xl overflow-hidden border border-lightgray/30 p-8 max-w-5xl mx-auto">
+        <h3 class="text-xl font-bold mb-6">更多周边产品</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-6">
+          <!-- 周边商品 1 -->
+          <div class="group text-center">
+            <div class="relative overflow-hidden rounded-lg mb-4 aspect-square">
+              <img src="https://picsum.photos/300/300?random=18" alt="海报" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+            </div>
+            <h4 class="font-semibold mb-1 group-hover:text-primary transition-colors duration-300">限量海报</h4>
+            <p class="text-gray-400 text-sm">¥49</p>
+          </div>
+
+          <!-- 周边商品 2 -->
+          <div class="group text-center">
+            <div class="relative overflow-hidden rounded-lg mb-4 aspect-square">
+              <img src="https://picsum.photos/300/300?random=20" alt="手环" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+            </div>
+            <h4 class="font-semibold mb-1 group-hover:text-primary transition-colors duration-300">硅胶手环</h4>
+            <p class="text-gray-400 text-sm">¥29</p>
+          </div>
+
+          <!-- 周边商品 3 -->
+          <div class="group text-center">
+            <div class="relative overflow-hidden rounded-lg mb-4 aspect-square">
+              <img src="https://picsum.photos/300/300?random=20" alt="笔记本" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+            </div>
+            <h4 class="font-semibold mb-1 group-hover:text-primary transition-colors duration-300">歌词笔记本</h4>
+            <p class="text-gray-400 text-sm">¥39</p>
+          </div>
+
+          <!-- 周边商品 4 -->
+          <div class="group text-center">
+            <div class="relative overflow-hidden rounded-lg mb-4 aspect-square">
+              <img src="https://picsum.photos/300/300?random=21" alt="徽章套装" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+            </div>
+            <h4 class="font-semibold mb-1 group-hover:text-primary transition-colors duration-300">徽章套装</h4>
+            <p class="text-gray-400 text-sm">¥59</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 乐迷互动区域 -->
+  <section id="contact" class="py-20 bg-darkgray relative">
+    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyZTJlMmUiIGZpbGwtb3BhY2l0eT0iLjEiPjxwYXRoIGQ9Ik0zNiAxOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMC0xOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMTggMGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-20"></div>
+    <div class="container mx-auto px-4 relative z-10">
+      <div class="text-center mb-16">
+        <h2 class="text-[clamp(2rem,6vw,3rem)] font-display font-bold mb-4 tracking-tighter">
+          <span class="bg-gradient-to-r from-primary to-secondary text-gradient">乐迷互动</span>
+        </h2>
+        <p class="text-gray-400 max-w-xl mx-auto">留下你的想法和建议，与我互动交流</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+        <!-- 留言板 -->
+        <div class="bg-dark rounded-2xl overflow-hidden border border-lightgray/30 p-8">
+          <h3 class="text-xl font-bold mb-6">留言板</h3>
+          <div class="space-y-6 mb-8" id="message-board">
+            <!-- 留言 1 -->
+            <div class="bg-lightgray/20 rounded-lg p-4">
+              <div class="flex items-center gap-3 mb-3">
+                <img src="https://picsum.photos/50/50?random=22" alt="用户头像" class="w-10 h-10 rounded-full object-cover">
+                <div>
+                  <h4 class="font-semibold">小明</h4>
+                  <p class="text-xs text-gray-400">2024-05-15 14:30</p>
+                </div>
+              </div>
+              <p class="text-gray-300">城市霓虹这首歌真的太好听了，每次听都有不同的感受，期待你的下一张专辑！</p>
+            </div>
+
+            <!-- 留言 2 -->
+            <div class="bg-lightgray/20 rounded-lg p-4">
+              <div class="flex items-center gap-3 mb-3">
+                <img src="https://picsum.photos/50/50?random=23" alt="用户头像" class="w-10 h-10 rounded-full object-cover">
+                <div>
+                  <h4 class="font-semibold">小红</h4>
+                  <p class="text-xs text-gray-400">2024-05-10 09:15</p>
+                </div>
+              </div>
+              <p class="text-gray-300">上周的演出太棒了！希望能尽快再来成都演出，一定会去支持！</p>
+            </div>
+
+            <!-- 留言 3 -->
+            <div class="bg-lightgray/20 rounded-lg p-4">
+              <div class="flex items-center gap-3 mb-3">
+                <img src="https://picsum.photos/50/50?random=24" alt="用户头像" class="w-10 h-10 rounded-full object-cover">
+                <div>
+                  <h4 class="font-semibold">小李</h4>
+                  <p class="text-xs text-gray-400">2024-05-05 21:45</p>
+                </div>
+              </div>
+              <p class="text-gray-300">很喜欢孤独星球的歌词，写得很有深度，能感受到你想表达的情感。</p>
+            </div>
+          </div>
+
+          <!-- 留言表单 -->
+          <form id="message-form" class="space-y-4">
+            <div>
+              <label for="name" class="block text-sm font-medium text-gray-300 mb-1">昵称</label>
+              <input type="text" id="name" class="w-full bg-lightgray/30 border border-lightgray/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50" placeholder="请输入你的昵称">
+            </div>
+            <div>
+              <label for="message" class="block text-sm font-medium text-gray-300 mb-1">留言内容</label>
+              <textarea id="message" rows="4" class="w-full bg-lightgray/30 border border-lightgray/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50" placeholder="请输入你的留言"></textarea>
+            </div>
+            <button type="submit" class="w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2">
+              <i class="fa fa-paper-plane"></i> 发送留言
+            </button>
+          </form>
+        </div>
+
+        <!-- 社交媒体与联系信息 -->
+        <div class="bg-dark rounded-2xl overflow-hidden border border-lightgray/30 p-8">
+          <h3 class="text-xl font-bold mb-6">关注我</h3>
+          <p class="text-gray-400 mb-8">通过社交媒体与我保持联系，获取最新动态</p>
+
+          <!-- 社交媒体图标 -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-6 mb-12">
+            <!-- 社交媒体 1 -->
+            <a href="#" class="bg-lightgray/20 hover:bg-primary/20 rounded-xl p-6 text-center transition-all duration-300 transform hover:scale-105 hover:border-primary/50 border border-transparent group">
+              <div class="w-16 h-16 bg-primary/10 hover:bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300 group-hover:text-primary">
+                <i class="fa fa-weibo text-2xl"></i>
+              </div>
+              <h4 class="font-semibold group-hover:text-primary transition-colors duration-300">微博</h4>
+            </a>
+
+            <!-- 社交媒体 2 -->
+            <a href="#" class="bg-lightgray/20 hover:bg-primary/20 rounded-xl p-6 text-center transition-all duration-300 transform hover:scale-105 hover:border-primary/50 border border-transparent group">
+              <div class="w-16 h-16 bg-primary/10 hover:bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300 group-hover:text-primary">
+                <i class="fa fa-wechat text-2xl"></i>
+              </div>
+              <h4 class="font-semibold group-hover:text-primary transition-colors duration-300">微信</h4>
+            </a>
+
+            <!-- 社交媒体 3 -->
+            <a href="#" class="bg-lightgray/20 hover:bg-primary/20 rounded-xl p-6 text-center transition-all duration-300 transform hover:scale-105 hover:border-primary/50 border border-transparent group">
+              <div class="w-16 h-16 bg-primary/10 hover:bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300 group-hover:text-primary">
+                <i class="fa fa-instagram text-2xl"></i>
+              </div>
+              <h4 class="font-semibold group-hover:text-primary transition-colors duration-300">Instagram</h4>
+            </a>
+
+            <!-- 社交媒体 4 -->
+            <a href="#" class="bg-lightgray/20 hover:bg-primary/20 rounded-xl p-6 text-center transition-all duration-300 transform hover:scale-105 hover:border-primary/50 border border-transparent group">
+              <div class="w-16 h-16 bg-primary/10 hover:bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300 group-hover:text-primary">
+                <i class="fa fa-youtube-play text-2xl"></i>
+              </div>
+              <h4 class="font-semibold group-hover:text-primary transition-colors duration-300">YouTube</h4>
+            </a>
+
+            <!-- 社交媒体 5 -->
+            <a href="#" class="bg-lightgray/20 hover:bg-primary/20 rounded-xl p-6 text-center transition-all duration-300 transform hover:scale-105 hover:border-primary/50 border border-transparent group">
+              <div class="w-16 h-16 bg-primary/10 hover:bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300 group-hover:text-primary">
+                <i class="fa fa-spotify text-2xl"></i>
+              </div>
+              <h4 class="font-semibold group-hover:text-primary transition-colors duration-300">Spotify</h4>
+            </a>
+
+            <!-- 社交媒体 6 -->
+            <a href="#" class="bg-lightgray/20 hover:bg-primary/20 rounded-xl p-6 text-center transition-all duration-300 transform hover:scale-105 hover:border-primary/50 border border-transparent group">
+              <div class="w-16 h-16 bg-primary/10 hover:bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300 group-hover:text-primary">
+                <i class="fa fa-twitter text-2xl"></i>
+              </div>
+              <h4 class="font-semibold group-hover:text-primary transition-colors duration-300">Twitter</h4>
+            </a>
+          </div>
+
+          <!-- 联系信息 -->
+          <div class="space-y-6">
+            <div class="flex items-start gap-4">
+              <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                <i class="fa fa-envelope text-primary"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-1">电子邮件</h4>
+                <p class="text-gray-400">contact@independentartist.com</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-4">
+              <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                <i class="fa fa-phone text-primary"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-1">商务合作</h4>
+                <p class="text-gray-400">+86 123 4567 8910</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-4">
+              <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                <i class="fa fa-map-marker text-primary"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-1">工作室地址</h4>
+                <p class="text-gray-400">北京市朝阳区音乐产业园区A座501室</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 页脚 -->
+  <footer class="bg-dark py-12 border-t border-lightgray/20">
+    <div class="container mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+        <div>
+          <a href="#" class="flex items-center gap-2 mb-6">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+              <i class="fa fa-music text-white"></i>
+            </div>
+            <span class="text-xl font-display font-bold tracking-wider animate-glow">SOUNDWAVE</span>
+          </a>
+          <p class="text-gray-400 mb-6">独立音乐人的个人品牌展示网站，致力于创作和分享优质音乐内容。</p>
+          <div class="flex gap-4">
+            <a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300"><i class="fa fa-weibo"></i></a>
+            <a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300"><i class="fa fa-wechat"></i></a>
+            <a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300"><i class="fa fa-instagram"></i></a>
+            <a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300"><i class="fa fa-youtube-play"></i></a>
+          </div>
+        </div>
+        <div>
+          <h4 class="text-lg font-bold mb-6">快速链接</h4>
+          <ul class="space-y-3">
+            <li><a href="#home" class="text-gray-400 hover:text-primary transition-colors duration-300">首页</a></li>
+            <li><a href="#music" class="text-gray-400 hover:text-primary transition-colors duration-300">音乐</a></li>
+            <li><a href="#shows" class="text-gray-400 hover:text-primary transition-colors duration-300">演出</a></li>
+            <li><a href="#behind" class="text-gray-400 hover:text-primary transition-colors duration-300">创作幕后</a></li>
+            <li><a href="#store" class="text-gray-400 hover:text-primary transition-colors duration-300">商店</a></li>
+            <li><a href="#contact" class="text-gray-400 hover:text-primary transition-colors duration-300">联系</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-lg font-bold mb-6">法律信息</h4>
+          <ul class="space-y-3">
+            <li><a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300">隐私政策</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300">使用条款</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300">版权声明</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300">Cookie 政策</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-lg font-bold mb-6">订阅更新</h4>
+          <p class="text-gray-400 mb-4">订阅我的电子邮件，获取最新音乐和演出信息</p>
+          <form class="flex flex-col sm:flex-row gap-3">
+            <input type="email" placeholder="你的邮箱地址" class="flex-1 bg-lightgray/30 border border-lightgray/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50">
+            <button type="submit" class="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition-all duration-300 whitespace-nowrap">
+              订阅
+            </button>
+          </form>
+        </div>
+      </div>
+      <div class="pt-8 border-t border-lightgray/20 text-center text-gray-500 text-sm">
+        <p>&copy; 2024 独立音乐人个人品牌. 保留所有权利.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript -->
+  <script>
+    // 导航栏滚动效果
+    window.addEventListener('scroll', function() {
+      const navbar = document.getElementById('navbar');
+      if (window.scrollY > 50) {
+        navbar.classList.add('py-2', 'shadow-lg');
+        navbar.classList.remove('py-4');
+      } else {
+        navbar.classList.add('py-4');
+        navbar.classList.remove('py-2', 'shadow-lg');
+      }
+    });
+
+    // 移动端菜单
+    const menuBtn = document.getElementById('menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    menuBtn.addEventListener('click', function() {
+      mobileMenu.classList.toggle('hidden');
+    });
+
+    // 平滑滚动
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href');
+        if (targetId === '#') return;
+
+        const targetElement = document.querySelector(targetId);
+        if (targetElement) {
+          window.scrollTo({
+            top: targetElement.offsetTop - 80,
+            behavior: 'smooth'
+          });
+          // 关闭移动端菜单
+          if (!mobileMenu.classList.contains('hidden')) {
+            mobileMenu.classList.add('hidden');
+          }
+        }
+      });
+    });
+
+    // 留言表单提交
+    const messageForm = document.getElementById('message-form');
+    const messageBoard = document.getElementById('message-board');
+
+    messageForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const message = document.getElementById('message').value;
+
+      if (!name || !message) {
+        alert('请输入昵称和留言内容');
+        return;
+      }
+
+      // 创建新留言
+      const now = new Date();
+      const dateStr = now.getFullYear() + '-' + (now.getMonth() + 1).toString().padStart(2, '0') + '-' + now.getDate().toString().padStart(2, '0') + ' ' + now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+      const newMessage = document.createElement('div');
+      newMessage.className = 'bg-lightgray/20 rounded-lg p-4 animate-fade-in';
+      newMessage.innerHTML = `
+        <div class="flex items-center gap-3 mb-3">
+          <img src="https://picsum.photos/50/50?random=${Math.floor(Math.random() * 1000)}" alt="用户头像" class="w-10 h-10 rounded-full object-cover">
+          <div>
+            <h4 class="font-semibold">${name}</h4>
+            <p class="text-xs text-gray-400">${dateStr}</p>
+          </div>
+        </div>
+        <p class="text-gray-300">${message}</p>
+      `;
+
+      // 添加到留言板顶部
+      messageBoard.insertBefore(newMessage, messageBoard.firstChild);
+
+      // 清空表单
+      messageForm.reset();
+    });
+
+    // 横向滚动卡片控制
+    const scrollContainer = document.querySelector('.overflow-x-auto');
+    const leftBtn = document.querySelector('.fa-angle-left').parentElement;
+    const rightBtn = document.querySelector('.fa-angle-right').parentElement;
+
+    if (leftBtn && rightBtn) {
+      leftBtn.addEventListener('click', () => {
+        scrollContainer.scrollBy({ left: -300, behavior: 'smooth' });
+      });
+
+      rightBtn.addEventListener('click', () => {
+        scrollContainer.scrollBy({ left: 300, behavior: 'smooth' });
+      });
+    }
+  </script>
+</body>
+</html>-64">
+            <img src="https://picsum.photos/500/500?random=15" alt="专辑封面" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+            <div class="absolute top-4 right-4 bg-primary/90 text-white text-sm font-semibold px-3 py-1 rounded-full">
+              热卖
+            </div>
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-bold mb-1 group-hover:text-primary transition-colors duration-300">城市霓虹 (实体专辑)</h3>
+            <p class="text-gray-400 text-sm mb-4">包含10首歌曲，限量版CD+歌词本</p>
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-2xl font-bold text-white">¥128</span>
+              <div class="flex items-center gap-1 text-yellow-400">
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star-half-o"></i>
+                <span class="text-gray-400 text-sm ml-1">(42)</span>
+              </div>
+            </div>
+            <button class="w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2">
+              <i class="fa fa-shopping-cart"></i> 加入购物车
+            </button>
+          </div>
+        </div>
+
+        <!-- 专辑商品 2 -->
+        <div class="bg-darkgray rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.02] group relative">
+          <div class="relative overflow-hidden h-64">
+            <img src="https://picsum.photos/500/500?random=16" alt="专辑封面" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-bold mb-1 group-hover:text-primary transition-colors duration-300">孤独星球 (黑胶唱片)</h3>
+            <p class="text-gray-400 text-sm mb-4">12寸黑胶唱片，限量编号版</p>
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-2xl font-bold text-white">¥299</span>
+              <div class="flex items-center gap-1 text-yellow-400">
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star"></i>
+                <i class="fa fa-star"></i>
+                <span class="text-gray-400 text-sm ml-1">(28)</span>
+              </div>
+            </div>
+            <button class="w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2">
+              <i class="fa fa-shopping-cart"></i> 加入购物车
+            </button>
+          </div>
+        </div>
+
+        <!-- 专辑商品 3 -->
+        <div class="bg-darkgray rounded-xl overflow-hidden border border-lightgray/30 hover:border-primary/50 transition-all duration-300 transform hover:scale-[1.02] group relative">
+          <div class="relative overflow-hidden h
