@@ -1,6 +1,6 @@
 <template>
   <div class="modal-overlay" @click.self="close">
-    <div class="modal-container">
+    <div class="modal">
       <div class="modal-header">
         <h2>{{ mode === 'edit' ? '编辑成员信息' : '添加新成员' }}</h2>
         <button class="close-btn" @click="close">
@@ -45,59 +45,68 @@
             </div>
           </div>
 
-          <div class="form-group">
-            <label>成员姓名 *</label>
-            <input
-              type="text"
-              v-model="formData.name"
-              required
-              placeholder="请输入成员姓名"
-            >
+          <!-- 成员姓名和角色/职位占一排 -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">成员姓名 *</label>
+              <input
+                type="text"
+                v-model="formData.name"
+                class="form-control"
+                required
+                placeholder="请输入成员姓名"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">角色/职位</label>
+              <input
+                type="text"
+                v-model="formData.role"
+                class="form-control"
+                placeholder="如：主唱、吉他手、鼓手等"
+              />
+            </div>
           </div>
           
           <div class="form-group">
-            <label>角色/职位</label>
-            <input 
-              type="text" 
-              v-model="formData.role" 
-              placeholder="如：主唱、吉他手、鼓手等"
-            >
-          </div>
-          
-          <div class="form-group">
-            <label>所属乐队 *</label>
-            <select v-model="formData.band_id" required>
+            <label class="form-label">所属乐队 *</label>
+            <select v-model="formData.band_id" class="form-control" required>
               <option value="">请选择乐队</option>
-              <option 
-                v-for="band in bands" 
-                :key="band.id" 
+              <option
+                v-for="band in bands"
+                :key="band.id"
                 :value="band.id"
               >
                 {{ band.name }}
               </option>
             </select>
           </div>
-          
+
           <!-- 恢复为原生 input[type=date] 日期输入框 -->
           <div class="form-group">
-            <label>加入日期 *</label>
-            <input 
-              type="date" 
-              v-model="formData.join_date" 
+            <label class="form-label">加入日期 *</label>
+            <input
+              type="date"
+              v-model="formData.join_date"
+              class="form-control custom-date-input"
               required
               :max="today"
-              class="custom-date-input"
               placeholder="选择日期"
-            >
+            />
           </div>
           
-          <div class="form-buttons">
-            <button type="button" class="cancel-btn" @click="close">取消</button>
-            <button type="submit" class="save-btn" :disabled="!isFormValid">
-              {{ mode === 'edit' ? '更新' : '创建' }}
-            </button>
-          </div>
         </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" @click="close">
+          取消
+        </button>
+        <button type="button" class="btn btn-primary" @click="save" :disabled="!isFormValid">
+          <i class="fa fa-save"></i>
+          {{ mode === 'edit' ? '更新' : '创建' }}
+        </button>
       </div>
     </div>
     
@@ -258,46 +267,29 @@ onMounted(() => {
 @use '@/assets/scss/variables' as *;
 @use 'sass:color';
 
+// 🎨 成员模态框样式优化 - 使用全局样式
 .modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba($dark, 0.8);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 2rem;
+  // 针对成员模态框的智能定位
+  @media (min-width: 1025px) {
+    // 桌面端：考虑导航栏高度，使用顶部对齐策略
+    align-items: flex-start;
+    padding-top: 60px; // 减少顶部边距，使模态框更靠近顶部
+  }
 
   @media (max-width: 768px) {
-    padding: 1rem;
+    // 移动端：底部弹出，更适合表单填写
+    align-items: flex-end;
   }
 }
 
-.modal-container {
-  background: linear-gradient(135deg, rgba($darkgray, 0.95), rgba($lightgray, 0.9));
-  backdrop-filter: blur(20px);
-  border-radius: $border-radius-xl;
-  width: 550px;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow: hidden;
-  box-shadow:
-    0 25px 50px rgba($dark, 0.5),
-    0 0 0 1px rgba($primary, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  animation: modalSlideIn $transition-normal ease;
-}
+.modal {
+  // 成员模态框特定尺寸
+  max-width: 550px;
+  width: 100%;
 
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+  // 桌面端优化高度
+  @media (min-width: 1025px) {
+    max-height: calc(100vh - 100px); // 减少顶部边距后，增加可用高度
   }
 }
 
@@ -305,7 +297,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2rem 2rem 1rem;
+  padding: 1.25rem 1.5rem 0.75rem; // 减少内边距
   background: linear-gradient(135deg, rgba($primary, 0.1), rgba($secondary, 0.05));
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 
@@ -344,31 +336,45 @@ onMounted(() => {
 }
 
 .modal-body {
-  padding: 2rem;
-  max-height: 60vh;
-  overflow-y: auto;
+  padding: 1.25rem; // 减少内边距
+  max-height: none; // 移除固定高度限制
+  overflow-y: visible; // 取消滚动条
 
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
+  // 移除滚动条样式
+  // &::-webkit-scrollbar {
+  //   width: 6px;
+  // }
 
-  &::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
-  }
+  // &::-webkit-scrollbar-track {
+  //   background: rgba(255, 255, 255, 0.1);
+  //   border-radius: 3px;
+  // }
 
-  &::-webkit-scrollbar-thumb {
-    background: rgba($primary, 0.5);
-    border-radius: 3px;
+  // &::-webkit-scrollbar-thumb {
+  //   background: rgba($primary, 0.5);
+  //   border-radius: 3px;
 
-    &:hover {
-      background: rgba($primary, 0.7);
-    }
+  //   &:hover {
+  //     background: rgba($primary, 0.7);
+  //   }
+  // }
+}
+
+// 🎨 表单样式
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
   }
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem; // 减少表单组间距
 
   label {
     display: block;
@@ -382,7 +388,7 @@ onMounted(() => {
   select,
   textarea {
     width: 100%;
-    padding: 1rem 1.25rem;
+    padding: 0.75rem 1rem; // 减少内边距
     background: rgba($lightgray, 0.4);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: $border-radius-lg;
@@ -415,8 +421,8 @@ onMounted(() => {
 // 🌟 头像上传区域
 .avatar-section {
   text-align: center;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
+  margin-bottom: 1.25rem; // 减少底部间距
+  padding: 1rem; // 减少内边距
   background: rgba(255, 255, 255, 0.05);
   border-radius: $border-radius-lg;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -547,64 +553,7 @@ select {
   }
 }
 
-// 表单按钮区域
-.form-buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding: 1rem 2rem 2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.02);
-
-  @media (max-width: 480px) {
-    flex-direction: column;
-    padding: 1rem;
-  }
-}
-
-.cancel-btn,
-.save-btn {
-  padding: 0.875rem 2rem;
-  border: none;
-  border-radius: 50px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 0.95rem;
-  transition: all $transition-normal ease;
-  min-width: 120px;
-}
-
-.cancel-btn {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
-    transform: translateY(-2px);
-  }
-}
-
-.save-btn {
-  background: linear-gradient(135deg, $primary, $secondary);
-  color: white;
-  box-shadow: 0 4px 15px rgba($primary, 0.3);
-
-  &:hover {
-    background: linear-gradient(135deg, color.adjust($primary, $lightness: -10%), color.adjust($secondary, $lightness: -10%));
-    box-shadow: 0 6px 20px rgba($primary, 0.4);
-    transform: translateY(-2px);
-  }
-
-  &:disabled {
-    background: rgba(255, 255, 255, 0.2);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-}
+// 自定义按钮样式已移除，使用全局样式
 
 @media (max-width: 768px) {
   .modal-container {
@@ -617,9 +566,7 @@ select {
     padding: 1.5rem;
   }
 
-  .form-buttons {
-    padding: 1rem 1.5rem 1.5rem;
-  }
+
 }
 </style>
 

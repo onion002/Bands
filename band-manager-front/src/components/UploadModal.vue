@@ -7,7 +7,7 @@
           <i class="fas fa-times"></i>
         </button>
       </div>
-      
+
       <div class="modal-body">
         <!-- 上传区域 -->
         <div v-if="!previewUrl" class="upload-area" @dragover.prevent @drop="handleDrop">
@@ -17,7 +17,7 @@
           <button class="select-file" @click="triggerFileInput">选择图片</button>
           <p class="hint">支持 JPG, PNG, GIF 格式，最大 5MB</p>
         </div>
-        
+
         <!-- 预览区域 -->
         <div v-else class="preview-area">
           <img :src="previewUrl" alt="预览头像">
@@ -28,12 +28,12 @@
             </button>
           </div>
         </div>
-        
+
         <!-- 上传进度 -->
         <div v-if="uploading" class="progress-container">
           <div class="progress-bar" :style="{ width: progress + '%' }"></div>
         </div>
-        
+
         <!-- 上传结果 -->
         <div v-if="result" class="result-message" :class="{ success: result.success, error: !result.success }">
           <i :class="['fas', result.success ? 'fa-check-circle' : 'fa-exclamation-circle']"></i>
@@ -90,10 +90,10 @@ const handleDrop = (e: DragEvent) => {
 const processFile = (selectedFile: File) => {
   console.log('处理文件:', selectedFile.name, selectedFile.type, selectedFile.size)
   console.log('接受的类型:', acceptType)
-  
+
   // 修复文件类型验证逻辑
   let isValidType = false
-  
+
   // 如果 acceptType 是 "image/*"，检查文件类型是否以 "image/" 开头
   if (acceptType === 'image/*') {
     isValidType = selectedFile.type.startsWith('image/')
@@ -102,9 +102,9 @@ const processFile = (selectedFile: File) => {
     const acceptTypes = acceptType.split(',').map(type => type.trim())
     isValidType = acceptTypes.includes(selectedFile.type)
   }
-  
+
   console.log('文件类型验证结果:', isValidType)
-  
+
   if (!isValidType) {
     result.value = {
       success: false,
@@ -112,7 +112,7 @@ const processFile = (selectedFile: File) => {
     }
     return
   }
-  
+
   if (selectedFile.size > maxFileSize) {
     result.value = {
       success: false,
@@ -120,11 +120,11 @@ const processFile = (selectedFile: File) => {
     }
     return
   }
-  
+
   file.value = selectedFile
   previewUrl.value = URL.createObjectURL(selectedFile)
   result.value = null
-  
+
   console.log('文件处理完成，准备预览')
 }
 const clearPreview = () => {
@@ -134,41 +134,41 @@ const clearPreview = () => {
 }
 const startUpload = async () => {
   if (!file.value) return
-  
+
   console.log('开始上传文件:', file.value.name, file.value.type)
-  
+
   uploading.value = true
   result.value = null
   progress.value = 0
-  
+
   try {
     const progressInterval = setInterval(() => {
       if (progress.value < 90) progress.value += 10
     }, 100)
-    
+
     console.log('调用上传 API...')
     const response: any = await props.uploadApi(file.value)
     console.log('上传响应:', response)
-    
+
     clearInterval(progressInterval)
     progress.value = 100
-    
+
     // 修复URL获取逻辑，支持多种字段名
     const url = response[urlField] || response.url || response.poster_url
     console.log('提取的URL:', url, '使用字段:', urlField)
-    
+
     result.value = {
       success: true,
       message: '图片上传成功',
       url
     }
-    
+
     if (url) {
       emit('uploaded', url)
     } else {
       throw new Error('响应中未找到图片URL')
     }
-    
+
     setTimeout(() => {
       if (url) close()
     }, 1500)
@@ -187,21 +187,29 @@ const close = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+// 🎨 上传模态框样式优化
 .modal-overlay {
+  // 继承全局样式
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 1rem;
+
+  // 上传模态框智能定位
+  @media (max-width: 768px) {
+    align-items: flex-end;
+    padding: 0;
+  }
 }
 
 .upload-modal {
+  // 继承全局模态框样式
   background: linear-gradient(135deg, rgba(30, 30, 46, 0.95), rgba(44, 44, 62, 0.9));
   backdrop-filter: blur(20px);
   border-radius: 20px;
@@ -213,7 +221,16 @@ const close = () => {
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
-  animation: modalSlideIn 0.3s ease;
+
+  // 使用全局动画
+  animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+
+  @media (max-width: 768px) {
+    max-width: 100vw;
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    animation: modalSlideInMobile 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
 }
 
 @keyframes modalSlideIn {
@@ -221,6 +238,7 @@ const close = () => {
     opacity: 0;
     transform: translateY(-20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -229,7 +247,7 @@ const close = () => {
 
 .modal-header {
   background: linear-gradient(135deg, rgba(255, 42, 109, 0.8), rgba(5, 217, 232, 0.6));
-  padding: 24px;
+  padding: 1rem 1.25rem; // 减少内边距
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -267,14 +285,14 @@ const close = () => {
 }
 
 .modal-body {
-  padding: 30px;
+  padding: 1.25rem; // 减少内边距
   color: white;
 }
 
 .upload-area {
   border: 2px dashed rgba(255, 42, 109, 0.4);
   border-radius: 16px;
-  padding: 50px 30px;
+  padding: 2rem 1.5rem; // 减少内边距
   text-align: center;
   transition: all 0.3s ease;
   background: rgba(255, 42, 109, 0.05);
@@ -304,15 +322,15 @@ const close = () => {
 }
 
 .upload-area i {
-  font-size: 4rem;
+  font-size: 3rem; // 减小图标尺寸
   color: #ff2a6d;
-  margin-bottom: 20px;
+  margin-bottom: 1rem; // 减少底部间距
   display: block;
   opacity: 0.8;
 }
 
 .upload-area p {
-  margin: 0 0 20px;
+  margin: 0 0 1rem; // 减少底部间距
   color: rgba(255, 255, 255, 0.8);
   font-size: 1.1rem;
 }
@@ -345,20 +363,20 @@ const close = () => {
 
 .preview-area {
   text-align: center;
-  padding: 20px;
+  padding: 1rem; // 减少内边距
   background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .preview-area img {
-  max-width: 250px;
-  max-height: 250px;
-  border-radius: 16px;
-  object-fit: cover;
-  margin-bottom: 25px;
-  border: 3px solid #ff2a6d;
-  box-shadow: 0 8px 25px rgba(255, 42, 109, 0.3);
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  object-fit: contain;
+  margin-bottom: 20px;
+  border: 2px solid rgba(255, 42, 109, 0.5);
   transition: transform 0.3s ease;
 
   &:hover {
@@ -372,7 +390,8 @@ const close = () => {
   justify-content: center;
 }
 
-.cancel-btn, .upload-btn {
+.cancel-btn,
+.upload-btn {
   padding: 12px 24px;
   border: none;
   border-radius: 50px;
@@ -435,8 +454,13 @@ const close = () => {
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .progress-bar {
@@ -460,8 +484,13 @@ const close = () => {
 }
 
 @keyframes progressShine {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .result-message {
@@ -494,16 +523,18 @@ const close = () => {
     width: 95%;
     margin: 10px;
   }
-  
-  .modal-header, .modal-body {
+
+  .modal-header,
+  .modal-body {
     padding: 15px;
   }
-  
+
   .preview-actions {
     flex-direction: column;
   }
-  
-  .cancel-btn, .upload-btn {
+
+  .cancel-btn,
+  .upload-btn {
     width: 100%;
   }
 }

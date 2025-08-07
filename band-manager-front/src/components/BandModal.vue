@@ -122,9 +122,9 @@
     <UploadModal
       v-if="showUploadModal"
       title="上传乐队图片"
-      :upload-api="BandService.uploadBandImage"
+      :upload-api="uploadBandImageWrapper"
       accept="image/*"
-      :max-size="5"
+      :max-size="5 * 1024 * 1024"
       @uploaded="handleImageUploaded"
       @close="showUploadModal = false"
     />
@@ -198,7 +198,29 @@
   const triggerBandImageUpload = () => {
     showUploadModal.value = true;
   };
+
+  // 创建包装的上传API函数，确保返回正确的格式
+  const uploadBandImageWrapper = async (file: File) => {
+    try {
+      console.log('开始上传乐队图片:', file.name);
+      const response = await BandService.uploadBandImage(file);
+      console.log('乐队图片上传响应:', response);
+
+      // 确保返回正确的格式，UploadModal期望的是 { url: string }
+      const imageUrl = (response as any).url || (response as any).image_url || response.data?.url || response.data?.image_url;
+      if (!imageUrl) {
+        throw new Error('服务器返回的响应中没有找到图片URL');
+      }
+
+      return { url: imageUrl };
+    } catch (error) {
+      console.error('乐队图片上传失败:', error);
+      throw error;
+    }
+  };
+
   const handleImageUploaded = (imageUrl: string) => {
+    console.log('乐队图片上传成功，URL:', imageUrl);
     formData.value.banner_image_url = imageUrl;
     showUploadModal.value = false;
   };
@@ -210,123 +232,41 @@
 <style scoped lang="scss">
 @use '@/assets/scss/variables' as *;
 @use '@/assets/scss/mixins' as *;
+@use 'sass:color';
 
-// 🎨 优化的模态框样式
+// 🎨 乐队模态框样式优化
 .modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba($dark, 0.8);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 2rem;
-  @include modal-backdrop;
-  @include hardware-acceleration;
+  // 针对乐队模态框的智能定位
+  @media (min-width: 1025px) {
+    // 桌面端：考虑导航栏高度，使用顶部对齐策略
+    align-items: flex-start;
+    padding-top: 80px; // 减少顶部边距，使模态框更靠近顶部
+  }
 
   @media (max-width: 768px) {
-    padding: 1rem;
+    // 移动端：底部弹出，更适合表单填写
+    align-items: flex-end;
   }
 }
 
 .modal {
-  background: linear-gradient(135deg, rgba($darkgray, 0.95), rgba($lightgray, 0.9));
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: $border-radius-xl;
-  width: 100%;
+  // 乐队模态框特定尺寸
   max-width: 650px;
-  max-height: 90vh;
-  overflow: hidden;
-  box-shadow:
-    0 25px 50px rgba($dark, 0.5),
-    0 0 0 1px rgba($primary, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  @include modal-enter;
-  @include hardware-acceleration;
 
-  .modal-header {
-    padding: 2rem 2rem 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, rgba($primary, 0.1), rgba($secondary, 0.05));
-
-    h3 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      background: $gradient-primary;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin: 0;
-      text-shadow: 0 2px 10px rgba($primary, 0.3);
-    }
-
-    .close-btn {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: $gray-400;
-      cursor: pointer;
-      padding: 0.75rem;
-      border-radius: 50%;
-      transition: all $transition-fast ease;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      &:hover {
-        color: $white;
-        background: rgba($primary, 0.2);
-        border-color: rgba($primary, 0.4);
-        transform: rotate(90deg);
-      }
-
-      i {
-        font-size: 1.25rem;
-      }
-    }
+  // 桌面端优化高度
+  @media (min-width: 1025px) {
+    max-height: calc(100vh - 100px); // 减少顶部边距后，增加可用高度
   }
 
-  .modal-body {
-    padding: 2rem;
-    max-height: 60vh;
-    overflow-y: auto;
-
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 3px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: rgba($primary, 0.5);
-      border-radius: 3px;
-
-      &:hover {
-        background: rgba($primary, 0.7);
-      }
-    }
-  }
-
-  .modal-footer {
-    padding: 1rem 2rem 2rem;
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.02);
-
-    @media (max-width: 480px) {
-      flex-direction: column;
-    }
+  // 乐队模态框特殊标题样式
+  .modal-header h3 {
+    background: linear-gradient(135deg, $primary, color.adjust($primary, $lightness: 20%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-shadow: 0 2px 10px rgba($primary, 0.3);
   }
 }
 // 🎨 表单样式
@@ -334,20 +274,20 @@
   .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
+    gap: 1rem; // 减少间距
+    margin-bottom: 1rem; // 减少底部间距
 
     @media (max-width: 480px) {
       grid-template-columns: 1fr;
-      gap: 1rem;
+      gap: 0.75rem; // 移动端进一步减少
     }
   }
 
   .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem; // 减少表单组间距
 
     &.image-upload-group {
-      margin-bottom: 2rem;
+      margin-bottom: 1.25rem; // 减少图片上传组间距
     }
 
     .form-label {
@@ -360,7 +300,7 @@
 
     .form-control {
       width: 100%;
-      padding: 1rem 1.25rem;
+      padding: 0.75rem 1rem; // 减少内边距
       background: rgba($lightgray, 0.4);
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: $border-radius-lg;
@@ -387,11 +327,6 @@
       &:hover:not(:focus) {
         border-color: rgba(255, 255, 255, 0.25);
         background: rgba($lightgray, 0.5);
-      }
-
-      &:invalid {
-        border-color: #ef4444;
-        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
       }
     }
 

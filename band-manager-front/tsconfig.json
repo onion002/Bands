@@ -10,18 +10,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "esModuleInterop": true,
-    "lib": [
-      "ESNext",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
     "noEmit": true,
-    "types": [
-      "vite/client",
-      "element-plus/global",
-      "node"
-    ],
+    "types": ["vite/client", "node"],  // 移除了问题类型
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
@@ -31,21 +23,14 @@
       "@stores/*": ["src/stores/*"],
       "@api/*": ["src/api/*"],
       "@types/*": ["src/types/*"]
-    },
-    // 添加以下配置
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "noImplicitAny": false,
-    "noFallthroughCasesInSwitch": true,
-    "exactOptionalPropertyTypes": false
+    }
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.d.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
-    "vite.config.ts" // 包含 Vite 配置文件
+    "vite.config.ts"
   ],
   "references": [
     {

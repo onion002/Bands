@@ -10,18 +10,54 @@
 
       <div class="modal-body">
         <form @submit.prevent="handleSubmit" class="event-form">
-          <!-- 🎵 基本信息 -->
-          <div class="form-group">
-            <label class="form-label">活动标题 *</label>
-            <input
-              type="text"
-              v-model="formData.title"
-              class="form-control"
-              placeholder="请输入活动标题..."
-              maxlength="200"
-              required
-            />
-            <div class="char-count">{{ formData.title.length }}/200</div>
+          <!-- 基本信息 - 活动标题和活动图片占一排 -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">活动标题 *</label>
+              <input
+                type="text"
+                v-model="formData.title"
+                class="form-control"
+                placeholder="请输入活动标题..."
+                maxlength="200"
+                required
+              />
+              <div class="char-count">{{ formData.title.length }}/200</div>
+            </div>
+
+            <!-- 活动图片上传 -->
+            <div class="form-group image-upload-group">
+              <label class="form-label">活动图片</label>
+              <div class="image-upload-area">
+                <div class="image-preview">
+                  <img
+                    v-if="formData.image_url"
+                    :src="formData.image_url"
+                    alt="活动图片"
+                    class="preview-image"
+                  />
+                  <div v-else class="image-placeholder" @click="showUploadModal = true">
+                    <i class="fa fa-image"></i>
+                    <span>点击上传图片</span>
+                  </div>
+                </div>
+                <div class="image-actions">
+                  <button type="button" class="btn btn-outline btn-sm" @click="showUploadModal = true">
+                    <i class="fa fa-camera"></i>
+                    上传图片
+                  </button>
+                  <button
+                    v-if="formData.image_url"
+                    type="button"
+                    class="btn btn-outline btn-sm btn-danger"
+                    @click="removeImage"
+                  >
+                    <i class="fa fa-trash"></i>
+                    移除
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="form-row">
@@ -108,6 +144,7 @@
               maxlength="500"
             />
           </div>
+
           <div class="form-group">
             <label class="form-label">活动描述</label>
             <textarea
@@ -137,6 +174,17 @@
         </button>
       </div>
     </div>
+
+    <!-- 图片上传弹窗 -->
+    <UploadModal
+      v-if="showUploadModal"
+      title="上传活动图片"
+      :upload-api="uploadEventImage"
+      accept="image/*"
+      :max-size="5 * 1024 * 1024"
+      @uploaded="handleImageUploaded"
+      @close="showUploadModal = false"
+    />
   </div>
 </template>
 
@@ -155,7 +203,7 @@ const props = defineProps({
   mode: {
     type: String,
     default: 'add'
-  }
+}
 });
 
 const emit = defineEmits(['close', 'submit']);
@@ -175,7 +223,7 @@ const formData = ref({
   capacity: undefined as number | undefined,
   status: 'upcoming' as 'upcoming' | 'ongoing' | 'completed' | 'cancelled',
   band_id: '',
-  poster_image_url: ''
+  image_url: ''
 });
 
 // 当传入的event发生变化时更新表单数据
@@ -192,7 +240,7 @@ watch(() => props.event, (newEvent) => {
       capacity: newEvent.capacity,
       status: newEvent.status,
       band_id: String(newEvent.band_id),
-      poster_image_url: newEvent.poster_image_url || ''
+      image_url: newEvent.poster_image_url || ''
     };
   } else {
     // 重置表单
@@ -207,7 +255,7 @@ watch(() => props.event, (newEvent) => {
       capacity: undefined,
       status: 'upcoming',
       band_id: '',
-      poster_image_url: ''
+      image_url: ''
     };
   }
 }, { immediate: true });
@@ -222,41 +270,38 @@ const fetchBands = async () => {
   }
 };
 
-// 打开上传模态框
-const openUploadModal = () => {
-  showUploadModal.value = true;
+// 上传活动图片的API包装函数
+const uploadEventImage = async (file: File) => {
+  try {
+    console.log('开始上传活动图片:', file.name);
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await EventService.uploadPoster(formData);
+    console.log('活动图片上传响应:', response);
+
+    // 确保返回正确的格式，UploadModal期望的是 { url: string }
+    const imageUrl = (response as any).url || (response as any).poster_url || response.data?.url || response.data?.poster_url;
+    if (!imageUrl) {
+      throw new Error('服务器返回的响应中没有找到图片URL');
+    }
+
+    return { url: imageUrl };
+  } catch (error) {
+    console.error('活动图片上传失败:', error);
+    throw error;
+  }
 };
 
-// 上传海报 API
-const uploadPosterApi = async (file: File) => {
-  console.log('uploadPosterApi 被调用，文件:', file.name, file.type)
-  
-  const formData = new FormData()
-  formData.append('file', file)
-  
-  console.log('FormData 创建完成，准备发送请求')
-  
-  try {
-    const result = await EventService.uploadPoster(formData)
-    console.log('EventService.uploadPoster 返回:', result)
-    return result
-  } catch (error: any) {
-    console.error('EventService.uploadPoster 错误:', error)
-    throw error
-  }
-}
-
-// 处理上传成功
-const handleUploadSuccess = (imageUrl: string) => {
-  console.log('handleUploadSuccess 被调用')
-  console.log('接收到的图片URL:', imageUrl)
-  console.log('当前 formData.poster_image_url:', formData.value.poster_image_url)
-  
-  formData.value.poster_image_url = imageUrl;
+// 处理图片上传成功
+const handleImageUploaded = (imageUrl: string) => {
+  console.log('图片上传成功:', imageUrl);
+  formData.value.image_url = imageUrl;
   showUploadModal.value = false;
-  
-  console.log('更新后的 formData.poster_image_url:', formData.value.poster_image_url)
-  console.log('完整的 formData:', formData.value)
+};
+
+// 移除图片
+const removeImage = () => {
+  formData.value.image_url = '';
 };
 
 // 提交表单
@@ -280,7 +325,8 @@ const handleSubmit = async () => {
 
     const submitData = {
       ...formData.value,
-      band_id: parseInt(formData.value.band_id)
+      band_id: parseInt(formData.value.band_id),
+      poster_image_url: formData.value.image_url
     };
 
     console.log('提交的数据:', submitData)
@@ -301,53 +347,31 @@ onMounted(() => {
 
 <style scoped lang="scss">
 @use '@/assets/scss/variables' as *;
+@use 'sass:color';
 
+// 活动模态框样式优化
 .modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba($dark, 0.8);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 2rem;
+  @media (min-width: 1025px) {
+    align-items: flex-start;
+    padding-top: 40px;
+  }
 
   @media (max-width: 768px) {
-    padding: 1rem;
+    align-items: flex-end;
   }
 }
 
 .modal {
-  background: linear-gradient(135deg, rgba($darkgray, 0.95), rgba($lightgray, 0.9));
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: $border-radius-xl;
-  width: 100%;
   max-width: 750px;
-  max-height: 90vh;
-  overflow: hidden;
-  box-shadow:
-    0 25px 50px rgba($dark, 0.5),
-    0 0 0 1px rgba($primary, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
-  animation: modalSlideIn $transition-normal ease;
 
-  @keyframes modalSlideIn {
-    from {
-      opacity: 0;
-      transform: translateY(-20px) scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
+  @media (min-width: 1025px) {
+    max-height: calc(100vh - 100px);
   }
 
   .modal-header {
-    padding: 2rem 2rem 1rem;
+    padding: 1.25rem 1.5rem 0.75rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -394,9 +418,11 @@ onMounted(() => {
   }
 
   .modal-body {
-    padding: 2rem;
+    padding: 1.25rem;
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
 
     &::-webkit-scrollbar {
       width: 6px;
@@ -418,39 +444,29 @@ onMounted(() => {
   }
 
   .modal-footer {
-    padding: 1rem 2rem 2rem;
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
     flex-shrink: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.02);
-
-    @media (max-width: 480px) {
-      flex-direction: column;
-    }
   }
 }
-// 🎨 表单样式
+
+// 表单样式
 .event-form {
   .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
+    gap: 1rem;
+    margin-bottom: 4px;
 
     @media (max-width: 480px) {
       grid-template-columns: 1fr;
-      gap: 1rem;
+      gap: 0.75rem;
     }
   }
 
   .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 4px;
 
     .form-label {
       display: block;
-      margin-bottom: 0.5rem;
       color: $white;
       font-weight: 500;
       font-size: 0.875rem;
@@ -458,7 +474,7 @@ onMounted(() => {
 
     .form-control {
       width: 100%;
-      padding: 1rem 1.25rem;
+      
       background: rgba($lightgray, 0.4);
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: $border-radius-lg;
@@ -484,11 +500,6 @@ onMounted(() => {
       &:hover:not(:focus) {
         border-color: rgba(255, 255, 255, 0.25);
         background: rgba($lightgray, 0.5);
-      }
-
-      &:invalid {
-        border-color: #ef4444;
-        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
       }
     }
 
@@ -517,7 +528,6 @@ onMounted(() => {
       text-align: right;
       font-size: 0.75rem;
       color: rgba(255, 255, 255, 0.5);
-      margin-top: 0.5rem;
       font-weight: 500;
 
       &.warning {
@@ -529,7 +539,6 @@ onMounted(() => {
       }
     }
 
-    // 表单标签增强
     .form-label {
       position: relative;
 
@@ -549,24 +558,92 @@ onMounted(() => {
       }
     }
 
-    // 必填字段标识
     .required::after {
       content: ' *';
       color: $primary;
       font-weight: bold;
     }
-  }
+
+    // 图片上传区域样式
+    .image-upload-group {
+      margin-bottom: 1.25rem;
+    }
 }
 
+// 🌟 图片上传区域
+.image-upload-area {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: $border-radius-lg;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  .image-preview {
+    width: 140px;
+    height: 140px;
+    border-radius: $border-radius-lg;
+    overflow: hidden;
+    border: 2px dashed rgba($primary, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba($primary, 0.05);
+    transition: all $transition-normal ease;
+    position: relative;
+
+    &:hover {
+      border-color: rgba($primary, 0.6);
+      background: rgba($primary, 0.1);
+      transform: scale(1.02);
+    }
+
+    .preview-image {
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: cover;
+      object-position: center;
+      border-radius: calc($border-radius-lg - 2px);
+      display: block;
+    }
+
+    .image-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255, 255, 255, 0.6);
+      text-align: center;
+      padding: 1rem;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+
+      i {
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+        color: $primary;
+        opacity: 0.8;
+      }
+
+      span {
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .image-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    padding-top: 0.5rem;
+  }
+}
+  }
 
 </style>
-
-
-
-
-
-
-
-
-
-
