@@ -28,11 +28,13 @@
           <i class="fa fa-music"></i>
         </div>
         <div class="stat-content">
-          <div class="stat-number">{{ loading ? '...' : stats.bands }}</div>
+          <div class="stat-number">{{ loading ? '...' : stats.bands.count }}</div>
           <div class="stat-label">乐队数量</div>
-          <div class="stat-trend">
-            <i class="fa fa-arrow-up"></i>
-            <span>+12%</span>
+          <div class="stat-trend" :class="{ positive: stats.bands.change > 0, negative: stats.bands.change < 0 }">
+            <i v-if="stats.bands.change > 0" class="fa fa-arrow-up"></i>
+            <i v-else-if="stats.bands.change < 0" class="fa fa-arrow-down"></i>
+            <i v-else class="fa fa-minus"></i>
+            <span>{{ stats.bands.change > 0 ? '+' : '' }}{{ stats.bands.change }}</span>
           </div>
         </div>
       </div>
@@ -42,11 +44,13 @@
           <i class="fa fa-users"></i>
         </div>
         <div class="stat-content">
-          <div class="stat-number">{{ loading ? '...' : stats.members }}</div>
+          <div class="stat-number">{{ loading ? '...' : stats.members.count }}</div>
           <div class="stat-label">成员总数</div>
-          <div class="stat-trend">
-            <i class="fa fa-arrow-up"></i>
-            <span>+8%</span>
+          <div class="stat-trend" :class="{ positive: stats.members.change > 0, negative: stats.members.change < 0 }">
+            <i v-if="stats.members.change > 0" class="fa fa-arrow-up"></i>
+            <i v-else-if="stats.members.change < 0" class="fa fa-arrow-down"></i>
+            <i v-else class="fa fa-minus"></i>
+            <span>{{ stats.members.change > 0 ? '+' : '' }}{{ stats.members.change }}</span>
           </div>
         </div>
       </div>
@@ -56,11 +60,13 @@
           <i class="fa fa-calendar"></i>
         </div>
         <div class="stat-content">
-          <div class="stat-number">{{ loading ? '...' : stats.events }}</div>
+          <div class="stat-number">{{ loading ? '...' : stats.events.count }}</div>
           <div class="stat-label">活动数量</div>
-          <div class="stat-trend">
-            <i class="fa fa-arrow-up"></i>
-            <span>+15%</span>
+          <div class="stat-trend" :class="{ positive: stats.events.change > 0, negative: stats.events.change < 0 }">
+            <i v-if="stats.events.change > 0" class="fa fa-arrow-up"></i>
+            <i v-else-if="stats.events.change < 0" class="fa fa-arrow-down"></i>
+            <i v-else class="fa fa-minus"></i>
+            <span>{{ stats.events.change > 0 ? '+' : '' }}{{ stats.events.change }}</span>
           </div>
         </div>
       </div>
@@ -326,16 +332,24 @@ onUnmounted(() => {
     }
 
     .stat-trend {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-size: 0.75rem;
-      color: #10b981;
-
-      i {
-        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
       }
-    }
+
+      .stat-trend.positive {
+        color: $success;
+      }
+
+      .stat-trend.negative {
+        color: $danger;
+      }
+
+      .stat-trend.positive i,
+      .stat-trend.negative i {
+        font-size: 1rem;
+      }
   }
 }
 

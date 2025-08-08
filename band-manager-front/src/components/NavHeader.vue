@@ -6,7 +6,7 @@
         <div class="brand-icon">
           <i class="fa fa-music"></i>
         </div>
-        <span class="brand-text">SOUNDWAVE</span>
+        <span class="brand-text">Bands</span>
       </router-link>
 
       <!-- 🎯 桌面导航菜单 -->

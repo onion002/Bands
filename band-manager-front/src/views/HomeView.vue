@@ -42,7 +42,7 @@
             </div>
             <div class="preview-content">
               <h3 class="track-title">欢迎来到音乐世界</h3>
-              <p class="artist-name">SOUNDWAVE 平台</p>
+              <p class="artist-name">Bands 平台</p>
               <div class="player-controls">
                 <button class="play-btn">
                   <i class="fa fa-play-circle"></i>

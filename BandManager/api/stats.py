@@ -19,23 +19,51 @@ def get_dashboard_stats():
         current_user = get_current_user()
         logging.info(f"获取用户 {current_user.username} 的仪表板统计数据")
 
+        # 计算一周前的日期
+        one_week_ago = datetime.now() - timedelta(days=7)
+
         # 获取当前管理员的乐队数量（排除软删除）
         bands_count = Band.query.filter_by(owner_id=current_user.id, is_deleted=False).count()
-        logging.info(f"乐队数量: {bands_count}")
+        # 获取一周前的乐队数量
+        bands_count_week_ago = Band.query.filter(
+            Band.owner_id == current_user.id,
+            Band.is_deleted == False,
+            Band.created_at <= one_week_ago
+        ).count()
+        # 计算乐队数量变化
+        bands_change = bands_count - bands_count_week_ago
+        logging.info(f"乐队数量: {bands_count}, 一周前: {bands_count_week_ago}, 变化: {bands_change}")
 
         # 获取当前管理员所有乐队的成员总数（排除软删除）
         band_ids = [band.id for band in Band.query.filter_by(owner_id=current_user.id, is_deleted=False).all()]
         members_count = 0
+        members_count_week_ago = 0
         if band_ids:
             members_count = Member.query.filter(
                 Member.band_id.in_(band_ids),
                 Member.is_deleted == False
             ).count()
-        logging.info(f"成员数量: {members_count}")
+            # 获取一周前的成员数量
+            members_count_week_ago = Member.query.filter(
+                Member.band_id.in_(band_ids),
+                Member.is_deleted == False,
+                Member.created_at <= one_week_ago
+            ).count()
+        # 计算成员数量变化
+        members_change = members_count - members_count_week_ago
+        logging.info(f"成员数量: {members_count}, 一周前: {members_count_week_ago}, 变化: {members_change}")
 
         # 获取当前管理员的活动数量（排除软删除）
         events_count = Event.query.filter_by(owner_id=current_user.id, is_deleted=False).count()
-        logging.info(f"活动数量: {events_count}")
+        # 获取一周前的活动数量
+        events_count_week_ago = Event.query.filter(
+            Event.owner_id == current_user.id,
+            Event.is_deleted == False,
+            Event.created_at <= one_week_ago
+        ).count()
+        # 计算活动数量变化
+        events_change = events_count - events_count_week_ago
+        logging.info(f"活动数量: {events_count}, 一周前: {events_count_week_ago}, 变化: {events_change}")
 
         # 获取进行中的活动数量（今天及以后的活动，排除软删除）
         today = datetime.now().date()
@@ -47,9 +75,18 @@ def get_dashboard_stats():
         logging.info(f"进行中活动数量: {active_events_count}")
 
         result = {
-            'bands': bands_count,
-            'members': members_count,
-            'events': events_count,
+            'bands': {
+                'count': bands_count,
+                'change': bands_change
+            },
+            'members': {
+                'count': members_count,
+                'change': members_change
+            },
+            'events': {
+                'count': events_count,
+                'change': events_change
+            },
             'activeEvents': active_events_count
         }
         logging.info(f"返回统计数据: {result}")

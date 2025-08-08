@@ -47,9 +47,18 @@ api.interceptors.response.use(
 )
 
 export interface DashboardStats {
-  bands: number
-  members: number
-  events: number
+  bands: {
+    count: number
+    change: number
+  }
+  members: {
+    count: number
+    change: number
+  }
+  events: {
+    count: number
+    change: number
+  }
   activeEvents: number
 }
 
