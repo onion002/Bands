@@ -131,16 +131,49 @@ def get_recent_activities():
 
 def format_time_ago(timestamp):
     """格式化时间为相对时间"""
-    now = datetime.now()
-    diff = now - timestamp
+    # 确保timestamp是datetime对象
+    if not isinstance(timestamp, datetime):
+        timestamp = datetime.fromisoformat(timestamp)
     
-    if diff.days > 0:
-        return f'{diff.days}天前'
-    elif diff.seconds > 3600:
-        hours = diff.seconds // 3600
+    # 转换为UTC时区进行比较，避免本地时区差异
+    timestamp_utc = timestamp.astimezone(tz=None) if timestamp.tzinfo else timestamp
+    now_utc = datetime.utcnow()
+    
+    diff = now_utc - timestamp_utc
+    total_seconds = diff.total_seconds()
+    
+    # 添加详细日志以诊断问题
+    logging.info(f"format_time_ago - original timestamp: {timestamp}")
+    logging.info(f"format_time_ago - timestamp_utc: {timestamp_utc}, now_utc: {now_utc}")
+    logging.info(f"format_time_ago - diff: {diff}, total_seconds: {total_seconds}")
+    
+    if total_seconds >= 86400:  # 24小时 = 86400秒
+        days = int(total_seconds // 86400)
+        return f'{days}天前'
+    elif total_seconds >= 3600:  # 1小时 = 3600秒
+        hours = int(total_seconds // 3600)
         return f'{hours}小时前'
-    elif diff.seconds > 60:
-        minutes = diff.seconds // 60
+    elif total_seconds >= 60:  # 1分钟 = 60秒
+        minutes = int(total_seconds // 60)
         return f'{minutes}分钟前'
     else:
         return '刚刚'
+
+# 添加一个简单的测试函数
+def test_format_time_ago():
+    """测试format_time_ago函数"""
+    # 测试刚刚
+    now = datetime.utcnow()
+    print(f"刚刚: {format_time_ago(now)}")
+    
+    # 测试1分钟前
+    one_minute_ago = now - timedelta(minutes=1)
+    print(f"1分钟前: {format_time_ago(one_minute_ago)}")
+    
+    # 测试1小时前
+    one_hour_ago = now - timedelta(hours=1)
+    print(f"1小时前: {format_time_ago(one_hour_ago)}")
+    
+    # 测试1天前
+    one_day_ago = now - timedelta(days=1)
+    print(f"1天前: {format_time_ago(one_day_ago)}")

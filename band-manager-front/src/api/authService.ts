@@ -52,7 +52,8 @@ const authApi = axios.create({
   baseURL: `${API_BASE_URL}/api/auth`,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  withCredentials: true // 允许跨域请求携带凭证
 })
 
 // 请求拦截器 - 添加token

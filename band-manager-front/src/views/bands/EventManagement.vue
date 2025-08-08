@@ -46,7 +46,7 @@
       <div class="filter-row">
         <div class="filter-group">
           <label>所属乐队</label>
-          <select v-model="selectedBandId" @change="handleBandChange" class="form-control">
+          <select v-model="selectedBandId" @change="(e: Event) => handleBandChange(e)" class="form-control">
             <option value="">全部乐队</option>
             <option v-for="option in bandSelectOptions" :key="option.value" :value="option.value">
               {{ option.label }}

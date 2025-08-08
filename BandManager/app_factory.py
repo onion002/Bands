@@ -16,7 +16,13 @@ def create_app():
     
     # 初始化扩展
     init_extensions(app)
-    CORS(app, supports_credentials=True)
+    # 初始化CORS，使用配置中的允许源并明确设置资源路径
+    CORS(app, resources={r"/api/*": {
+        "origins": app.config.get('CORS_ORIGINS'),
+        "allow_headers": ["Content-Type", "Authorization"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "supports_credentials": True
+    }})
     # 注册蓝图
     register_blueprints(app)
     

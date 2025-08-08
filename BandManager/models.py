@@ -199,8 +199,14 @@ class User(db.Model):
     def verify_token(token):
         """验证JWT token"""
         try:
+            from flask import current_app
             payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
             user_id = payload.get('user_id')
+            if user_id:
+                return User.query.get(user_id)
+            return None
+        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+            return None
             if user_id:
                 return User.query.get(user_id)
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
