@@ -202,16 +202,11 @@ class User(db.Model):
             from flask import current_app
             payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
             user_id = payload.get('user_id')
-            if user_id:
-                return User.query.get(user_id)
-            return None
+            if not user_id:
+                return None
+            return User.query.get(user_id)
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
             return None
-            if user_id:
-                return User.query.get(user_id)
-        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-            return None
-        return None
 
     def to_dict(self, include_sensitive=False):
         """转换为字典"""

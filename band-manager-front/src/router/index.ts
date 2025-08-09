@@ -24,12 +24,7 @@ const routes = [
     meta: { requiresGuest: true }
   },
 
-  // 图标测试页面
-  {
-    path: '/icon-test',
-    name: 'IconTest',
-    component: () => import('@/views/IconTestView.vue')
-  },
+  // 图标测试页面（已移除）
 
   // 管理员仪表板
   {
@@ -71,6 +66,13 @@ const routes = [
     name: 'PublicView',
     component: () => import('@/views/PublicView.vue'),
     props: true
+  },
+
+  // 音乐老师（所有用户可用）
+  {
+    path: '/music-teacher',
+    name: 'MusicTeacher',
+    component: () => import('@/views/MusicTeacherView.vue')
   },
 
   // 404 页面

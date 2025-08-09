@@ -269,9 +269,11 @@ def get_event(event_id):
 
 # 更新演出活动
 @events_bp.route('/<int:event_id>', methods=['PUT'])
+@require_admin
 def update_event(event_id):
     try:
-        event = Event.query.filter_by(id=event_id, is_deleted=False).first()
+        current_user = get_current_user()
+        event = Event.query.filter_by(id=event_id, is_deleted=False, owner_id=current_user.id).first()
         if not event:
             return jsonify({'error': '演出活动不存在'}), 404
         
@@ -320,10 +322,12 @@ def update_event(event_id):
 
 # 删除演出活动
 @events_bp.route('/<int:event_id>', methods=['DELETE'])
+@require_admin
 def delete_event(event_id):
     """删除演出活动（物理删除所有相关图片）"""
     try:
-        event = Event.query.filter_by(id=event_id, is_deleted=False).first()
+        current_user = get_current_user()
+        event = Event.query.filter_by(id=event_id, is_deleted=False, owner_id=current_user.id).first()
         if not event:
             return jsonify({'error': '演出活动不存在'}), 404
 

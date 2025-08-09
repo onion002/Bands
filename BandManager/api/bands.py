@@ -10,8 +10,8 @@ import logging
 from sqlalchemy.exc import IntegrityError
 from auth_decorators import require_auth, require_admin, optional_auth, get_current_user, apply_user_filter, set_owner_for_creation
 
-# 创建蓝图
-bands_bp = Blueprint('bands', __name__, url_prefix='/api/bands')
+# 创建蓝图（前缀在应用注册时统一指定）
+bands_bp = Blueprint('bands', __name__)
 
 # 允许的文件扩展名
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -206,9 +206,9 @@ def get_bands():
 def get_public_bands(username):
     """获取指定管理员的公开乐队列表"""
     try:
-        from models import User
+        from models import User, UserType
         # 查找管理员用户
-        admin_user = User.query.filter_by(username=username, user_type='admin').first()
+        admin_user = User.query.filter_by(username=username, user_type=UserType.ADMIN).first()
         if not admin_user:
             return jsonify({'error': '管理员用户不存在'}), 404
 

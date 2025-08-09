@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import logging
 from auth_decorators import require_auth, require_admin, optional_auth, get_current_user, apply_user_filter, set_owner_for_creation
 
-members_bp = Blueprint('members', __name__, url_prefix='/api/members')
+members_bp = Blueprint('members', __name__)
 
 # 允许的文件扩展名
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -53,9 +53,9 @@ def get_all_members():
 def get_public_members(username):
     """获取指定管理员的公开成员列表"""
     try:
-        from models import User
+        from models import User, UserType
         # 查找管理员用户
-        admin_user = User.query.filter_by(username=username, user_type='admin').first()
+        admin_user = User.query.filter_by(username=username, user_type=UserType.ADMIN).first()
         if not admin_user:
             return jsonify({'error': '管理员用户不存在'}), 404
 
@@ -200,9 +200,11 @@ def get_member(member_id):
 
 # 更新成员信息
 @members_bp.route('/<int:member_id>', methods=['PUT'])
+@require_admin
 def update_member(member_id):
     try:
-        member = Member.query.get(member_id)
+        current_user = get_current_user()
+        member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first()
         if not member:
             return jsonify({'error': '成员不存在'}), 404
             
@@ -246,9 +248,11 @@ def update_member(member_id):
 
 # 删除成员
 @members_bp.route('/<int:member_id>', methods=['DELETE'])
+@require_admin
 def delete_member(member_id):
     try:
-        member = Member.query.get(member_id)
+        current_user = get_current_user()
+        member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first()
         if not member:
             return jsonify({'error': '成员不存在'}), 404
         
@@ -279,10 +283,12 @@ def delete_member(member_id):
 
 # 上传成员头像
 @members_bp.route('/<int:member_id>/avatar', methods=['POST'])
+@require_admin
 def upload_member_avatar(member_id):
     try:
-        # 检查成员是否存在
-        member = Member.query.get(member_id)
+        # 检查成员是否存在且属于当前用户
+        current_user = get_current_user()
+        member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first()
         if not member:
             return jsonify({'error': '成员不存在'}), 404
 

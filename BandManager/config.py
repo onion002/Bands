@@ -43,6 +43,7 @@ class DevelopmentConfig(Config):
     DEBUG = True
     SQLALCHEMY_ECHO = True
     API_BASE_URL = 'http://localhost:5000'
+    # 按用户要求，保持原有默认数据库配置（不改动为 SQLite）
 
 class ProductionConfig(Config):
     """生产环境配置"""
