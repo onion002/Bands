@@ -29,6 +29,7 @@ export interface TeacherRequest {
   model?: string
   temperature?: number
   max_tokens?: number
+  top_p?: number
 }
 
 export interface TeacherResponse {

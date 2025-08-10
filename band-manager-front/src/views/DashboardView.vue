@@ -3,7 +3,7 @@
     <!-- 🎵 页面头部 -->
     <div class="page-header">
       <h1>
-        <span class="gradient-text">管理员仪表板</span>
+        <span class="gradient-text">管理员仪表盘</span>
       </h1>
       <p>欢迎回来，{{ authStore.displayName }}！管理您的音乐世界</p>
     </div>

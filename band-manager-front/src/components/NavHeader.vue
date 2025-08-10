@@ -73,6 +73,7 @@
           <router-link to="/events" class="mobile-nav-link" @click="closeMobileMenu">演出活动</router-link>
           <router-link to="/gallery" class="mobile-nav-link" @click="closeMobileMenu">照片墙</router-link>
           <router-link to="/public" class="mobile-nav-link" @click="closeMobileMenu">公开展示</router-link>
+          <router-link to="/music-teacher" class="mobile-nav-link" @click="closeMobileMenu">音乐老师</router-link>
         </template>
 
         <template v-else-if="authStore.isAuthenticated && !authStore.isAdmin">
@@ -133,6 +134,116 @@ const handleLogout = () => {
 @use '@/assets/scss/variables' as *;
 
 // 🎨 用户信息样式
+.nav-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999; // 确保最高层级
+  height: 4rem; // 固定高度为4rem
+  background: rgba($darkgray, 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba($primary, 0.2);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+  // 确保导航栏完全独立
+  isolation: isolate;
+}
+
+// 导航容器
+.nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  height: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+// 品牌Logo
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: $white;
+  font-weight: 700;
+  font-size: 1.25rem;
+  
+  .brand-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    background: $primary;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: $white;
+  }
+  
+  .brand-text {
+    color: $white;
+  }
+}
+
+// 导航菜单
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  
+  .nav-link {
+    color: $gray-300;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 0;
+    position: relative;
+    transition: color $transition-normal ease;
+    
+    &:hover {
+      color: $white;
+    }
+    
+    &.router-link-active {
+      color: $primary;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -0.5rem;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: $primary;
+        border-radius: 1px;
+      }
+    }
+  }
+}
+
+// 用户操作区域
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+// 移动端菜单按钮
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: $white;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  
+  @media (max-width: 768px) {
+    display: block;
+  }
+}
+
 .user-info {
   display: flex;
   flex-direction: column;
@@ -161,13 +272,14 @@ const handleLogout = () => {
 
 // 📱 移动端菜单样式
 .mobile-menu {
-  position: absolute;
-  top: 100%;
+  position: fixed;
+  top: 4rem; // 正好在固定导航栏下方
   left: 0;
   right: 0;
   background: rgba($darkgray, 0.95);
   backdrop-filter: blur(8px);
   border-top: 1px solid rgba($primary, 0.2);
+  z-index: 999;
 
   .mobile-menu-content {
     padding: 1rem;
@@ -216,31 +328,16 @@ const handleLogout = () => {
   }
 }
 
-// 🎯 活跃链接样式
-.nav-link.router-link-active {
-  color: $primary !important;
 
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -0.5rem;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: $primary;
-    border-radius: 1px;
-  }
-}
-
-.mobile-nav-link.router-link-active {
-  color: $primary !important;
-  background: rgba($primary, 0.1) !important;
-}
 
 // 🌟 响应式调整
 @media (max-width: 768px) {
   .nav-container {
     padding: 1rem 1rem !important;
+  }
+
+  .nav-menu {
+    display: none;
   }
 
   .user-info {
