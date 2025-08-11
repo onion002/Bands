@@ -75,6 +75,14 @@ const routes = [
     component: () => import('@/views/MusicTeacherView.vue')
   },
 
+  // 用户资料页面
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/views/ProfileView.vue'),
+    meta: { requiresAuth: true }
+  },
+
   // 404 页面
   {
     path: '/:pathMatch(.*)*',

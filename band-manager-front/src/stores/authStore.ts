@@ -146,6 +146,29 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // 上传头像
+  const uploadAvatar = async (file: File) => {
+    try {
+      loading.value = true
+      error.value = ''
+      
+      const response = await AuthService.uploadAvatar(file)
+      user.value = response.user
+      
+      // 更新本地存储
+      if (token.value) {
+        AuthService.saveAuthInfo(token.value, response.user)
+      }
+      
+      return response
+    } catch (err: any) {
+      error.value = err.error || '头像上传失败'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   // 验证token有效性
   const verifyToken = async () => {
     try {
@@ -208,6 +231,7 @@ export const useAuthStore = defineStore('auth', () => {
     fetchProfile,
     updateProfile,
     changePassword,
+    uploadAvatar,
     verifyToken,
     clearError,
     hasPermission,

@@ -3,6 +3,7 @@ import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
 import { useAuthStore } from './stores/authStore'
+import BackToTop from './components/BackToTop.vue'
 
 // 🎨 导入全局样式
 import './assets/scss/global.scss'
@@ -16,6 +17,9 @@ const pinia = createPinia()
 
 app.use(pinia)
 app.use(router)
+
+// 全局注册组件
+app.component('BackToTop', BackToTop)
 
 // 初始化认证状态
 const authStore = useAuthStore()

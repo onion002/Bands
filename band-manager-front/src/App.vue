@@ -7,11 +7,15 @@
     <main class="main-content">
       <router-view />
     </main>
+    
+    <!-- 🚀 返回顶部按钮 - 全局组件 -->
+    <BackToTop />
   </div>
 </template>
 
 <script setup lang="ts">
 import NavHeader from '@/components/NavHeader.vue'
+import BackToTop from '@/components/BackToTop.vue'
 </script>
 
 <style lang="scss">

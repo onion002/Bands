@@ -168,6 +168,11 @@ class User(db.Model):
     display_name = db.Column(db.String(100))
     avatar_url = db.Column(db.String(255))
     is_active = db.Column(db.Boolean, nullable=False, default=True)
+    
+    # 公开设置字段
+    bands_public = db.Column(db.Boolean, nullable=False, default=False)
+    members_public = db.Column(db.Boolean, nullable=False, default=False)
+    events_public = db.Column(db.Boolean, nullable=False, default=False)
 
     # 时间戳字段
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -223,7 +228,10 @@ class User(db.Model):
             'display_name': self.display_name,
             'avatar_url': self.avatar_url,
             'is_active': self.is_active,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'bands_public': self.bands_public,
+            'members_public': self.members_public,
+            'events_public': self.events_public
         }
         return data
 

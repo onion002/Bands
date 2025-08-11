@@ -209,6 +209,16 @@ def update_profile():
         if 'avatar_url' in data:
             user.avatar_url = data['avatar_url'].strip()
         
+        # 更新隐私设置字段
+        if 'bands_public' in data:
+            user.bands_public = bool(data['bands_public'])
+        
+        if 'members_public' in data:
+            user.members_public = bool(data['members_public'])
+        
+        if 'events_public' in data:
+            user.events_public = bool(data['events_public'])
+        
         # 更新邮箱（需要验证格式和唯一性）
         if 'email' in data:
             new_email = data['email'].strip()
@@ -295,27 +305,132 @@ def verify_token():
     """验证token有效性"""
     try:
         data = request.get_json()
-        token = data.get('token') if data else None
+        if not data:
+            return jsonify({'error': '请提供token'}), 400
         
+        token = data.get('token')
         if not token:
-            # 尝试从请求头获取
-            auth_header = request.headers.get('Authorization')
-            if auth_header and auth_header.startswith('Bearer '):
-                token = auth_header.split(' ')[1]
+            return jsonify({'error': 'token不能为空'}), 400
         
-        if not token:
-            return jsonify({'valid': False, 'error': '未提供token'}), 400
-        
+        # 验证token
         user = User.verify_token(token)
-        
-        if user and user.is_active:
+        if user:
             return jsonify({
                 'valid': True,
                 'user': user.to_dict()
-            }), 200
+            })
         else:
-            return jsonify({'valid': False, 'error': 'token无效或已过期'}), 401
-            
+            return jsonify({
+                'valid': False,
+                'error': 'token无效或已过期'
+            })
     except Exception as e:
-        logger.error(f"验证token失败: {str(e)}")
-        return jsonify({'valid': False, 'error': '验证失败'}), 500
+        logger.error(f"验证token时发生错误: {str(e)}")
+        return jsonify({'error': '验证token失败'}), 500
+
+@auth_bp.route('/upload-avatar', methods=['POST'])
+def upload_avatar():
+    """上传用户头像"""
+    try:
+        # 验证用户是否已登录
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': '请先登录'}), 401
+        
+        token = auth_header.split(' ')[1]
+        user = User.verify_token(token)
+        if not user:
+            return jsonify({'error': 'token无效或已过期'}), 401
+        
+        # 检查是否有文件上传
+        if 'avatar' not in request.files:
+            return jsonify({'error': '请选择头像文件'}), 400
+        
+        file = request.files['avatar']
+        if file.filename == '':
+            return jsonify({'error': '请选择头像文件'}), 400
+        
+        # 验证文件类型
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+        if not file.filename.lower().endswith(tuple('.' + ext for ext in allowed_extensions)):
+            return jsonify({'error': '只支持PNG、JPG、JPEG、GIF、WEBP格式的图片'}), 400
+        
+        # 验证文件大小（5MB）
+        if len(file.read()) > 5 * 1024 * 1024:
+            file.seek(0)  # 重置文件指针
+            return jsonify({'error': '文件大小不能超过5MB'}), 400
+        
+        file.seek(0)  # 重置文件指针
+        
+        # 创建上传目录
+        upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'avatars')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # 生成唯一文件名
+        import uuid
+        file_extension = os.path.splitext(file.filename)[1]
+        filename = f"avatar_{user.id}_{uuid.uuid4().hex}{file_extension}"
+        file_path = os.path.join(upload_dir, filename)
+        
+        # 保存文件
+        file.save(file_path)
+        
+        # 更新用户头像URL
+        avatar_url = f"/uploads/avatars/{filename}"
+        user.avatar_url = avatar_url
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': '头像上传成功',
+            'user': user.to_dict()
+        })
+        
+    except Exception as e:
+        logger.error(f"上传头像时发生错误: {str(e)}")
+        return jsonify({'error': '头像上传失败'}), 500
+
+@auth_bp.route('/public/<username>', methods=['GET'])
+def get_public_data(username):
+    """获取用户的公开数据"""
+    try:
+        # 查找用户
+        user = User.query.filter_by(username=username, is_active=True).first()
+        if not user:
+            return jsonify({'error': '用户不存在'}), 404
+        
+        # 检查用户是否有公开数据
+        if not (user.bands_public or user.members_public or user.events_public):
+            return jsonify({'error': '该用户没有公开任何数据'}), 404
+        
+        # 获取公开的乐队数据
+        bands = []
+        if user.bands_public:
+            from models import Band
+            bands = Band.query.filter_by(owner_id=user.id, is_deleted=False).all()
+            bands = [band.to_dict() for band in bands]
+        
+        # 获取公开的成员数据
+        members = []
+        if user.members_public:
+            from models import Member
+            members = Member.query.filter_by(owner_id=user.id, is_deleted=False).all()
+            members = [member.to_dict() for member in members]
+        
+        # 获取公开的活动数据
+        events = []
+        if user.events_public:
+            from models import Event
+            events = Event.query.filter_by(owner_id=user.id, is_deleted=False).all()
+            events = [event.to_dict() for event in events]
+        
+        return jsonify({
+            'admin': user.to_dict(),
+            'bands': bands,
+            'members': members,
+            'events': events
+        })
+        
+    except Exception as e:
+        logger.error(f"获取公开数据时发生错误: {str(e)}")
+        return jsonify({'error': '获取公开数据失败'}), 500

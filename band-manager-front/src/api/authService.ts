@@ -15,6 +15,9 @@ export interface User {
   avatar_url?: string
   is_active: boolean
   created_at: string
+  bands_public?: boolean
+  members_public?: boolean
+  events_public?: boolean
 }
 
 // 注册数据接口
@@ -110,6 +113,18 @@ export const AuthService = {
   // 修改密码
   async changePassword(data: { old_password: string; new_password: string }): Promise<{ message: string }> {
     return authApi.post('/change-password', data)
+  },
+
+  // 上传头像
+  async uploadAvatar(file: File): Promise<{ message: string; user: User }> {
+    const formData = new FormData()
+    formData.append('avatar', file)
+    
+    return authApi.post('/upload-avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
   },
 
   // 验证token

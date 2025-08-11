@@ -49,6 +49,20 @@
               {{ authStore.isAdmin ? '管理员' : '用户' }}
             </span>
           </div>
+          
+          <!-- 用户头像 -->
+          <router-link to="/profile" class="user-avatar">
+            <img 
+              v-if="authStore.user?.avatar_url" 
+              :src="authStore.user.avatar_url" 
+              :alt="authStore.user.username"
+              class="avatar-image"
+            />
+            <div v-else class="avatar-placeholder">
+              <i class="fa fa-user"></i>
+            </div>
+          </router-link>
+          
           <button @click="handleLogout" class="btn btn-outline btn-sm">
             <i class="fa fa-sign-out"></i>
             退出
@@ -92,6 +106,17 @@
 
         <template v-if="authStore.isAuthenticated">
           <div class="mobile-user-info">
+            <router-link to="/profile" class="mobile-user-avatar">
+              <img 
+                v-if="authStore.user?.avatar_url" 
+                :src="authStore.user.avatar_url" 
+                :alt="authStore.user.username"
+                class="mobile-avatar-image"
+              />
+              <div v-else class="mobile-avatar-placeholder">
+                <i class="fa fa-user"></i>
+              </div>
+            </router-link>
             <span>{{ authStore.user?.username }} ({{ authStore.isAdmin ? '管理员' : '用户' }})</span>
           </div>
           <button @click="handleLogout" class="mobile-nav-link logout-btn">退出登录</button>
@@ -229,6 +254,42 @@ const handleLogout = () => {
   gap: 1rem;
 }
 
+// 用户头像
+.user-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all $transition-normal ease;
+  border: 2px solid transparent;
+  
+  &:hover {
+    border-color: $primary;
+    transform: scale(1.05);
+  }
+  
+  .avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: rgba($primary, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $primary;
+    font-size: 1rem;
+  }
+}
+
 // 移动端菜单按钮
 .mobile-menu-btn {
   display: none;
@@ -324,6 +385,34 @@ const handleLogout = () => {
       color: $gray-300;
       font-size: 0.875rem;
       text-align: center;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      
+      .mobile-user-avatar {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+        
+        .mobile-avatar-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        
+        .mobile-avatar-placeholder {
+          width: 100%;
+          height: 100%;
+          background: rgba($primary, 0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: $primary;
+          font-size: 0.875rem;
+        }
+      }
     }
   }
 }
