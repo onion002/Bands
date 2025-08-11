@@ -43,9 +43,6 @@
           <button @click.stop="$emit('edit', band)" class="action-btn" title="编辑">
             <i class="fa fa-edit"></i>
           </button>
-          <button @click.stop="$emit('upload', band)" class="action-btn" title="上传图片">
-            <i class="fa fa-upload"></i>
-          </button>
           <button @click.stop="$emit('delete', band)" class="action-btn delete" title="删除">
             <i class="fa fa-trash"></i>
           </button>
@@ -100,7 +97,6 @@ const props = defineProps({
 // 定义事件
 defineEmits<{
   edit: [band: Band]
-  upload: [band: Band]
   delete: [band: Band]
 }>()
 

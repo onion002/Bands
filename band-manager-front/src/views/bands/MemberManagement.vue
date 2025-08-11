@@ -164,9 +164,6 @@
               <button @click="editMember(member)" class="action-btn" title="编辑">
                 <i class="fa fa-edit"></i>
               </button>
-              <button @click="openUploadModal(member)" class="action-btn" title="上传头像">
-                <i class="fa fa-camera"></i>
-              </button>
               <button @click="deleteMember(member)" class="action-btn delete" title="删除">
                 <i class="fa fa-trash"></i>
               </button>
@@ -219,17 +216,7 @@
       @save="updateMember"
     />
 
-    <!-- 🌟 上传模态框 -->
-    <UploadModal
-      v-if="showUploadModal"
-      title="上传成员头像"
-      :upload-api="(file) => MemberService.uploadMemberAvatar(selectedMember?.id, file)"
-      accept="image/*"
-      :max-size="5"
-      url-field="avatar_url"
-      @close="closeUploadModal"
-      @uploaded="handleUploadSuccess"
-    />
+
   </div>
 </template>
 
@@ -238,7 +225,7 @@ import { ref, onMounted, computed } from 'vue'
 import { MemberService } from '@/api/memberService'
 import { BandService } from '@/api/bandService'
 import MemberModal from '@/components/MemberModal.vue'
-import UploadModal from '@/components/UploadModal.vue'
+
 import type { Member, Band } from '@/types'
 
 // 🎵 数据状态
@@ -250,7 +237,7 @@ const error = ref('')
 // 🎨 模态框状态
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
-const showUploadModal = ref(false)
+
 const selectedMember = ref<Member | null>(null)
 
 // 🎯 筛选和搜索状态
@@ -368,15 +355,7 @@ const closeCreateModal = () => {
   showCreateModal.value = false
 }
 
-const openUploadModal = (member: Member) => {
-  selectedMember.value = member
-  showUploadModal.value = true
-}
 
-const closeUploadModal = () => {
-  showUploadModal.value = false
-  selectedMember.value = null
-}
 
 const closeEditModal = () => {
   showEditModal.value = false
@@ -460,10 +439,7 @@ const deleteMember = async (member: Member) => {
   }
 }
 
-const handleUploadSuccess = () => {
-  fetchMembers()
-  closeUploadModal()
-}
+
 
 // 🔄 批量操作函数
 const toggleBatchMode = () => {

@@ -38,8 +38,8 @@ class Band(db.Model):
 
     # 添加与Member的一对多关系
     members = db.relationship('Member', backref='band', lazy=True, cascade='all, delete-orphan')
-    # 添加与Event的一对多关系
-    events = db.relationship('Event', backref='band', lazy=True, cascade='all, delete-orphan')
+    # 添加与Event的多对多关系
+    events = db.relationship('Event', secondary='event_bands', backref='bands', lazy=True)
     
     def to_dict(self):
         return {
@@ -104,6 +104,12 @@ class Member(db.Model):
             'avatar_url': self.avatar_url
         }
 
+# Event和Band的多对多关联表
+event_bands = db.Table('event_bands',
+    db.Column('event_id', db.Integer, db.ForeignKey('events.id'), primary_key=True),
+    db.Column('band_id', db.Integer, db.ForeignKey('bands.id'), primary_key=True)
+)
+
 class Event(db.Model):
     __tablename__ = 'events'
     id = db.Column(db.Integer, primary_key=True)
@@ -115,7 +121,6 @@ class Event(db.Model):
     ticket_price = db.Column(db.Numeric(10, 2))  # 票价，支持小数
     capacity = db.Column(db.Integer)  # 场地容量
     status = db.Column(db.String(20), default='upcoming')  # upcoming, ongoing, completed, cancelled
-    band_id = db.Column(db.Integer, db.ForeignKey('bands.id'), nullable=False)
 
     # 图片相关字段
     poster_image_url = db.Column(db.String(255), nullable=True)  # 演出海报
@@ -141,8 +146,8 @@ class Event(db.Model):
             'ticket_price': float(self.ticket_price) if self.ticket_price else None,
             'capacity': self.capacity,
             'status': self.status,
-            'band_id': self.band_id,
-            'band_name': self.band.name if self.band else None,  # type: ignore
+            'band_ids': [band.id for band in self.bands] if self.bands else [],
+            'band_names': [band.name for band in self.bands] if self.bands else [],
             'poster_image_url': self.poster_image_url
         }
 

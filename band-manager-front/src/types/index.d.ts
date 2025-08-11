@@ -58,8 +58,8 @@ export interface Event {
   ticket_price?: number;
   capacity?: number;
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
-  band_id: number;
-  band_name: string;
+  band_ids: number[];
+  band_names: string[];
   poster_image_url?: string;
 }
 
@@ -73,7 +73,7 @@ export interface CreateEventData {
   ticket_price?: number;
   capacity?: number;
   status?: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
-  band_id: number;
+  band_ids: number[];
   poster_image_url?: string;
 }
 
@@ -87,7 +87,7 @@ export interface UpdateEventData {
   ticket_price?: number;
   capacity?: number;
   status?: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
-  band_id?: number;
+  band_ids?: number[];
   poster_image_url?: string;
 }
 

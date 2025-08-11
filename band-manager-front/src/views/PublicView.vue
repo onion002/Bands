@@ -123,7 +123,7 @@
             <div class="member-info">
               <h4>{{ member.name }}</h4>
               <p v-if="member.role" class="member-role">{{ member.role }}</p>
-              <p v-if="member.band_name" class="member-band">{{ member.band_name }}</p>
+                              <p v-if="member.band_names && member.band_names.length > 0" class="member-band">{{ member.band_names.join('、') }}</p>
               <p v-if="member.join_date" class="member-date">
                 加入时间：{{ formatDate(member.join_date) }}
               </p>
@@ -149,9 +149,9 @@
                   <i class="fas fa-map-marker-alt"></i>
                   {{ event.venue }}
                 </span>
-                <span v-if="event.band_name" class="detail-item">
-                  <i class="fas fa-music"></i>
-                  {{ event.band_name }}
+                <span v-if="event.band_names && event.band_names.length > 0" class="detail-item">
+                  <i class="fas fa-users"></i>
+                  {{ event.band_names.join('、') }}
                 </span>
                 <span class="detail-item status" :class="event.status">
                   <i class="fas fa-circle"></i>
@@ -241,7 +241,7 @@ const loadAdminData = async () => {
         id: 1,
         name: '张三',
         role: '主唱',
-        band_name: '摇滚乐队',
+        band_names: ['摇滚乐队'],
         join_date: '2020-01-15'
       }
     ]
@@ -253,7 +253,7 @@ const loadAdminData = async () => {
         description: '参加城市音乐节演出',
         event_date: '2024-08-15T19:00:00',
         venue: '市中心广场',
-        band_name: '摇滚乐队',
+        band_names: ['摇滚乐队'],
         status: 'upcoming'
       }
     ]
@@ -287,9 +287,9 @@ const formatEventMonth = (dateStr: string) => {
 // 获取状态文本
 const getStatusText = (status: string) => {
   const statusMap: Record<string, string> = {
-    upcoming: '即将开始',
-    ongoing: '进行中',
-    completed: '已完成',
+    upcoming: '即将售票',
+    ongoing: '售票中',
+    completed: '结束售票',
     cancelled: '已取消'
   }
   return statusMap[status] || status
@@ -724,7 +724,7 @@ onMounted(() => {
   font-size: 0.9rem;
 }
 
-.detail-item.status.upcoming { color: #3182ce; }
+.detail-item.status.upcoming { color: #f59e0b; }
 .detail-item.status.ongoing { color: #38a169; }
 .detail-item.status.completed { color: #718096; }
 .detail-item.status.cancelled { color: #e53e3e; }

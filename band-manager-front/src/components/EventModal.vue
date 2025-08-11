@@ -10,79 +10,97 @@
 
       <div class="modal-body">
         <form @submit.prevent="handleSubmit" class="event-form">
-          <!-- 基本信息 - 活动标题和活动图片占一排 -->
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">活动标题 *</label>
-              <input
-                type="text"
-                v-model="formData.title"
-                class="form-control"
-                placeholder="请输入活动标题..."
-                maxlength="200"
-                required
-              />
-              <div class="char-count">{{ formData.title.length }}/200</div>
-            </div>
+          <!-- 活动标题 -->
+          <div class="form-group">
+            <label class="form-label">活动标题 *</label>
+            <input
+              type="text"
+              v-model="formData.title"
+              class="form-control"
+              placeholder="请输入活动标题..."
+              maxlength="200"
+              required
+            />
+          </div>
 
-            <!-- 活动图片上传 -->
-            <div class="form-group image-upload-group">
-              <label class="form-label">活动图片</label>
-              <div class="image-upload-area">
-                <div class="image-preview">
-                  <img
-                    v-if="formData.image_url"
-                    :src="formData.image_url"
-                    alt="活动图片"
-                    class="preview-image"
-                  />
-                  <div v-else class="image-placeholder" @click="showUploadModal = true">
-                    <i class="fa fa-image"></i>
-                    <span>点击上传图片</span>
-                  </div>
-                </div>
-                <div class="image-actions">
-                  <button type="button" class="btn btn-outline btn-sm" @click="showUploadModal = true">
-                    <i class="fa fa-camera"></i>
-                    上传图片
-                  </button>
-                  <button
-                    v-if="formData.image_url"
-                    type="button"
-                    class="btn btn-outline btn-sm btn-danger"
-                    @click="removeImage"
+          <!-- 参加乐队选择 -->
+          <div class="form-group">
+            <label class="form-label">参加乐队 *</label>
+            <div class="band-selection">
+              <!-- 已选择的乐队标签 -->
+              <div class="selected-bands" v-if="formData.band_ids.length > 0">
+                <div 
+                  v-for="bandId in formData.band_ids" 
+                  :key="bandId"
+                  class="selected-band-tag"
+                >
+                  {{ getBandName(bandId) }}
+                  <button 
+                    type="button" 
+                    class="remove-band-btn"
+                    @click="removeBand(bandId)"
                   >
-                    <i class="fa fa-trash"></i>
-                    移除
+                    <i class="fa fa-times"></i>
                   </button>
                 </div>
+              </div>
+              
+              <!-- 乐队选择按钮 -->
+              <div class="band-select-button">
+                <button 
+                  type="button"
+                  class="select-bands-btn"
+                  @click="openBandSelectionModal"
+                >
+                  <i class="fa fa-plus"></i>
+                  {{ formData.band_ids.length > 0 ? `已选择 ${formData.band_ids.length} 个乐队` : '请选择乐队' }}
+                </button>
               </div>
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">所属乐队 *</label>
-              <select v-model="formData.band_id" class="form-control" required>
-                <option value="">请选择乐队</option>
-                <option
-                  v-for="band in bands"
-                  :key="band.id"
-                  :value="band.id"
-                >
-                  {{ band.name }}
-                </option>
-              </select>
-            </div>
+          <!-- 活动状态 -->
+          <div class="form-group">
+            <label class="form-label">活动状态</label>
+            <select v-model="formData.status" class="form-control">
+              <option value="upcoming">即将售票</option>
+              <option value="ongoing">售票中</option>
+              <option value="completed">结束售票</option>
+              <option value="cancelled">已取消</option>
+            </select>
+          </div>
 
-            <div class="form-group">
-              <label class="form-label">活动状态</label>
-              <select v-model="formData.status" class="form-control">
-                <option value="upcoming">即将开始</option>
-                <option value="ongoing">进行中</option>
-                <option value="completed">已完成</option>
-                <option value="cancelled">已取消</option>
-              </select>
+          <!-- 活动图片上传 -->
+          <div class="form-group">
+            <label class="form-label">活动图片</label>
+            <div class="image-upload-area">
+              <div class="image-preview">
+                <img
+                  v-if="formData.image_url"
+                  :src="formData.image_url"
+                  alt="活动图片"
+                  class="preview-image"
+                />
+                <div v-else class="image-placeholder" @click="showUploadModal = true">
+                  <i class="fa fa-image"></i>
+                  <span>点击上传图片</span>
+                </div>
+              </div>
+              <div class="image-actions">
+                <button type="button" class="btn btn-outline btn-sm" @click="showUploadModal = true">
+                  <i class="fa fa-camera"></i>
+                  上传图片
+                </button>
+                <button
+                  v-if="formData.image_url"
+                  type="button"
+                  class="btn btn-outline btn-sm btn-danger"
+                  @click="removeImage"
+                >
+                  <i class="fa fa-trash"></i>
+                  移除
+                </button>
+              </div>
             </div>
           </div>
 
@@ -150,7 +168,7 @@
             <textarea
               v-model="formData.description"
               class="form-control"
-              rows="4"
+              rows="3"
               placeholder="请输入活动描述..."
               maxlength="1000"
             ></textarea>
@@ -185,11 +203,82 @@
       @uploaded="handleImageUploaded"
       @close="showUploadModal = false"
     />
+
+    <!-- 乐队选择模态框 -->
+    <div class="band-selection-modal" v-if="showBandSelectionModal">
+      <div class="band-selection-overlay" @click="closeBandSelectionModal"></div>
+      <div class="band-selection-content">
+        <div class="band-selection-header">
+          <h3>选择参加乐队</h3>
+          <button class="close-modal-btn" @click="closeBandSelectionModal">
+            <i class="fa fa-times"></i>
+          </button>
+        </div>
+
+        <div class="band-selection-search">
+          <input
+            type="text"
+            v-model="bandSearchKeyword"
+            placeholder="搜索乐队..."
+            class="search-input"
+          />
+        </div>
+
+        <div class="band-selection-list">
+          <div 
+            v-for="band in filteredBands"
+            :key="band.id"
+            class="band-selection-item"
+            @click="toggleBandSelection(band.id)"
+          >
+            <div class="checkbox-wrapper">
+              <input 
+                type="checkbox" 
+                :checked="tempSelectedBands.includes(band.id)"
+                @click.stop
+              />
+              <span class="checkmark"></span>
+            </div>
+            <span class="band-name">{{ band.name }}</span>
+          </div>
+          
+          <div v-if="filteredBands.length === 0" class="no-bands">
+            {{ bandSearchKeyword ? '没有找到匹配的乐队' : '没有可选的乐队' }}
+          </div>
+        </div>
+
+        <div class="band-selection-footer">
+          <button 
+            type="button" 
+            class="btn btn-outline"
+            @click="clearAllSelections"
+          >
+            全部取消
+          </button>
+          <div class="footer-right">
+            <button 
+              type="button" 
+              class="btn btn-outline"
+              @click="cancelBandSelection"
+            >
+              取消
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-primary"
+              @click="confirmBandSelection"
+            >
+              确定
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed, onUnmounted } from 'vue';
 import type { Event } from '@/types';
 import UploadModal from './UploadModal.vue';
 import { BandService } from '@/api/bandService';
@@ -203,14 +292,17 @@ const props = defineProps({
   mode: {
     type: String,
     default: 'add'
-}
+  }
 });
 
 const emit = defineEmits(['close', 'submit']);
 
 const loading = ref(false);
 const showUploadModal = ref(false);
+const showBandSelectionModal = ref(false);
 const bands = ref<any[]>([]);
+const bandSearchKeyword = ref('');
+const tempSelectedBands = ref<number[]>([]);
 
 const formData = ref({
   id: 0,
@@ -222,7 +314,7 @@ const formData = ref({
   ticket_price: undefined as number | undefined,
   capacity: undefined as number | undefined,
   status: 'upcoming' as 'upcoming' | 'ongoing' | 'completed' | 'cancelled',
-  band_id: '',
+  band_ids: [] as number[],
   image_url: ''
 });
 
@@ -239,7 +331,7 @@ watch(() => props.event, (newEvent) => {
       ticket_price: newEvent.ticket_price,
       capacity: newEvent.capacity,
       status: newEvent.status,
-      band_id: String(newEvent.band_id),
+      band_ids: newEvent.band_ids || [],
       image_url: newEvent.poster_image_url || ''
     };
   } else {
@@ -254,7 +346,7 @@ watch(() => props.event, (newEvent) => {
       ticket_price: undefined,
       capacity: undefined,
       status: 'upcoming',
-      band_id: '',
+      band_ids: [],
       image_url: ''
     };
   }
@@ -268,6 +360,73 @@ const fetchBands = async () => {
   } catch (error) {
     console.error('获取乐队列表失败:', error);
   }
+};
+
+// 计算过滤后的乐队列表
+const filteredBands = computed(() => {
+  if (!bandSearchKeyword.value.trim()) {
+    return bands.value;
+  }
+  const keyword = bandSearchKeyword.value.toLowerCase();
+  return bands.value.filter(band => 
+    band.name.toLowerCase().includes(keyword)
+  );
+});
+
+// 根据乐队ID获取乐队名称
+const getBandName = (bandId: number) => {
+  const band = bands.value.find(b => b.id === bandId);
+  return band ? band.name : '未知乐队';
+};
+
+// 移除乐队
+const removeBand = (bandId: number) => {
+  const index = formData.value.band_ids.indexOf(bandId);
+  if (index > -1) {
+    formData.value.band_ids.splice(index, 1);
+  }
+};
+
+// 打开乐队选择模态框
+const openBandSelectionModal = () => {
+  tempSelectedBands.value = [...formData.value.band_ids];
+  bandSearchKeyword.value = '';
+  showBandSelectionModal.value = true;
+};
+
+// 关闭乐队选择模态框
+const closeBandSelectionModal = () => {
+  showBandSelectionModal.value = false;
+  tempSelectedBands.value = [];
+  bandSearchKeyword.value = '';
+};
+
+// 切换乐队选择状态
+const toggleBandSelection = (bandId: number) => {
+  const index = tempSelectedBands.value.indexOf(bandId);
+  if (index > -1) {
+    // 如果已选择，则移除
+    tempSelectedBands.value.splice(index, 1);
+  } else {
+    // 如果未选择，则添加
+    tempSelectedBands.value.push(bandId);
+  }
+};
+
+// 全部取消选择
+const clearAllSelections = () => {
+  tempSelectedBands.value = [];
+};
+
+// 取消选择（恢复原状态）
+const cancelBandSelection = () => {
+  closeBandSelectionModal();
+};
+
+// 确认选择
+const confirmBandSelection = () => {
+  formData.value.band_ids = [...tempSelectedBands.value];
+  closeBandSelectionModal();
 };
 
 // 上传活动图片的API包装函数
@@ -312,8 +471,8 @@ const handleSubmit = async () => {
       alert('请输入活动标题');
       return;
     }
-    if (!formData.value.band_id) {
-      alert('请选择乐队');
+    if (!formData.value.band_ids || formData.value.band_ids.length === 0) {
+      alert('请选择至少一个乐队');
       return;
     }
     if (!formData.value.event_date) {
@@ -325,7 +484,6 @@ const handleSubmit = async () => {
 
     const submitData = {
       ...formData.value,
-      band_id: parseInt(formData.value.band_id),
       poster_image_url: formData.value.image_url
     };
 
@@ -342,6 +500,10 @@ const handleSubmit = async () => {
 
 onMounted(() => {
   fetchBands();
+});
+
+onUnmounted(() => {
+  // 清理工作
 });
 </script>
 
@@ -418,11 +580,14 @@ onMounted(() => {
   }
 
   .modal-body {
-    padding: 1.25rem;
+    padding: 0.5rem;
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
     min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 
     &::-webkit-scrollbar {
       width: 6px;
@@ -453,33 +618,34 @@ onMounted(() => {
   .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 4px;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
 
     @media (max-width: 480px) {
       grid-template-columns: 1fr;
-      gap: 0.75rem;
+      gap: 0.5rem;
     }
   }
 
   .form-group {
-    margin-bottom: 4px;
+    margin-bottom: 0.25rem;
 
     .form-label {
       display: block;
       color: $white;
       font-weight: 500;
-      font-size: 0.875rem;
+      font-size: 0.8rem;
+      margin-bottom: 0.25rem;
     }
 
     .form-control {
       width: 100%;
-      
+      padding: 0.5rem 0.75rem;
       background: rgba($lightgray, 0.4);
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: $border-radius-lg;
       color: $white;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       transition: all $transition-normal ease;
       backdrop-filter: blur(10px);
 
@@ -520,15 +686,16 @@ onMounted(() => {
 
     textarea.form-control {
       resize: vertical;
-      min-height: 120px;
-      line-height: 1.6;
+      min-height: 100px;
+      line-height: 1.5;
     }
 
     .char-count {
       text-align: right;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: rgba(255, 255, 255, 0.5);
       font-weight: 500;
+      margin-top: 0.25rem;
 
       &.warning {
         color: #fbbf24;
@@ -538,51 +705,22 @@ onMounted(() => {
         color: #ef4444;
       }
     }
-
-    .form-label {
-      position: relative;
-
-      &::after {
-        content: '';
-        position: absolute;
-        bottom: -2px;
-        left: 0;
-        width: 0;
-        height: 2px;
-        background: $gradient-primary;
-        transition: width $transition-normal ease;
-      }
-
-      &:hover::after {
-        width: 100%;
-      }
-    }
-
-    .required::after {
-      content: ' *';
-      color: $primary;
-      font-weight: bold;
-    }
-
-    // 图片上传区域样式
-    .image-upload-group {
-      margin-bottom: 1.25rem;
-    }
+  }
 }
 
-// 🌟 图片上传区域
+// 图片上传区域
 .image-upload-area {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   align-items: flex-start;
-  padding: 1.5rem;
+  padding: 1rem;
   background: rgba(255, 255, 255, 0.05);
   border-radius: $border-radius-lg;
   border: 1px solid rgba(255, 255, 255, 0.1);
 
   .image-preview {
-    width: 140px;
-    height: 140px;
+    width: 120px;
+    height: 120px;
     border-radius: $border-radius-lg;
     overflow: hidden;
     border: 2px dashed rgba($primary, 0.4);
@@ -644,6 +782,319 @@ onMounted(() => {
     padding-top: 0.5rem;
   }
 }
+
+// 乐队选择样式
+.band-selection {
+  .selected-bands {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+    min-height: 1.25rem;
+    padding: 0.125rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: $border-radius-md;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+
+    .selected-band-tag {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      background: rgba($secondary, 0.2);
+      border: 1px solid rgba($secondary, 0.4);
+      border-radius: $border-radius-sm;
+      color: $white;
+      font-size: 0.75rem;
+      font-weight: 500;
+      transition: all $transition-normal ease;
+
+      &:hover {
+        background: rgba($secondary, 0.3);
+        border-color: rgba($secondary, 0.6);
+        transform: translateY(-1px);
+      }
+
+      .remove-band-btn {
+        background: none;
+        border: none;
+        color: rgba($secondary, 0.8);
+        cursor: pointer;
+        padding: 0.15rem;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all $transition-normal ease;
+
+        &:hover {
+          background: rgba($secondary, 0.2);
+          color: $secondary;
+        }
+
+        i {
+          font-size: 0.65rem;
+        }
+      }
+    }
   }
 
+  .band-select-button {
+    .select-bands-btn {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: rgba($primary, 0.1);
+      border: 2px dashed rgba($primary, 0.3);
+      border-radius: $border-radius-lg;
+      color: $white;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all $transition-normal ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+
+      &:hover {
+        background: rgba($primary, 0.2);
+        border-color: rgba($primary, 0.5);
+        transform: translateY(-1px);
+      }
+
+      i {
+        font-size: 0.8rem;
+        color: $primary;
+      }
+    }
+  }
+}
+
+// 乐队选择模态框样式
+.band-selection-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .band-selection-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba($black, 0.7);
+    backdrop-filter: blur(5px);
+  }
+
+  .band-selection-content {
+    position: relative;
+    background: $darkgray;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: $border-radius-lg;
+    box-shadow: 0 8px 32px rgba($black, 0.4);
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(10px);
+
+    .band-selection-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      h3 {
+        color: $white;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .close-modal-btn {
+        background: none;
+        border: none;
+        color: $gray-400;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 50%;
+        transition: all $transition-normal ease;
+
+        &:hover {
+          color: $white;
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        i {
+          font-size: 1.1rem;
+        }
+      }
+    }
+
+    .band-selection-search {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+      .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: rgba($lightgray, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: $border-radius-md;
+        color: $white;
+        font-size: 0.9rem;
+        transition: all $transition-normal ease;
+
+        &::placeholder {
+          color: rgba(255, 255, 255, 0.5);
+        }
+
+        &:focus {
+          outline: none;
+          border-color: $primary;
+          background: rgba($lightgray, 0.5);
+          box-shadow: 0 0 0 3px rgba($primary, 0.2);
+        }
+      }
+    }
+
+    .band-selection-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem 0;
+      max-height: 400px;
+
+      .band-selection-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        cursor: pointer;
+        transition: all $transition-normal ease;
+
+        &:hover {
+          background: rgba($primary, 0.1);
+        }
+
+        .checkbox-wrapper {
+          position: relative;
+          width: 20px;
+          height: 20px;
+
+          input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+          }
+
+          .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            background: rgba($lightgray, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            transition: all $transition-normal ease;
+
+            &::after {
+              content: '';
+              position: absolute;
+              left: 6px;
+              top: 2px;
+              width: 5px;
+              height: 10px;
+              border: solid $white;
+              border-width: 0 2px 2px 0;
+              transform: rotate(45deg);
+              opacity: 0;
+              transition: opacity $transition-normal ease;
+            }
+          }
+
+          input[type="checkbox"]:checked ~ .checkmark {
+            background: $primary;
+            border-color: $primary;
+
+            &::after {
+              opacity: 1;
+            }
+          }
+        }
+
+        .band-name {
+          color: $white;
+          font-size: 0.95rem;
+          font-weight: 500;
+        }
+      }
+
+      .no-bands {
+        padding: 2rem;
+        text-align: center;
+        color: $gray-400;
+        font-size: 0.9rem;
+      }
+    }
+
+    .band-selection-footer {
+      padding: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+
+      .footer-right {
+        display: flex;
+        gap: 0.75rem;
+      }
+
+      .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: $border-radius-md;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all $transition-normal ease;
+        cursor: pointer;
+
+        &.btn-outline {
+          background: transparent;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: $white;
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+          }
+        }
+
+        &.btn-primary {
+          background: $primary;
+          border: 1px solid $primary;
+          color: $white;
+
+          &:hover {
+            background: darken($primary, 10%);
+            border-color: darken($primary, 10%);
+            transform: translateY(-1px);
+          }
+        }
+      }
+    }
+  }
+}
 </style>

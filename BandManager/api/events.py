@@ -142,7 +142,8 @@ def get_all_events():
             band = Band.query.filter_by(id=band_id, owner_id=current_user.id).first()
             if not band:
                 return jsonify({'error': '乐队不存在或无权限访问'}), 404
-            query = query.filter_by(band_id=band_id)
+            # 使用多对多关系筛选
+            query = query.join(Event.bands).filter(Event.bands.any(id=band_id))
         
         # 按状态筛选
         if status:
@@ -180,10 +181,12 @@ def get_band_events(band_id):
         page = max(1, page)
         per_page = max(1, min(per_page, 100))
         
-        # 查询演出活动
-        pagination = Event.query.filter_by(band_id=band_id, is_deleted=False)\
-                       .order_by(Event.event_date.desc())\
-                       .paginate(page=page, per_page=per_page, error_out=False)
+        # 查询演出活动 - 使用多对多关系
+        pagination = Event.query.join(Event.bands).filter(
+            Event.bands.any(id=band_id),
+            Event.is_deleted == False
+        ).order_by(Event.event_date.desc())\
+         .paginate(page=page, per_page=per_page, error_out=False)
         
         events = [event.to_dict() for event in pagination.items]
         
@@ -208,14 +211,20 @@ def create_event():
         print(f"接收到的创建活动数据: {data}")
 
         # 验证必要字段
-        required_fields = ['title', 'event_date', 'band_id']
+        required_fields = ['title', 'event_date', 'band_ids']
         if not data or not all(field in data for field in required_fields):
-            return jsonify({'error': '缺少必要字段: title, event_date 或 band_id'}), 400
+            return jsonify({'error': '缺少必要字段: title, event_date 或 band_ids'}), 400
 
         # 验证乐队是否存在且属于当前用户
-        band = Band.query.filter_by(id=data['band_id'], owner_id=current_user.id).first()
-        if not band:
-            return jsonify({'error': '乐队不存在或无权限访问'}), 404
+        band_ids = data['band_ids']
+        if not isinstance(band_ids, list) or not band_ids:
+            return jsonify({'error': 'band_ids必须是乐队ID列表'}), 400
+            
+        bands = Band.query.filter(Band.id.in_(band_ids), Band.owner_id == current_user.id).all()
+        if len(bands) != len(band_ids):
+            found_ids = [band.id for band in bands]
+            missing_ids = [bid for bid in band_ids if bid not in found_ids]
+            return jsonify({'error': f'以下乐队不存在或无权限访问: {missing_ids}'}), 404
         
         # 转换日期格式
         try:
@@ -233,10 +242,12 @@ def create_event():
             ticket_price=data.get('ticket_price'),
             capacity=data.get('capacity'),
             status=data.get('status', 'upcoming'),
-            band_id=data.get('band_id'),
             poster_image_url=data.get('poster_image_url'),  # 确保这里正确获取
             owner_id=current_user.id
         )
+        
+        # 添加乐队关联
+        new_event.bands = bands
         
         print(f"创建的活动对象 - 海报URL: {new_event.poster_image_url}")
         
@@ -301,11 +312,20 @@ def update_event(event_id):
             event.capacity = data['capacity']
         if 'status' in data:
             event.status = data['status']
-        if 'band_id' in data:
-            # 验证新乐队是否存在
-            if not Band.query.get(data['band_id']):
-                return jsonify({'error': '乐队不存在'}), 404
-            event.band_id = data['band_id']
+        if 'band_ids' in data:
+            # 验证新乐队是否存在且属于当前用户
+            band_ids = data['band_ids']
+            if not isinstance(band_ids, list) or not band_ids:
+                return jsonify({'error': 'band_ids必须是乐队ID列表'}), 400
+                
+            bands = Band.query.filter(Band.id.in_(band_ids), Band.owner_id == current_user.id).all()
+            if len(bands) != len(band_ids):
+                found_ids = [band.id for band in bands]
+                missing_ids = [bid for bid in band_ids if bid not in found_ids]
+                return jsonify({'error': f'以下乐队不存在或无权限访问: {missing_ids}'}), 404
+            
+            # 更新乐队关联
+            event.bands = bands
         if 'poster_image_url' in data:
             event.poster_image_url = data['poster_image_url']
         

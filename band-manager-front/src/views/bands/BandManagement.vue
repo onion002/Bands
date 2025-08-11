@@ -173,9 +173,6 @@
                 <button @click.stop="editBand(band)" class="action-btn" title="编辑">
                   <i class="fa fa-edit"></i>
                 </button>
-                <button @click.stop="openUploadModal(band)" class="action-btn" title="上传图片">
-                  <i class="fa fa-upload"></i>
-                </button>
                 <button @click.stop="deleteBand(band)" class="action-btn delete" title="删除">
                   <i class="fa fa-trash"></i>
                 </button>
@@ -260,17 +257,6 @@
       @save="updateBand"
     />
 
-    <!-- 🌟 上传模态框 -->
-    <UploadModal
-      v-if="showUploadModal"
-      title="上传乐队图片"
-      :upload-api="(file) => BandService.uploadBandImage(file, selectedBand?.id)"
-      accept="image/*"
-      :max-size="5"
-      url-field="banner_image_url"
-      @close="closeUploadModal"
-      @uploaded="handleUploadSuccess"
-    />
   </div>
 </template>
 
@@ -279,7 +265,7 @@ import { ref, onMounted, computed } from 'vue'
 import { BandService } from '@/api/bandService'
 import BandModal from '@/components/BandModal.vue'
 import BandCard from '@/components/BandCard.vue'
-import UploadModal from '@/components/UploadModal.vue'
+
 import type { Band } from '@/types'
 
 // 🎵 数据状态
@@ -290,7 +276,7 @@ const error = ref('')
 // 🎨 模态框状态
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
-const showUploadModal = ref(false)
+
 const selectedBand = ref<Band | null>(null)
 
 // 🎯 筛选和搜索状态
@@ -396,15 +382,7 @@ const closeCreateModal = () => {
   showCreateModal.value = false
 }
 
-const openUploadModal = (band: Band) => {
-  selectedBand.value = band
-  showUploadModal.value = true
-}
 
-const closeUploadModal = () => {
-  showUploadModal.value = false
-  selectedBand.value = null
-}
 
 const closeEditModal = () => {
   showEditModal.value = false
@@ -474,10 +452,7 @@ const deleteBand = async (band: Band) => {
   }
 }
 
-const handleUploadSuccess = () => {
-  fetchBands()
-  closeUploadModal()
-}
+
 
 // 🌟 简介弹窗控制
 const openBioDialog = (band: Band) => {
