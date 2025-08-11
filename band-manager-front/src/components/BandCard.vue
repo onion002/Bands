@@ -1,246 +1,324 @@
 <template>
-  <div class="band-card" @click="handleCardClick">
-    <!-- 🎨 乐队图片区域 -->
+  <div class="band-card card card-interactive" :class="{ 'selected': selected }">
+    <!-- 批量选择复选框 -->
+    <div v-if="showBatchCheckbox" class="batch-checkbox">
+      <input
+        type="checkbox"
+        :checked="selected"
+        @change="$emit('selection-change', ($event.target as HTMLInputElement).checked)"
+        class="checkbox"
+      />
+    </div>
+
     <div class="band-image">
-      <img
-        v-if="band.banner_image_url"
-        :src="band.banner_image_url"
-        :alt="band.name"
+      <img 
+        v-if="band.banner_image_url" 
+        :src="band.banner_image_url" 
+        :alt="band.name" 
         class="band-image-content"
       />
-      <div v-else class="placeholder-image">
+      <div v-else class="image-placeholder">
         <i class="fa fa-music"></i>
         <span>{{ band.name }}</span>
       </div>
-
-      <!-- 图片遮罩 -->
       <div class="image-overlay"></div>
-
-      <!-- 乐队类型标签 -->
-      <div class="band-genre">{{ band.genre || '未分类' }}</div>
-
-      <!-- 悬停播放按钮 -->
-      <button class="play-btn" @click.stop="showBioDialog = true">
-        <i class="fa fa-play-circle"></i>
+      <div v-if="band.genre" class="band-genre">{{ band.genre }}</div>
+      
+      <!-- 播放按钮 -->
+      <button 
+        v-if="showPlayButton"
+        @click="$emit('play')" 
+        class="play-btn"
+        :title="`播放 ${band.name}`"
+      >
+        <i class="fa fa-play"></i>
       </button>
     </div>
 
-    <!-- 🎵 乐队信息区域 -->
-    <div class="band-content">
-      <h3 class="band-title">{{ band.name }}</h3>
-      <div class="band-year">{{ band.year }}年成立</div>
-      <p class="band-bio">{{ band.bio || '暂无简介' }}</p>
-
-      <!-- 乐队统计 -->
+    <div class="band-info">
+      <h4 class="band-title">{{ band.name }}</h4>
+      <div v-if="band.year" class="band-year">{{ band.year }}年成立</div>
+      <p v-if="band.bio" class="band-bio">{{ band.bio }}</p>
+      
       <div class="band-stats">
         <div class="member-count">
           <i class="fa fa-users"></i>
           <span>{{ band.member_count || 0 }}人</span>
         </div>
+      </div>
 
-        <!-- 操作按钮 -->
-        <div class="band-actions">
-          <button @click.stop="$emit('edit', band)" class="action-btn" title="编辑">
-            <i class="fa fa-edit"></i>
-          </button>
-          <button @click.stop="$emit('delete', band)" class="action-btn delete" title="删除">
-            <i class="fa fa-trash"></i>
-          </button>
-        </div>
+      <!-- 操作按钮 -->
+      <div v-if="showActions" class="band-actions">
+        <button 
+          @click="$emit('edit')" 
+          class="action-btn edit-btn"
+          title="编辑乐队"
+        >
+          <i class="fa fa-edit"></i>
+        </button>
+        <button 
+          @click="$emit('delete')" 
+          class="action-btn delete-btn"
+          title="删除乐队"
+        >
+          <i class="fa fa-trash"></i>
+        </button>
+        <button 
+          @click="$emit('view')" 
+          class="action-btn view-btn"
+          title="查看详情"
+        >
+          <i class="fa fa-eye"></i>
+        </button>
       </div>
     </div>
-
-    <!-- 🌟 乐队简介弹窗 -->
-    <div v-if="showBioDialog" class="modal-overlay" @click.self="showBioDialog = false">
-      <div class="modal">
-        <div class="modal-header">
-          <h3>{{ band.name }} - 乐队简介</h3>
-          <button class="close-btn" @click="showBioDialog = false">
-            <i class="fa fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="bio-content">
-            <p>{{ band.bio || '暂无简介信息' }}</p>
-            <div class="band-details">
-              <div class="detail-item">
-                <strong>成立年份:</strong> {{ band.year }}
-              </div>
-              <div class="detail-item">
-                <strong>音乐类型:</strong> {{ band.genre || '未分类' }}
-              </div>
-              <div class="detail-item">
-                <strong>成员数量:</strong> {{ band.member_count || 0 }}人
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-primary" @click="showBioDialog = false">关闭</button>
-        </div>
-      </div>
   </div>
 </template>
-  
-<script setup lang="ts">
-import { ref } from 'vue'
-import type { PropType } from 'vue'
-import type { Band } from '@/types'
 
-const props = defineProps({
-  band: {
-    type: Object as PropType<Band>,
-    required: true
-  }
+<script setup lang="ts">
+interface Band {
+  id: number
+  name: string
+  genre?: string
+  year?: number
+  bio?: string
+  banner_image_url?: string
+  member_count?: number
+  primary_color?: string
+}
+
+interface Props {
+  band: Band
+  selected?: boolean
+  showBatchCheckbox?: boolean
+  showPlayButton?: boolean
+  showActions?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  selected: false,
+  showBatchCheckbox: false,
+  showPlayButton: false,
+  showActions: false
 })
 
 // 定义事件
 defineEmits<{
-  edit: [band: Band]
-  delete: [band: Band]
+  'selection-change': [value: boolean]
+  'play': []
+  'edit': []
+  'delete': []
+  'view': []
 }>()
-
-// 弹窗状态
-const showBioDialog = ref(false)
-
-// 处理卡片点击
-const handleCardClick = () => {
-  showBioDialog.value = true
-}
 </script>
-  
+
 <style scoped lang="scss">
 @use '@/assets/scss/variables' as *;
-@use '@/assets/scss/mixins' as *;
 
-// 🎨 优化的乐队卡片样式
 .band-card {
-  @include interactive-card;
-  @include fade-in-up(0.6s, 30px);
+  overflow: hidden;
+  position: relative;
 
-  // 使用全局定义的 .band-card 样式基础上添加优化
+  &.selected {
+    transform: scale(0.98);
 
-  .placeholder-image {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    background: rgba($lightgray, 0.3);
-    color: $gray-400;
-    @include transition-optimized(background-color);
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border: 2px solid $primary;
+      border-radius: $border-radius-xl;
+      pointer-events: none;
+      z-index: 1;
+    }
+  }
 
-    i {
-      font-size: 3rem;
-      margin-bottom: 0.5rem;
-      color: $primary;
-      @include music-pulse(2s, 1.1);
+  .batch-checkbox {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 10;
+
+    .checkbox {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: $primary;
+      border-radius: 4px;
+    }
+  }
+
+  .band-image {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform $transition-slow ease;
     }
 
-    span {
-      font-weight: 500;
-      @include transition-optimized(color);
-    }
+    .image-placeholder {
+      width: 100%;
+      height: 100%;
+      background: rgba($lightgray, 0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: $gray-400;
 
-    &:hover {
-      background: rgba($lightgray, 0.4);
+      i {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+        color: $primary;
+      }
 
       span {
-        color: $primary;
+        font-weight: 500;
       }
     }
-  }
 
-  .play-btn {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: none;
-    border: none;
-    color: $white;
-    font-size: 4rem;
-    cursor: pointer;
-    opacity: 0;
-    @include transition-optimized(opacity transform color);
-    @include hardware-acceleration;
-
-    &:hover {
-      color: $primary;
-      transform: translate(-50%, -50%) scale(1.1) translateZ(0);
+    .image-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba($dark, 0.8), transparent);
     }
-  }
 
-  &:hover .play-btn {
-    opacity: 1;
-  }
+    .band-genre {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba($primary, 0.9);
+      color: $white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
 
-  // 添加进入动画延迟
-  &:nth-child(1) { animation-delay: 0.1s; }
-  &:nth-child(2) { animation-delay: 0.2s; }
-  &:nth-child(3) { animation-delay: 0.3s; }
-  &:nth-child(4) { animation-delay: 0.4s; }
-  &:nth-child(5) { animation-delay: 0.5s; }
-}
-
-// 🌟 优化的弹窗样式
-.modal-overlay {
-  @include modal-backdrop;
-  @include hardware-acceleration;
-}
-
-.modal {
-  @include modal-enter;
-  @include hardware-acceleration;
-}
-
-.bio-content {
-  p {
-    color: $gray-300;
-    line-height: 1.6;
-    margin-bottom: 1.5rem;
-    @include fade-in-up(0.5s, 20px, 0.1s);
-  }
-
-  .band-details {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-
-    .detail-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: $gray-400;
-      font-size: 0.875rem;
-      @include fade-in-left(0.4s, 20px);
-      @include transition-optimized(color);
-
-      &:nth-child(1) { animation-delay: 0.2s; }
-      &:nth-child(2) { animation-delay: 0.3s; }
-      &:nth-child(3) { animation-delay: 0.4s; }
-
-      strong {
-        color: $primary;
-        min-width: 80px;
-        @include glow-text($primary, 0.3);
-      }
+    .play-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: none;
+      border: none;
+      color: $white;
+      font-size: 3rem;
+      cursor: pointer;
+      opacity: 0;
+      transition: all $transition-normal ease;
 
       &:hover {
-        color: $gray-200;
+        color: $primary;
+        transform: translate(-50%, -50%) scale(1.1);
       }
     }
   }
-}
 
-// 🎨 响应式动画优化
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  .band-info {
+    padding: 1.5rem;
+
+    .band-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+      color: $white;
+      transition: color $transition-normal ease;
+    }
+
+    .band-year {
+      color: $primary;
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+      font-size: 0.875rem;
+    }
+
+    .band-bio {
+      color: $gray-400;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      margin-bottom: 1rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .band-stats {
+      margin-top: 1rem;
+
+      .member-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: $gray-300;
+        font-size: 0.875rem;
+        font-weight: 500;
+
+        i {
+          color: $primary;
+          font-size: 0.875rem;
+        }
+      }
+    }
+
+    .band-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+
+      .action-btn {
+        background: none;
+        border: none;
+        color: $gray-400;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: $border-radius-sm;
+        transition: all $transition-fast ease;
+
+        &:hover {
+          color: $primary;
+          background: rgba($primary, 0.1);
+        }
+
+        &.edit-btn:hover {
+          color: #3b82f6;
+          background: rgba(59, 130, 246, 0.1);
+        }
+
+        &.delete-btn:hover {
+          color: #ef4444;
+          background: rgba(239, 68, 68, 0.1);
+        }
+
+        &.view-btn:hover {
+          color: #10b981;
+          background: rgba(16, 185, 129, 0.1);
+        }
+      }
+    }
+  }
+
+  &:hover {
+    .band-image {
+      img {
+        transform: scale(1.1);
+      }
+
+      .play-btn {
+        opacity: 1;
+      }
+    }
+
+    .band-info .band-title {
+      color: $primary;
+    }
   }
 }
-
-
-  </style>
+</style>

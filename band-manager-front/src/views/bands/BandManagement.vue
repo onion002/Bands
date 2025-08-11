@@ -112,75 +112,20 @@
 
     <!-- 🎵 乐队网格展示 -->
     <div v-else class="bands-grid">
-      <div
+      <BandCard
         v-for="band in paginatedBands"
         :key="band.id"
-        class="band-item"
-        :class="{ 'selected': batchMode && selectedBands.includes(band.id) }"
-      >
-        <!-- 批量选择复选框 -->
-        <div v-if="batchMode" class="batch-checkbox">
-          <input
-            type="checkbox"
-            :value="band.id"
-            v-model="selectedBands"
-            class="checkbox"
-          />
-        </div>
-
-        <!-- 乐队卡片 -->
-        <div class="band-card card card-interactive">
-          <!-- 乐队图片 -->
-          <div class="band-image">
-            <img
-              v-if="band.banner_image_url"
-              :src="getBandImageUrl(band.banner_image_url)"
-              :alt="band.name"
-              class="band-image-content"
-            />
-            <div v-else class="image-placeholder">
-              <i class="fa fa-music"></i>
-              <span>{{ band.name }}</span>
-            </div>
-
-            <!-- 图片遮罩 -->
-            <div class="image-overlay"></div>
-
-            <!-- 乐队类型标签 -->
-            <div class="band-genre">{{ band.genre || '未分类' }}</div>
-
-            <!-- 悬停播放按钮 -->
-            <button class="play-btn" @click.stop="openBioDialog(band)">
-              <i class="fa fa-info-circle"></i>
-            </button>
-          </div>
-
-          <!-- 乐队信息 -->
-          <div class="band-content">
-            <h3 class="band-title">{{ band.name }}</h3>
-            <div class="band-year">{{ band.year }}年成立</div>
-            <p class="band-bio">{{ band.bio || '暂无简介' }}</p>
-
-            <!-- 乐队统计 -->
-            <div class="band-stats">
-              <div class="member-count">
-                <i class="fa fa-users"></i>
-                <span>{{ band.member_count || 0 }}人</span>
-              </div>
-
-              <!-- 操作按钮 -->
-              <div v-if="!batchMode" class="band-actions">
-                <button @click.stop="editBand(band)" class="action-btn" title="编辑">
-                  <i class="fa fa-edit"></i>
-                </button>
-                <button @click.stop="deleteBand(band)" class="action-btn delete" title="删除">
-                  <i class="fa fa-trash"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        :band="band"
+        :selected="batchMode && selectedBands.includes(band.id)"
+        :show-batch-checkbox="batchMode"
+        :show-play-button="true"
+        :show-actions="!batchMode"
+        @selection-change="(selected) => handleBandSelection(band.id, selected)"
+        @play="openBioDialog(band)"
+        @edit="editBand(band)"
+        @delete="deleteBand(band)"
+        @view="openBioDialog(band)"
+      />
     </div>
 
     <!-- 🌟 乐队简介弹窗 -->
@@ -474,6 +419,16 @@ const getBandImageUrl = (imageUrl: string) => {
 }
 
 // 🔄 批量操作函数
+const handleBandSelection = (bandId: number, selected: boolean) => {
+  if (selected) {
+    if (!selectedBands.value.includes(bandId)) {
+      selectedBands.value.push(bandId)
+    }
+  } else {
+    selectedBands.value = selectedBands.value.filter(id => id !== bandId)
+  }
+}
+
 const toggleBatchMode = () => {
   batchMode.value = !batchMode.value
   if (!batchMode.value) {
@@ -644,172 +599,7 @@ onMounted(() => {
   }
 }
 
-// 🎨 乐队卡片样式
-.band-card {
-  overflow: hidden;
 
-  .band-image {
-    position: relative;
-    height: 200px;
-    overflow: hidden;
-
-    .band-image-content {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform $transition-slow ease;
-    }
-
-    .image-placeholder {
-      width: 100%;
-      height: 100%;
-      background: rgba($lightgray, 0.3);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: $gray-400;
-
-      i {
-        font-size: 3rem;
-        margin-bottom: 0.5rem;
-        color: $primary;
-      }
-
-      span {
-        font-weight: 500;
-      }
-    }
-
-    .image-overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to top, rgba($dark, 0.8), transparent);
-    }
-
-    .band-genre {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      background: rgba($primary, 0.9);
-      color: $white;
-      padding: 0.25rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .play-btn {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: none;
-      border: none;
-      color: $white;
-      font-size: 3rem;
-      cursor: pointer;
-      opacity: 0;
-      transition: all $transition-normal ease;
-
-      &:hover {
-        color: $primary;
-        transform: translate(-50%, -50%) scale(1.1);
-      }
-    }
-  }
-
-  .band-content {
-    padding: 1.5rem;
-
-    .band-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin: 0 0 0.5rem;
-      color: $white;
-      transition: color $transition-normal ease;
-    }
-
-    .band-year {
-      color: $primary;
-      font-weight: 500;
-      margin-bottom: 0.75rem;
-      font-size: 0.875rem;
-    }
-
-    .band-bio {
-      color: $gray-400;
-      font-size: 0.875rem;
-      line-height: 1.5;
-      margin-bottom: 1rem;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .band-stats {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-
-      .member-count {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: $gray-400;
-        font-size: 0.875rem;
-
-        i {
-          color: $primary;
-        }
-      }
-
-      .band-actions {
-        display: flex;
-        gap: 0.5rem;
-
-        .action-btn {
-          background: none;
-          border: none;
-          color: $gray-400;
-          cursor: pointer;
-          padding: 0.5rem;
-          border-radius: $border-radius-sm;
-          transition: all $transition-fast ease;
-
-          &:hover {
-            color: $primary;
-            background: rgba($primary, 0.1);
-          }
-
-          &.delete:hover {
-            color: #ef4444;
-            background: rgba(#ef4444, 0.1);
-          }
-        }
-      }
-    }
-  }
-
-  &:hover {
-    .band-image {
-      .band-image-content {
-        transform: scale(1.1);
-      }
-
-      .play-btn {
-        opacity: 1;
-      }
-    }
-
-    .band-title {
-      color: $primary;
-    }
-  }
-}
 
 // 🎯 分页样式
 .pagination {

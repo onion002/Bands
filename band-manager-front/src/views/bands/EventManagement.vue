@@ -122,78 +122,27 @@
 
     <!-- 🎵 活动网格展示 -->
     <div v-else class="events-list">
-      <div
+      <EventCard
         v-for="event in paginatedEvents"
         :key="event.id"
-        class="event-card"
-        :class="{ 'selected': batchMode && selectedEvents.includes(event.id) }"
-      >
-        <!-- 批量选择复选框 -->
-        <div v-if="batchMode" class="batch-checkbox">
-          <input
-            type="checkbox"
-            :value="event.id"
-            v-model="selectedEvents"
-            class="checkbox"
-          />
-        </div>
-
-        <!-- 左侧：活动海报 -->
-        <div class="event-poster">
-          <img
-            v-if="event.poster_image_url"
-            :src="event.poster_image_url"
-            :alt="event.title"
-            class="poster-image"
-            @error="handlePosterError"
-          />
-          <div v-else class="poster-placeholder">
-            <i class="fa fa-calendar"></i>
-            <span>{{ event.title }}</span>
-          </div>
-        </div>
-
-        <!-- 右侧：活动信息 -->
-        <div class="event-content">
-          <!-- 标题 -->
-          <h3 class="event-title">{{ event.title }}</h3>
-          
-          <!-- 艺人信息 -->
-                      <div class="event-artist">
-              <i class="fa fa-users"></i>
-              艺人: {{ event.band_names ? event.band_names.join('、') : '待定' }}
-            </div>
-          
-          <!-- 地点信息 -->
-          <div class="event-venue">
-            <i class="fa fa-map-marker"></i>
-            {{ event.venue || '待定场地' }}
-          </div>
-          
-          <!-- 日期时间信息 -->
-          <div class="event-date">
-            <i class="fa fa-calendar"></i>
-            {{ formatEventDate(event.event_date) }}
-          </div>
-          
-          <!-- 价格、状态和操作按钮 - 放在同一排 -->
-          <div class="event-bottom-row">
-            <div class="event-price-status">
-              <span class="price">{{ event.ticket_price || 120 }}元</span>
-              <span class="status">{{ getStatusText(event.status) }}</span>
-            </div>
-            
-            <div v-if="!batchMode" class="event-actions">
-              <button @click="openEditModal(event)" class="action-btn" title="edit">
-                <i class="fa fa-edit"></i>
-              </button>
-              <button @click="deleteEvent(event)" class="action-btn delete" title="删除">
-                <i class="fa fa-trash"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+        :event="{
+          id: event.id,
+          title: event.title,
+          description: event.description,
+          event_date: event.event_date,
+          venue: event.venue,
+          band_names: event.band_names,
+          status: event.status,
+          poster_image_url: event.poster_image_url
+        }"
+        :selected="batchMode && selectedEvents.includes(event.id)"
+        :show-batch-checkbox="batchMode"
+        :show-actions="!batchMode"
+        @selection-change="(selected) => handleEventSelection(event.id, selected)"
+        @edit="openEditModal(event)"
+        @delete="deleteEvent(event)"
+        @view="openEditModal(event)"
+      />
     </div>
 
     <!-- 🎯 分页控件 -->
@@ -249,6 +198,7 @@ import { ref, onMounted, computed } from 'vue'
 import { EventService } from '@/api/eventService'
 import { BandService } from '@/api/bandService'
 import EventModal from '@/components/EventModal.vue'
+import EventCard from '@/components/EventCard.vue'
 
 import type { Event as EventItem } from '@/types'
 
@@ -443,6 +393,16 @@ const deleteEvent = async (event: EventItem) => {
 
 
 // 🔄 批量操作函数
+const handleEventSelection = (eventId: number, selected: boolean) => {
+  if (selected) {
+    if (!selectedEvents.value.includes(eventId)) {
+      selectedEvents.value.push(eventId)
+    }
+  } else {
+    selectedEvents.value = selectedEvents.value.filter(id => id !== eventId)
+  }
+}
+
 const toggleBatchMode = () => {
   batchMode.value = !batchMode.value
   if (!batchMode.value) {
@@ -722,392 +682,11 @@ onMounted(async () => {
   margin-bottom: 3rem;
 }
 
-// 🎨 活动卡片样式优化 - 完全模仿图2演唱会卡片格式
-.event-card {
-  position: relative;
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  padding: 0;
-  color: $white;
-  height: 206px;
-  background: rgba($darkgray, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-left: none;
-  border-radius: 12px;
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
-  }
 
-  &.selected {
-    transform: scale(0.98);
-    border-color: $primary;
-    box-shadow: 0 0 25px rgba($primary, 0.4);
-    background: rgba($primary, 0.05);
 
-    &::after {
-      content: '';
-      position: absolute;
-      inset: -3px;
-      background: linear-gradient(135deg, #ff2a6d, #05d9e8);
-      border-radius: $border-radius-xl;
-      pointer-events: none;
-      z-index: 1;
-      opacity: 0.6;
-      filter: blur(2px);
-    }
-  }
 
-  .batch-checkbox {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    z-index: 10;
 
-    .checkbox {
-      width: 20px;
-      height: 20px;
-      cursor: pointer;
-      accent-color: $primary;
-      border-radius: 4px;
-    }
-  }
 
-  .event-poster {
-    position: relative;
-    width: 206px;
-    height: 206px;
-    overflow: hidden;
-    flex-shrink: 0;
-    border-radius: 0;
-    box-shadow: none;
-    border: none;
-
-    .poster-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .poster-placeholder {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, rgba($gray-600, 0.6), rgba($gray-700, 0.8));
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: $gray-200;
-
-      i {
-        font-size: 3.5rem;
-        margin-bottom: 0.75rem;
-        color: $primary;
-        opacity: 0.8;
-      }
-
-      span {
-        font-weight: 500;
-        text-align: center;
-        padding: 0 1rem;
-        font-size: 0.9rem;
-      }
-    }
-
-    .event-status {
-      position: absolute;
-      top: 0.75rem;
-      left: 0.75rem;
-      padding: 0.4rem 1rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba($white, 0.1);
-
-      &.status-upcoming {
-        background: linear-gradient(135deg, $warning, #f59e0b);
-        color: $white;
-      }
-
-      &.status-ongoing {
-        background: linear-gradient(135deg, $success, #059669);
-        color: $white;
-      }
-
-      &.status-completed {
-        background: linear-gradient(135deg, $gray-500, $gray-600);
-        color: $white;
-      }
-
-      &.status-cancelled {
-        background: linear-gradient(135deg, $danger, #b91c1c);
-        color: $white;
-      }
-    }
-
-    &:hover .poster-image {
-      transform: scale(1.05);
-    }
-  }
-
-  .event-price {
-    background: linear-gradient(135deg, $primary, $secondary);
-    color: $white;
-    padding: 0.5rem 1rem;
-    border-radius: 9999px;
-    font-size: 0.9rem;
-    font-weight: 800;
-    text-align: center;
-    align-self: flex-start;
-    margin: 0.5rem 0;
-    box-shadow: 0 6px 20px rgba($primary, 0.4);
-    position: relative;
-    letter-spacing: 0.02em;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      inset: -2px;
-      background: linear-gradient(135deg, $primary, $secondary);
-      border-radius: 9999px;
-      z-index: -1;
-      opacity: 0.4;
-      filter: blur(6px);
-    }
-  }
-
-  .event-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 1.2rem;
-    gap: 0.6rem;
-    min-width: 0;
-
-    .event-title {
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: $white;
-      line-height: 1.2;
-      margin: 0;
-      text-shadow: none;
-      letter-spacing: -0.01em;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-    }
-
-    .event-artist {
-      color: $white;
-      font-weight: 600;
-      font-size: 0.8rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.25rem 0.5rem;
-      background: rgba($secondary, 0.2);
-      border-radius: 4px;
-      border-left: 2px solid $secondary;
-      box-shadow: 0 1px 4px rgba($secondary, 0.3);
-
-      i {
-        color: $secondary;
-        width: 16px;
-        flex-shrink: 0;
-        font-size: 0.9rem;
-      }
-    }
-
-    .event-venue,
-    .event-date {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      padding: 0.2rem 0.5rem;
-      background: rgba($primary, 0.2);
-      border-radius: 4px;
-      border-left: 2px solid $primary;
-      box-shadow: 0 1px 4px rgba($primary, 0.25);
-      transition: all 0.2s ease;
-      color: $white;
-      font-size: 0.75rem;
-
-      &:hover {
-        background: rgba($primary, 0.18);
-        transform: translateX(2px);
-      }
-
-      i {
-        color: $primary;
-        width: 18px;
-        flex-shrink: 0;
-        font-size: 1rem;
-      }
-    }
-
-    .event-bottom-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: auto;
-      padding-top: 0.3rem;
-      gap: 0.5rem;
-    }
-
-    .event-price-status {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      flex-shrink: 0;
-
-      .price {
-        color: $white;
-        font-weight: 700;
-        font-size: 0.85rem;
-      }
-
-      .status {
-        color: $white;
-        font-weight: 600;
-        font-size: 0.75rem;
-        padding: 0.2rem 0.5rem;
-        background: rgba($secondary, 0.2);
-        border-radius: 3px;
-        border: 1px solid $secondary;
-      }
-    }
-
-    .event-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.3rem;
-      flex-shrink: 0;
-
-      .action-btn {
-        background: rgba($gray-600, 0.8);
-        border: 1px solid rgba($gray-500, 0.6);
-        color: $white;
-        cursor: pointer;
-        padding: 0.3rem 0.5rem;
-        border-radius: 4px;
-        transition: all 0.25s ease;
-        backdrop-filter: blur(8px);
-        font-weight: 500;
-        font-size: 0.7rem;
-        min-width: 28px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        &:hover {
-          color: $white;
-          background: rgba($primary, 0.8);
-          border-color: $primary;
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba($primary, 0.35);
-        }
-
-        &.delete:hover {
-          color: $white;
-          background: rgba($danger, 0.8);
-          border-color: $danger;
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba($danger, 0.35);
-        }
-      }
-    }
-  }
-
-  &:hover .event-title {
-    color: $secondary;
-  }
-}
-
-// 🎨 响应式设计
-@media (max-width: 768px) {
-  .event-card {
-    height: auto;
-    min-height: 206px;
-    flex-direction: column;
-    
-    .event-poster {
-      width: 100%;
-      height: 120px;
-      border-radius: 12px 12px 0 0;
-    }
-    
-    .event-content {
-      padding: 1rem;
-      gap: 0.5rem;
-    }
-    
-    .event-title {
-      font-size: 1rem;
-    }
-    
-    .event-artist,
-    .event-venue,
-    .event-date {
-      font-size: 0.7rem;
-      padding: 0.15rem 0.4rem;
-    }
-    
-    .event-bottom-row {
-      gap: 0.4rem;
-    }
-    
-    .event-price-status {
-      .price {
-        font-size: 0.8rem;
-      }
-      
-      .status {
-        font-size: 0.7rem;
-        padding: 0.15rem 0.4rem;
-      }
-    }
-    
-    .event-actions {
-      .action-btn {
-        padding: 0.25rem 0.4rem;
-        font-size: 0.65rem;
-        min-width: 24px;
-      }
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .event-card {
-    .event-content {
-      padding: 0.8rem;
-      gap: 0.4rem;
-    }
-    
-    .event-title {
-      font-size: 0.9rem;
-    }
-    
-    .event-artist,
-    .event-venue,
-    .event-date {
-      font-size: 0.65rem;
-      padding: 0.1rem 0.3rem;
-    }
-    
-    .event-bottom-row {
-      gap: 0.3rem;
-    }
-  }
-}
 
 // 🎨 加载和错误状态样式
 .loading-section,

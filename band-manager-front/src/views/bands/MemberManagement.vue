@@ -112,65 +112,26 @@
 
     <!-- 🎵 成员网格展示 -->
     <div v-else class="members-grid">
-      <div
+      <MemberCard
         v-for="member in paginatedMembers"
         :key="member.id"
-        class="member-item"
-        :class="{ 'selected': batchMode && selectedMembers.includes(member.id) }"
-      >
-        <!-- 批量选择复选框 -->
-        <div v-if="batchMode" class="batch-checkbox">
-          <input
-            type="checkbox"
-            :value="member.id"
-            v-model="selectedMembers"
-            class="checkbox"
-          />
-        </div>
-
-        <!-- 成员卡片 -->
-        <div class="member-card card card-interactive">
-          <!-- 成员头像 -->
-          <div class="member-avatar">
-            <img
-              v-if="member.avatar_url"
-              :src="getAvatarUrl(member.avatar_url)"
-              :alt="member.name"
-              class="avatar-image"
-            />
-            <div v-else class="avatar-placeholder">
-              <i class="fa fa-user"></i>
-            </div>
-
-            <!-- 在线状态指示器 -->
-            <div class="status-indicator"></div>
-          </div>
-
-          <!-- 成员信息 -->
-          <div class="member-content">
-            <h3 class="member-name">{{ member.name }}</h3>
-            <div class="member-role">{{ member.role || '未设置角色' }}</div>
-            <div class="member-band">
-              <i class="fa fa-music"></i>
-              {{ member.band_name }}
-            </div>
-            <div class="member-date">
-              <i class="fa fa-calendar"></i>
-              {{ formatDate(member.join_date) }}
-            </div>
-
-            <!-- 操作按钮 -->
-            <div v-if="!batchMode" class="member-actions">
-              <button @click="editMember(member)" class="action-btn" title="编辑">
-                <i class="fa fa-edit"></i>
-              </button>
-              <button @click="deleteMember(member)" class="action-btn delete" title="删除">
-                <i class="fa fa-trash"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+        :member="{
+          id: member.id,
+          name: member.name,
+          role: member.role,
+          avatar_url: member.avatar_url,
+          band_names: [member.band_name],
+          join_date: member.join_date,
+          status: 'active'
+        }"
+        :selected="batchMode && selectedMembers.includes(member.id)"
+        :show-batch-checkbox="batchMode"
+        :show-actions="!batchMode"
+        @selection-change="(selected) => handleMemberSelection(member.id, selected)"
+        @edit="editMember(member)"
+        @delete="deleteMember(member)"
+        @view="editMember(member)"
+      />
     </div>
 
     <!-- 🎯 分页控件 -->
@@ -225,6 +186,7 @@ import { ref, onMounted, computed } from 'vue'
 import { MemberService } from '@/api/memberService'
 import { BandService } from '@/api/bandService'
 import MemberModal from '@/components/MemberModal.vue'
+import MemberCard from '@/components/MemberCard.vue'
 
 import type { Member, Band } from '@/types'
 
@@ -442,6 +404,16 @@ const deleteMember = async (member: Member) => {
 
 
 // 🔄 批量操作函数
+const handleMemberSelection = (memberId: number, selected: boolean) => {
+  if (selected) {
+    if (!selectedMembers.value.includes(memberId)) {
+      selectedMembers.value.push(memberId)
+    }
+  } else {
+    selectedMembers.value = selectedMembers.value.filter(id => id !== memberId)
+  }
+}
+
 const toggleBatchMode = () => {
   batchMode.value = !batchMode.value
   if (!batchMode.value) {
@@ -599,120 +571,7 @@ onMounted(async () => {
   }
 }
 
-// 🎨 成员卡片样式
-.member-card {
-  padding: 2rem;
-  text-align: center;
 
-  .member-avatar {
-    position: relative;
-    width: 100px;
-    height: 100px;
-    margin: 0 auto 1.5rem;
-
-    .avatar-image {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid rgba($primary, 0.3);
-      transition: all $transition-normal ease;
-    }
-
-    .avatar-placeholder {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background: rgba($lightgray, 0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 3px solid rgba($primary, 0.3);
-
-      i {
-        font-size: 2.5rem;
-        color: $gray-400;
-      }
-    }
-
-    .status-indicator {
-      position: absolute;
-      bottom: 8px;
-      right: 8px;
-      width: 16px;
-      height: 16px;
-      background: #10b981;
-      border-radius: 50%;
-      border: 2px solid $darkgray;
-    }
-  }
-
-  .member-content {
-    .member-name {
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin: 0 0 0.5rem;
-      color: $white;
-    }
-
-    .member-role {
-      color: $primary;
-      font-weight: 500;
-      margin-bottom: 1rem;
-      font-size: 0.875rem;
-    }
-
-    .member-band,
-    .member-date {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      color: $gray-400;
-      font-size: 0.875rem;
-      margin-bottom: 0.5rem;
-
-      i {
-        color: $primary;
-        width: 16px;
-      }
-    }
-
-    .member-actions {
-      display: flex;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-top: 1.5rem;
-
-      .action-btn {
-        background: none;
-        border: none;
-        color: $gray-400;
-        cursor: pointer;
-        padding: 0.5rem;
-        border-radius: $border-radius-sm;
-        transition: all $transition-fast ease;
-
-        &:hover {
-          color: $primary;
-          background: rgba($primary, 0.1);
-        }
-
-        &.delete:hover {
-          color: #ef4444;
-          background: rgba(#ef4444, 0.1);
-        }
-      }
-    }
-  }
-
-  &:hover {
-    .member-avatar .avatar-image {
-      border-color: rgba($primary, 0.6);
-      transform: scale(1.05);
-    }
-  }
-}
 
 // 🎯 分页样式
 .pagination {

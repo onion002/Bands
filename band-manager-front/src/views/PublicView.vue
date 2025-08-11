@@ -96,33 +96,12 @@
           乐队列表
         </h2>
                  <div class="bands-grid">
-           <div v-for="band in bands" :key="band.id" class="band-card card card-interactive">
-             <div class="band-image">
-               <img 
-                 v-if="band.banner_image_url" 
-                 :src="band.banner_image_url" 
-                 :alt="band.name" 
-                 class="band-image-content"
-               />
-               <div v-else class="image-placeholder">
-                 <i class="fa fa-music"></i>
-                 <span>{{ band.name }}</span>
-               </div>
-               <div class="image-overlay"></div>
-               <div v-if="band.genre" class="band-genre">{{ band.genre }}</div>
-             </div>
-             <div class="band-info">
-               <h4 class="band-title">{{ band.name }}</h4>
-               <div v-if="band.year" class="band-year">{{ band.year }}年成立</div>
-               <p v-if="band.bio" class="band-bio">{{ band.bio }}</p>
-               <div class="band-stats">
-                 <div class="member-count">
-                   <i class="fa fa-users"></i>
-                   <span>{{ band.member_count || 0 }}人</span>
-                 </div>
-               </div>
-             </div>
-           </div>
+           <BandCard
+             v-for="band in bands"
+             :key="band.id"
+             :band="band"
+             :show-actions="false"
+           />
          </div>
       </div>
 
@@ -133,32 +112,12 @@
           成员列表
         </h2>
                  <div class="members-grid">
-           <div v-for="member in members" :key="member.id" class="member-card card card-interactive">
-             <div class="member-avatar">
-               <img 
-                 v-if="member.avatar_url" 
-                 :src="member.avatar_url" 
-                 :alt="member.name" 
-                 class="avatar-image"
-               />
-               <div v-else class="avatar-placeholder">
-                 <i class="fa fa-user"></i>
-               </div>
-               <div class="status-indicator"></div>
-             </div>
-             <div class="member-info">
-               <h4 class="member-name">{{ member.name }}</h4>
-               <div v-if="member.role" class="member-role">{{ member.role }}</div>
-               <div v-if="member.band_names && member.band_names.length > 0" class="member-band">
-                 <i class="fa fa-music"></i>
-                 {{ member.band_names.join('、') }}
-               </div>
-               <div v-if="member.join_date" class="member-date">
-                 <i class="fa fa-calendar"></i>
-                 {{ formatDate(member.join_date) }}
-               </div>
-             </div>
-           </div>
+           <MemberCard
+             v-for="member in members"
+             :key="member.id"
+             :member="member"
+             :show-actions="false"
+           />
          </div>
       </div>
 
@@ -169,30 +128,12 @@
           活动列表
         </h2>
                  <div class="events-list">
-           <div v-for="event in events" :key="event.id" class="event-card card card-interactive">
-             <div class="event-date">
-               <div class="date-day">{{ formatEventDay(event.event_date) }}</div>
-               <div class="date-month">{{ formatEventMonth(event.event_date) }}</div>
-             </div>
-             <div class="event-info">
-               <h4 class="event-title">{{ event.title }}</h4>
-               <p v-if="event.description" class="event-description">{{ event.description }}</p>
-               <div class="event-details">
-                 <span v-if="event.venue" class="detail-item">
-                   <i class="fa fa-map-marker-alt"></i>
-                   {{ event.venue }}
-                 </span>
-                 <span v-if="event.band_names && event.band_names.length > 0" class="detail-item">
-                   <i class="fa fa-users"></i>
-                   {{ event.band_names.join('、') }}
-                 </span>
-                 <span class="detail-item status" :class="event.status">
-                   <i class="fa fa-circle"></i>
-                   {{ getStatusText(event.status) }}
-                 </span>
-               </div>
-             </div>
-           </div>
+           <EventCard
+             v-for="event in events"
+             :key="event.id"
+             :event="event"
+             :show-actions="false"
+           />
          </div>
       </div>
 
@@ -219,6 +160,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import BandCard from '@/components/BandCard.vue'
+import MemberCard from '@/components/MemberCard.vue'
+import EventCard from '@/components/EventCard.vue'
 
 const route = useRoute()
 
@@ -493,11 +437,7 @@ onMounted(() => {
   font-weight: 500;
 }
 
-.public-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem; /* Adjusted padding */
-}
+
 
 .admin-selector {
   background: white;
