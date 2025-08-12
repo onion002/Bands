@@ -102,6 +102,9 @@
           <router-link to="/auth/register" class="mobile-nav-link" @click="closeMobileMenu">注册</router-link>
         </template>
 
+        <!-- 音乐盒演示页面 - 所有用户可见 -->
+        <router-link to="/music-box-demo" class="mobile-nav-link" @click="closeMobileMenu">🎵 音乐盒</router-link>
+
         <a href="https://www.damai.cn/" target="_blank" class="mobile-nav-link">大麦网</a>
 
         <template v-if="authStore.isAuthenticated">

@@ -5,7 +5,6 @@
       @click="scrollToTop"
       class="back-to-top-btn"
       :title="title"
-      :class="{ 'is-visible': showButton }"
     >
       <i class="fa fa-arrow-up"></i>
       <span class="btn-text">{{ buttonText }}</span>
@@ -32,17 +31,32 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   buttonText: '返回顶部',
   title: '返回页面顶部',
-  scrollThreshold: 300,
+  scrollThreshold: 100, // 设置为100px，在页面滚动1/3左右时出现
   position: 'right',
   size: 'medium'
 })
 
 const showButton = ref(false)
 
+// 在组件挂载后立即检查一次滚动位置
+onMounted(() => {
+  // 立即检查当前滚动位置
+  handleScroll()
+  
+  // 添加滚动事件监听
+  window.addEventListener('scroll', handleScroll, { passive: true })
+})
+
 // 滚动事件处理
 const handleScroll = () => {
   const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-  showButton.value = scrollTop > props.scrollThreshold
+  const shouldShow = scrollTop > props.scrollThreshold
+  showButton.value = shouldShow
+  
+  // 调试信息 - 只在开发环境显示
+  if (import.meta.env.DEV) {
+    console.log('Scroll position:', scrollTop, 'Threshold:', props.scrollThreshold, 'Should show:', shouldShow, 'Button visible:', showButton.value)
+  }
 }
 
 // 返回顶部
@@ -53,10 +67,7 @@ const scrollToTop = () => {
   })
 }
 
-// 监听滚动事件
-onMounted(() => {
-  window.addEventListener('scroll', handleScroll, { passive: true })
-})
+
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
@@ -74,7 +85,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
-  padding: 0.75rem;
+  padding: 0.5rem; // 减少padding确保圆形
   background: rgba($primary, 0.9);
   border: 2px solid rgba($primary, 0.3);
   border-radius: 50%;
@@ -84,13 +95,9 @@ onUnmounted(() => {
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 20px rgba($primary, 0.3);
   
-  // 位置设置
-  &.is-visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
+
   
-  // 大小设置
+  // 大小设置 - 确保宽高完全相等，保持完美圆形
   &.size-small {
     width: 3rem;
     height: 3rem;
@@ -123,11 +130,11 @@ onUnmounted(() => {
   
   // 位置设置
   &.position-right {
-    right: 2rem;
+    right: 2rem; // 恢复原来的位置，不要太靠右
   }
   
   &.position-left {
-    left: 2rem;
+    left: 2rem; // 保持对称
   }
   
   // 底部位置（避免被移动端导航栏遮挡）
@@ -218,14 +225,14 @@ onUnmounted(() => {
       }
     }
     
-    // 移动端位置调整
-    &.position-right {
-      right: 1rem;
-    }
-    
-    &.position-left {
-      left: 1rem;
-    }
+      // 移动端位置调整
+  &.position-right {
+    right: 1rem; // 恢复原来的位置
+  }
+  
+  &.position-left {
+    left: 1rem; // 保持对称
+  }
     
     bottom: 5rem;
   }
