@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { AuthService, type User, type LoginData, type RegisterData } from '@/api/authService'
+import { useMusicBoxStore } from './musicBoxStore'
 
 export const useAuthStore = defineStore('auth', () => {
   // 状态
@@ -23,6 +24,10 @@ export const useAuthStore = defineStore('auth', () => {
     if (storedToken && storedUser) {
       token.value = storedToken
       user.value = storedUser
+      
+      // 初始化音乐盒用户数据
+      const musicBoxStore = useMusicBoxStore()
+      musicBoxStore.setUser(storedUser.username)
     }
   }
 
@@ -38,6 +43,10 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = response.token
       user.value = response.user
       AuthService.saveAuthInfo(response.token, response.user)
+      
+      // 初始化音乐盒用户数据
+      const musicBoxStore = useMusicBoxStore()
+      musicBoxStore.setUser(response.user.username)
       
       return response
     } catch (err: any) {
@@ -61,6 +70,10 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.user
       AuthService.saveAuthInfo(response.token, response.user)
       
+      // 初始化音乐盒用户数据
+      const musicBoxStore = useMusicBoxStore()
+      musicBoxStore.setUser(response.user.username)
+      
       return response
     } catch (err: any) {
       error.value = err.error || '注册失败'
@@ -72,6 +85,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   // 登出
   const logout = () => {
+    // 清除音乐盒用户数据
+    const musicBoxStore = useMusicBoxStore()
+    musicBoxStore.clearUser()
+    
     user.value = null
     token.value = null
     error.value = ''

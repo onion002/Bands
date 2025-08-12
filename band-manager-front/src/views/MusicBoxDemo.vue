@@ -2,12 +2,12 @@
   <div class="music-box-demo">
     <div class="demo-header">
       <h1>🎵 音乐盒演示</h1>
-      <p>体验音乐搜索和播放功能</p>
+      <p>体验音乐搜索、播放、历史记录和收藏功能</p>
     </div>
 
     <div class="demo-content">
       <div class="feature-section">
-        <h2>✨ 功能特性</h2>
+        <h2>✨ 新功能特性</h2>
         <div class="features-grid">
           <div class="feature-card">
             <div class="feature-icon">🔍</div>
@@ -20,14 +20,24 @@
             <p>支持多种音质选择</p>
           </div>
           <div class="feature-card">
-            <div class="feature-icon">📱</div>
-            <h3>响应式设计</h3>
-            <p>适配各种设备屏幕</p>
+            <div class="feature-icon">📚</div>
+            <h3>播放历史</h3>
+            <p>自动记录播放过的歌曲</p>
           </div>
           <div class="feature-card">
-            <div class="feature-icon">🎨</div>
-            <h3>美观界面</h3>
-            <p>深色主题，霓虹配色</p>
+            <div class="feature-icon">❤️</div>
+            <h3>收藏功能</h3>
+            <p>收藏喜欢的歌曲</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <h3>自动播放</h3>
+            <p>登录时自动播放历史记录</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">💾</div>
+            <h3>数据同步</h3>
+            <p>本地存储，多设备同步</p>
           </div>
         </div>
       </div>
@@ -52,16 +62,65 @@
           <div class="step">
             <div class="step-number">3</div>
             <div class="step-content">
-              <h3>选择音质</h3>
-              <p>选择合适的音质，从标准到超清母带</p>
+              <h3>收藏歌曲</h3>
+              <p>点击心形图标收藏喜欢的歌曲</p>
             </div>
           </div>
           <div class="step">
             <div class="step-number">4</div>
             <div class="step-content">
-              <h3>播放音乐</h3>
-              <p>点击搜索结果中的歌曲开始播放</p>
+              <h3>查看历史</h3>
+              <p>切换到历史标签页查看播放记录</p>
             </div>
+          </div>
+          <div class="step">
+            <div class="step-number">5</div>
+            <div class="step-content">
+              <h3>管理收藏</h3>
+              <p>切换到收藏标签页管理收藏的歌曲</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="feature-details">
+        <h2>🔧 功能详情</h2>
+        <div class="details-grid">
+          <div class="detail-card">
+            <h3>📚 播放历史</h3>
+            <ul>
+              <li>自动记录每次播放的歌曲</li>
+              <li>显示播放次数和最后播放时间</li>
+              <li>支持清空历史记录</li>
+              <li>最多保存100首歌曲记录</li>
+            </ul>
+          </div>
+          <div class="detail-card">
+            <h3>❤️ 收藏功能</h3>
+            <ul>
+              <li>一键收藏喜欢的歌曲</li>
+              <li>显示收藏时间</li>
+              <li>支持取消收藏</li>
+              <li>收藏数据本地保存</li>
+            </ul>
+          </div>
+          <div class="detail-card">
+            <h3>🔄 自动播放</h3>
+            <ul>
+              <li>登录时自动播放最后一首歌曲</li>
+              <li>可开启/关闭自动播放功能</li>
+              <li>延迟2秒播放，避免页面加载干扰</li>
+              <li>智能判断用户登录状态</li>
+            </ul>
+          </div>
+          <div class="detail-card">
+            <h3>💾 数据管理</h3>
+            <ul>
+              <li>用户数据独立存储</li>
+              <li>支持多用户数据隔离</li>
+              <li>本地存储，保护隐私</li>
+              <li>登出时自动清理数据</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -218,6 +277,56 @@
             color: #b0b0b0;
             line-height: 1.6;
             margin: 0;
+          }
+        }
+      }
+    }
+  }
+
+  .feature-details {
+    margin-bottom: 4rem;
+
+    h2 {
+      font-size: 2rem;
+      color: #00d4ff;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+
+      .detail-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: left;
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: translateY(-5px);
+          border-color: #ff6b9d;
+          box-shadow: 0 10px 30px rgba(255, 107, 157, 0.2);
+        }
+
+        h3 {
+          font-size: 1.3rem;
+          color: #fff;
+          margin-bottom: 1rem;
+        }
+
+        ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+
+          li {
+            color: #b0b0b0;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
           }
         }
       }
