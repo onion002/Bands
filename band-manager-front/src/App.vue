@@ -3,6 +3,9 @@
     <!-- 🎵 导航头部 - 完全独立，固定在顶部 -->
     <NavHeader />
 
+    <!-- 🎵 音乐盒 - 固定在左上角 -->
+    <MusicBox />
+
     <!-- 🎨 主内容区域 - 在导航栏下方，有适当的上边距 -->
     <main class="main-content">
       <router-view />
@@ -16,6 +19,7 @@
 <script setup lang="ts">
 import NavHeader from '@/components/NavHeader.vue'
 import BackToTop from '@/components/BackToTop.vue'
+import MusicBox from '@/components/MusicBox.vue'
 </script>
 
 <style lang="scss">

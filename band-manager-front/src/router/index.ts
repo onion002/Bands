@@ -75,6 +75,13 @@ const routes = [
     component: () => import('@/views/MusicTeacherView.vue')
   },
 
+  // 音乐盒演示页面（所有用户可用）
+  {
+    path: '/music-box-demo',
+    name: 'MusicBoxDemo',
+    component: () => import('@/views/MusicBoxDemo.vue')
+  },
+
   // 用户资料页面
   {
     path: '/profile',
