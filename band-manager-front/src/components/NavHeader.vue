@@ -20,14 +20,12 @@
           <router-link to="/gallery" class="nav-link">照片墙</router-link>
           <router-link to="/public" class="nav-link">公开展示</router-link>
           <router-link to="/music-teacher" class="nav-link">音乐老师</router-link>
-          <router-link to="/music-box-demo" class="nav-link">🎵 音乐盒</router-link>
         </template>
 
         <!-- 普通用户导航 -->
         <template v-else-if="authStore.isAuthenticated && !authStore.isAdmin">
           <router-link to="/public" class="nav-link">我的主页</router-link>
           <router-link to="/music-teacher" class="nav-link">音乐老师</router-link>
-          <router-link to="/music-box-demo" class="nav-link">🎵 音乐盒</router-link>
         </template>
 
         <!-- 未登录用户导航 -->
@@ -90,13 +88,11 @@
           <router-link to="/gallery" class="mobile-nav-link" @click="closeMobileMenu">照片墙</router-link>
           <router-link to="/public" class="mobile-nav-link" @click="closeMobileMenu">公开展示</router-link>
           <router-link to="/music-teacher" class="mobile-nav-link" @click="closeMobileMenu">音乐老师</router-link>
-          <router-link to="/music-box-demo" class="mobile-nav-link" @click="closeMobileMenu">�� 音乐盒</router-link>
         </template>
 
         <template v-else-if="authStore.isAuthenticated && !authStore.isAdmin">
           <router-link to="/public" class="mobile-nav-link" @click="closeMobileMenu">我的主页</router-link>
           <router-link to="/music-teacher" class="mobile-nav-link" @click="closeMobileMenu">音乐老师</router-link>
-          <router-link to="/music-box-demo" class="mobile-nav-link" @click="closeMobileMenu">🎵 音乐盒</router-link>
         </template>
 
         <template v-else>
@@ -106,8 +102,7 @@
           <router-link to="/auth/register" class="mobile-nav-link" @click="closeMobileMenu">注册</router-link>
         </template>
 
-        <!-- 音乐盒演示页面 - 所有用户可见 -->
-        <router-link to="/music-box-demo" class="mobile-nav-link" @click="closeMobileMenu">🎵 音乐盒</router-link>
+
 
         <a href="https://www.damai.cn/" target="_blank" class="mobile-nav-link">大麦网</a>
 

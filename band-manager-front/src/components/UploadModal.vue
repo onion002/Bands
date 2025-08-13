@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 
 // 通用图片上传弹窗组件
 const props = defineProps<{
@@ -128,6 +128,10 @@ const processFile = (selectedFile: File) => {
   console.log('文件处理完成，准备预览')
 }
 const clearPreview = () => {
+  // 清理之前创建的URL对象，防止内存泄漏
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value)
+  }
   previewUrl.value = null
   file.value = null
   result.value = null
@@ -183,8 +187,15 @@ const startUpload = async () => {
   }
 }
 const close = () => {
+  // 组件关闭时清理预览URL
+  clearPreview()
   emit('close')
 }
+
+// 组件卸载时清理资源
+onUnmounted(() => {
+  clearPreview()
+})
 </script>
 
 <style scoped lang="scss">

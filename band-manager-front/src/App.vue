@@ -11,23 +11,18 @@
       <router-view />
     </main>
     
-    <!-- 🚀 返回顶部按钮 - 全局组件 -->
-    <BackToTop />
+
     
     <!-- 🎭 看板娘 - 固定在右下角 -->
     <PosterGirl ref="posterGirlRef" />
-    
-    <!-- 🎛️ 看板娘控制面板 - 固定在左下角 -->
-    <PosterGirlControl :poster-girl-ref="posterGirlRef" />
   </div>
 </template>
 
 <script setup lang="ts">
 import NavHeader from '@/components/NavHeader.vue'
-import BackToTop from '@/components/BackToTop.vue'
+
 import MusicBox from '@/components/MusicBox.vue'
 import PosterGirl from '@/components/PosterGirl.vue'
-import PosterGirlControl from '@/components/PosterGirlControl.vue'
 import { ref } from 'vue'
 
 // 看板娘引用

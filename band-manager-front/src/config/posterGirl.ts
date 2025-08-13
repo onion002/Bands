@@ -2,6 +2,10 @@
 export interface PosterGirlConfig {
   mode: 'static' | 'fixed' | 'draggable'
   hidden: boolean
+  size: {
+    width: number
+    height: number
+  }
   content: {
     welcome: string | string[]
     touch?: string | string[]
@@ -19,12 +23,21 @@ export interface PosterGirlConfig {
   night?: string
   model: string[]
   tips?: boolean
+  dragPosition?: {
+    x: number
+    y: number
+  }
 }
 
 // 默认配置
 export const defaultPosterGirlConfig: PosterGirlConfig = {
-  mode: "fixed",
+  mode: "draggable",
   hidden: false,
+  tips: true, // 启用提示系统
+  size: {
+    width: 280,
+    height: 250
+  },
   content: {
     welcome: [
       "欢迎来到乐队管理系统！🎸",
@@ -34,7 +47,8 @@ export const defaultPosterGirlConfig: PosterGirlConfig = {
     touch: [
       "哎呀，别摸我啦！😊",
       "我是你的音乐小助手~",
-      "有什么需要帮助的吗？"
+      "有什么需要帮助的吗？",
+      "你来啦，我好开心！"
     ],
     skin: [
       "想看看我的新服装吗？",
@@ -48,22 +62,30 @@ export const defaultPosterGirlConfig: PosterGirlConfig = {
         text: "这个乐队看起来很棒呢！"
       },
       {
-        selector: ".event-card", 
-        text: "这个活动一定很精彩！"
+        selector: ".card", 
+        text: "这个卡片很有趣呢！"
       },
       {
-        selector: ".member-card",
-        text: "这位成员很有才华呢！"
+        selector: "button",
+        text: "点击这个按钮试试看~"
       }
     ]
   },
-  model: ["/pio/models/pio/model.json"]
+  model: [
+    "/pio/models/pio/model.json",
+    "/pio/models/remu/model.json",
+    "/pio/models/umaru/model.json"
+  ]
 }
 
 // 自定义配置示例
 export const customPosterGirlConfig: PosterGirlConfig = {
   mode: "draggable",
   hidden: false,
+  size: {
+    width: 320,
+    height: 280
+  },
   content: {
     welcome: [
       "🎵 音乐无界，梦想无限！",
@@ -87,12 +109,12 @@ export const customPosterGirlConfig: PosterGirlConfig = {
         text: "这个乐队的风格很独特！"
       },
       {
-        selector: ".event-card", 
-        text: "这个演出一定很精彩！"
+        selector: ".card", 
+        text: "这个卡片很有趣呢！"
       },
       {
-        selector: ".member-card",
-        text: "这位音乐家很有天赋！"
+        selector: "button",
+        text: "点击这个按钮试试看~"
       },
       {
         type: "read",
@@ -104,6 +126,69 @@ export const customPosterGirlConfig: PosterGirlConfig = {
       }
     ]
   },
-  model: ["/pio/models/pio/model.json"],
+  model: [
+    "/pio/models/pio/model.json",
+    "/pio/models/remu/model.json"
+  ],
   tips: true
+}
+
+// 获取当前配置（直接使用localStorage中的配置，如果没有则使用默认配置）
+export function getCurrentConfig(): PosterGirlConfig {
+  try {
+    const saved = localStorage.getItem('posterGirlSettings')
+    if (saved) {
+      const savedConfig = JSON.parse(saved)
+      console.log('加载保存的配置:', savedConfig)
+      return savedConfig
+    }
+  } catch (error) {
+    console.error('加载看板娘配置失败:', error)
+  }
+  
+  console.log('使用默认配置')
+  return { ...defaultPosterGirlConfig }
+}
+
+// 保存配置到localStorage
+export function saveConfig(config: PosterGirlConfig): void {
+  try {
+    // 验证配置完整性
+    const validatedConfig = validateConfig(config)
+    localStorage.setItem('posterGirlSettings', JSON.stringify(validatedConfig))
+    console.log('配置保存成功:', validatedConfig)
+  } catch (error) {
+    console.error('保存看板娘配置失败:', error)
+  }
+}
+
+// 简单的配置验证函数
+function validateConfig(config: any): PosterGirlConfig {
+  // 确保配置结构完整
+  if (!config.content) {
+    config.content = {}
+  }
+  if (!config.content.welcome) {
+    config.content.welcome = defaultPosterGirlConfig.content.welcome
+  }
+  if (!config.content.touch) {
+    config.content.touch = defaultPosterGirlConfig.content.touch
+  }
+  if (!config.content.skin) {
+    config.content.skin = defaultPosterGirlConfig.content.skin
+  }
+  if (!config.content.custom) {
+    config.content.custom = defaultPosterGirlConfig.content.custom
+  }
+  if (!config.model) {
+    config.model = defaultPosterGirlConfig.model
+  }
+  if (!config.size) {
+    config.size = defaultPosterGirlConfig.size
+  }
+  if (config.tips === undefined) {
+    config.tips = true
+  }
+  
+  return config as PosterGirlConfig
 }

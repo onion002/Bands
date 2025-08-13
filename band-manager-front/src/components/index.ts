@@ -11,7 +11,7 @@ export { default as FilterSection } from './FilterSection.vue'
 export { default as MemberModal } from './MemberModal.vue'
 export { default as PageHeader } from './PageHeader.vue'
 export { default as UploadModal } from './UploadModal.vue'
-export { default as BackToTop } from './BackToTop.vue'
+
 export { default as MusicBox } from './MusicBox.vue'
 export { default as PosterGirl } from './PosterGirl.vue'
 export { default as PosterGirlControl } from './PosterGirlControl.vue'

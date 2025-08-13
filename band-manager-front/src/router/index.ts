@@ -82,6 +82,13 @@ const routes = [
     component: () => import('@/views/MusicBoxDemo.vue')
   },
 
+  // 看板娘设置页面（所有用户可用）
+  {
+    path: '/poster-girl-settings',
+    name: 'PosterGirlSettings',
+    component: () => import('@/views/PosterGirlSettings.vue')
+  },
+
   // 用户资料页面
   {
     path: '/profile',
