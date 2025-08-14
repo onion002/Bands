@@ -1,0 +1,218 @@
+{
+  "timestamp": "2025-08-14T13:52:15.275Z",
+  "summary": {
+    "totalSize": 28603336,
+    "jsSize": 1405870,
+    "cssSize": 175186,
+    "imageSize": 7271087,
+    "fontSize": 0
+  },
+  "chunks": {
+    "js": [
+      {
+        "file": "js/DashboardView-cefb42ba.js",
+        "size": 7,
+        "sizeBytes": 7043
+      },
+      {
+        "file": "js/ErrorView-8c82c016.js",
+        "size": 2,
+        "sizeBytes": 1960
+      },
+      {
+        "file": "js/MusicBoxDemo-707b451b.js",
+        "size": 5,
+        "sizeBytes": 5527
+      },
+      {
+        "file": "js/MusicTeacherView-5a0b4bd5.js",
+        "size": 16,
+        "sizeBytes": 16145
+      },
+      {
+        "file": "js/NotFoundView-245563e2.js",
+        "size": 1,
+        "sizeBytes": 990
+      },
+      {
+        "file": "js/ProfileView-b9068f3f.js",
+        "size": 12,
+        "sizeBytes": 12126
+      },
+      {
+        "file": "js/PublicView-8a833190.js",
+        "size": 5,
+        "sizeBytes": 5162
+      },
+      {
+        "file": "js/admin-05c2e8f6.js",
+        "size": 0,
+        "sizeBytes": 91
+      },
+      {
+        "file": "js/band-management-795785a1.js",
+        "size": 7,
+        "sizeBytes": 6985
+      },
+      {
+        "file": "js/index-5920e0ad.js",
+        "size": 43,
+        "sizeBytes": 44239
+      },
+      {
+        "file": "js/index-eb6734d4.js",
+        "size": 34,
+        "sizeBytes": 35227
+      },
+      {
+        "file": "js/utils-eb147ae1.js",
+        "size": 970,
+        "sizeBytes": 992778
+      },
+      {
+        "file": "js/vendor-fa91ab06.js",
+        "size": 34,
+        "sizeBytes": 34672
+      },
+      {
+        "file": "js/vue-core-dbad8a87.js",
+        "size": 89,
+        "sizeBytes": 91550
+      },
+      {
+        "file": "poster-girl-assets/static/l2d.js",
+        "size": 148,
+        "sizeBytes": 151375
+      }
+    ],
+    "css": [
+      {
+        "file": "css/DashboardView-b39b97ba.css",
+        "size": 5,
+        "sizeBytes": 5402
+      },
+      {
+        "file": "css/ErrorView-aa570564.css",
+        "size": 2,
+        "sizeBytes": 2485
+      },
+      {
+        "file": "css/MusicBoxDemo-1667d3d2.css",
+        "size": 4,
+        "sizeBytes": 4484
+      },
+      {
+        "file": "css/MusicTeacherView-0175c0fb.css",
+        "size": 16,
+        "sizeBytes": 16233
+      },
+      {
+        "file": "css/NotFoundView-f7489bda.css",
+        "size": 2,
+        "sizeBytes": 1825
+      },
+      {
+        "file": "css/ProfileView-d0a37016.css",
+        "size": 8,
+        "sizeBytes": 8391
+      },
+      {
+        "file": "css/PublicView-5bdecbed.css",
+        "size": 15,
+        "sizeBytes": 15349
+      },
+      {
+        "file": "css/admin-215e80c9.css",
+        "size": 2,
+        "sizeBytes": 2224
+      },
+      {
+        "file": "css/band-management-77d2410f.css",
+        "size": 53,
+        "sizeBytes": 53996
+      },
+      {
+        "file": "css/index-46d14626.css",
+        "size": 11,
+        "sizeBytes": 11417
+      },
+      {
+        "file": "css/index-d7767fac.css",
+        "size": 52,
+        "sizeBytes": 53380
+      }
+    ],
+    "images": [
+      {
+        "file": "poster-girl-assets/models/pio/textures/default-costume.png",
+        "size": 589,
+        "sizeBytes": 603024
+      },
+      {
+        "file": "poster-girl-assets/models/pio/textures/pajamas-costume.png",
+        "size": 459,
+        "sizeBytes": 470154
+      },
+      {
+        "file": "poster-girl-assets/models/pio/textures/school-costume.png",
+        "size": 552,
+        "sizeBytes": 564818
+      },
+      {
+        "file": "poster-girl-assets/models/remu/remu2048/texture_00.png",
+        "size": 3207,
+        "sizeBytes": 3283470
+      },
+      {
+        "file": "poster-girl-assets/models/umaru/13.jpg",
+        "size": 19,
+        "sizeBytes": 19655
+      },
+      {
+        "file": "poster-girl-assets/models/umaru/umaru2048/texture_00.png",
+        "size": 2271,
+        "sizeBytes": 2325594
+      },
+      {
+        "file": "poster-girl-assets/static/avatar.jpg",
+        "size": 4,
+        "sizeBytes": 4372
+      }
+    ],
+    "fonts": []
+  },
+  "issues": [
+    {
+      "type": "warning",
+      "message": "CSS包较大: css/band-management-77d2410f.css (53KB)",
+      "file": "css/band-management-77d2410f.css",
+      "size": 53
+    },
+    {
+      "type": "warning",
+      "message": "CSS包较大: css/index-d7767fac.css (52KB)",
+      "file": "css/index-d7767fac.css",
+      "size": 52
+    },
+    {
+      "type": "error",
+      "message": "JS包过大: js/utils-eb147ae1.js (970KB)",
+      "file": "js/utils-eb147ae1.js",
+      "size": 970
+    },
+    {
+      "type": "warning",
+      "message": "JS包较大: poster-girl-assets/static/l2d.js (148KB)",
+      "file": "poster-girl-assets/static/l2d.js",
+      "size": 148
+    }
+  ],
+  "recommendations": [
+    "JavaScript包过大，建议进一步代码分割",
+    "发现2个大JS文件，建议分析依赖关系",
+    "发现5个大图片文件，建议压缩或使用WebP格式",
+    "考虑启用gzip/brotli压缩",
+    "实现Service Worker缓存策略",
+    "添加性能监控和分析"
+  ]
+}

@@ -2,6 +2,18 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import HomeView from '@/views/HomeView.vue'
 
+// 🚀 优化的路由懒加载函数
+const lazyLoad = (component: string) => {
+  return () => import(/* webpackChunkName: "[request]" */ `@/views/${component}.vue`)
+}
+
+// 🚀 优化的模块懒加载函数
+const lazyLoadModule = (modulePath: string, componentName: string) => {
+  return () => import(/* webpackChunkName: "poster-girl" */ modulePath).then(module => ({ 
+    default: module[componentName] 
+  }))
+}
+
 const routes = [
   // 首页路由 - 根据认证状态显示不同内容
   {
@@ -14,13 +26,13 @@ const routes = [
   {
     path: '/auth/login',
     name: 'Login',
-    component: () => import('@/views/auth/LoginView.vue'),
+    component: lazyLoad('auth/LoginView'),
     meta: { requiresGuest: true }
   },
   {
     path: '/auth/register',
     name: 'Register',
-    component: () => import('@/views/auth/RegisterView.vue'),
+    component: lazyLoad('auth/RegisterView'),
     meta: { requiresGuest: true }
   },
 
@@ -30,7 +42,7 @@ const routes = [
   {
     path: '/dashboard',
     name: 'Dashboard',
-    component: () => import('@/views/DashboardView.vue'),
+    component: lazyLoad('DashboardView'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
 
@@ -38,13 +50,13 @@ const routes = [
   {
     path: '/admin/users',
     name: 'AdminUsers',
-    component: () => import('@/views/admin/AdminUsersView.vue'),
+    component: lazyLoad('admin/AdminUsersView'),
     meta: { requiresAuth: true, requiresSuperadmin: true }
   },
   {
     path: '/admin/reports',
     name: 'AdminReports',
-    component: () => import('@/views/admin/AdminReportsView.vue'),
+    component: lazyLoad('admin/AdminReportsView'),
     meta: { requiresAuth: true, requiresSuperadmin: true }
   },
 
@@ -52,25 +64,25 @@ const routes = [
   {
     path: '/bands',
     name: 'BandManagement',
-    component: () => import('@/views/bands/BandManagement.vue'),
+    component: lazyLoad('bands/BandManagement'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
     path: '/members',
     name: 'MemberManagement',
-    component: () => import('@/views/bands/MemberManagement.vue'),
+    component: lazyLoad('bands/MemberManagement'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
     path: '/events',
     name: 'EventManagement',
-    component: () => import('@/views/bands/EventManagement.vue'),
+    component: lazyLoad('bands/EventManagement'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
     path: '/community',
     name: 'Community',
-    component: () => import('@/views/bands/CommunityView.vue'),
+    component: lazyLoad('bands/CommunityView'),
     // 社区对所有用户可浏览，发帖/评论在接口层做鉴权
   },
 
@@ -78,7 +90,7 @@ const routes = [
   {
     path: '/public/:username?',
     name: 'PublicView',
-    component: () => import('@/views/PublicView.vue'),
+    component: lazyLoad('PublicView'),
     props: true
   },
 
@@ -86,28 +98,28 @@ const routes = [
   {
     path: '/music-teacher',
     name: 'MusicTeacher',
-    component: () => import('@/views/MusicTeacherView.vue')
+    component: lazyLoad('MusicTeacherView')
   },
 
   // 音乐盒演示页面（所有用户可用）
   {
     path: '/music-box-demo',
     name: 'MusicBoxDemo',
-    component: () => import('@/views/MusicBoxDemo.vue')
+    component: lazyLoad('MusicBoxDemo')
   },
 
   // 看板娘设置页面（所有用户可用）
   {
     path: '/poster-girl-settings',
     name: 'PosterGirlSettings', 
-    component: () => import('@/modules/poster-girl').then(module => ({ default: module.PosterGirlSettings }))
+    component: lazyLoadModule('@/modules/poster-girl', 'PosterGirlSettings')
   },
 
   // 用户资料页面
   {
     path: '/profile',
     name: 'Profile',
-    component: () => import('@/views/ProfileView.vue'),
+    component: lazyLoad('ProfileView'),
     meta: { requiresAuth: true }
   },
 
@@ -115,7 +127,7 @@ const routes = [
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
-    component: () => import('@/views/NotFoundView.vue')
+    component: lazyLoad('NotFoundView')
   }
 ]
 
@@ -124,13 +136,16 @@ const router = createRouter({
   routes
 })
 
-// 路由守卫
+// 🚀 优化的路由守卫 - 减少不必要的认证检查
+let authInitialized = false
+
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  // 初始化认证状态（如果还没有初始化）
-  if (!authStore.isAuthenticated) {
+  // 只在第一次路由跳转时初始化认证状态
+  if (!authInitialized) {
     authStore.initAuth()
+    authInitialized = true
 
     // 如果初始化后有token，验证其有效性
     if (authStore.token) {

@@ -6,24 +6,224 @@
     <link rel="apple-touch-icon" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bands</title>
+    
+    <!-- 🚀 性能优化：资源提示 -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    
+    <!-- 🚀 性能优化：关键资源预加载 -->
+    <link rel="preload" href="/src/main.ts" as="script" type="module" />
+    
+    <!-- 🚀 性能优化：字体预加载 -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@500;600;700;800&display=swap" as="style" />
+    
     <!-- Font Awesome 图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
+    <!-- 🚀 关键CSS内联 - 提升首屏渲染性能 -->
     <style>
+      /* 基础重置 */
+      * {
+        box-sizing: border-box;
+      }
+      
+      html {
+        scroll-behavior: smooth;
+      }
+      
       body {
-        background: #111 !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        color: #ffffff;
+        background: #0f0f23;
         margin: 0;
         padding: 0;
         min-height: 100vh;
-        width: 100%;           /* 改为100%，防止溢出 */
-        box-sizing: border-box;
-        /*overflow-x: hidden;    /* 禁止横向滚动 */
+        width: 100%;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overflow-x: hidden;
+      }
+      
+      /* 关键布局样式 */
+      #app {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      /* 关键加载状态 */
+      .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        border-top-color: #6366f1;
+        animation: spin 1s ease-in-out infinite;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
+      /* 关键按钮样式 */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.875rem;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      
+      .btn-primary {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: #ffffff;
+      }
+      
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+      }
+      
+      /* 关键卡片样式 */
+      .card {
+        background: rgba(26, 26, 46, 0.8);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      
+      /* 关键网格布局 */
+      .grid {
+        display: grid;
+        gap: 1rem;
+      }
+      
+      .grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+      .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+      .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+      
+      /* 关键弹性布局 */
+      .flex {
+        display: flex;
+      }
+      
+      .flex-col { flex-direction: column; }
+      .flex-row { flex-direction: row; }
+      .items-center { align-items: center; }
+      .justify-center { justify-content: center; }
+      .justify-between { justify-content: space-between; }
+      
+      /* 关键间距工具类 */
+      .gap-1 { gap: 0.25rem; }
+      .gap-2 { gap: 0.5rem; }
+      .gap-3 { gap: 0.75rem; }
+      .gap-4 { gap: 1rem; }
+      
+      /* 关键文本工具类 */
+      .text-center { text-align: center; }
+      .text-sm { font-size: 0.875rem; }
+      .text-base { font-size: 1rem; }
+      .text-lg { font-size: 1.125rem; }
+      .text-xl { font-size: 1.25rem; }
+      .text-2xl { font-size: 1.5rem; }
+      
+      .font-medium { font-weight: 500; }
+      .font-semibold { font-weight: 600; }
+      .font-bold { font-weight: 700; }
+      
+      /* 关键颜色工具类 */
+      .text-primary { color: #6366f1; }
+      .text-secondary { color: #8b5cf6; }
+      .text-muted { color: #e5e7eb; }
+      
+      /* 关键响应式工具类 */
+      @media (max-width: 768px) {
+        .md\:hidden { display: none; }
+        .md\:block { display: block; }
+        .md\:flex { display: flex; }
+        
+        .grid-cols-2,
+        .grid-cols-3 {
+          grid-template-columns: repeat(1, 1fr);
+        }
+      }
+      
+      /* 关键滚动条样式 */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background: #1a1a2e;
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background: #e5e7eb;
+        border-radius: 3px;
+      }
+      
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(99, 102, 241, 0.6);
       }
     </style>
+    
+    <!-- 🚀 异步加载非关键CSS -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@500;600;700;800&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@500;600;700;800&display=swap" />
+    </noscript>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <!-- 🚀 关键内容骨架屏 - 提升感知性能 -->
+      <div style="display: flex; flex-direction: column; min-height: 100vh; align-items: center; justify-content: center; padding: 2rem;">
+        <div class="loading"></div>
+        <p style="margin-top: 1rem; color: #e5e7eb;">正在加载...</p>
+      </div>
+    </div>
     
+    <!-- 🚀 性能优化：延迟加载非关键脚本 -->
     <script type="module" src="/src/main.ts"></script>
+    
+    <!-- 🚀 性能优化：资源加载完成后的清理 -->
+    <script>
+      // 移除骨架屏
+      window.addEventListener('load', function() {
+        const skeleton = document.querySelector('#app > div');
+        if (skeleton && skeleton.querySelector('.loading')) {
+          skeleton.remove();
+        }
+      });
+      
+      // 性能监控
+      if ('performance' in window) {
+        window.addEventListener('load', function() {
+          setTimeout(function() {
+            const perfData = performance.getEntriesByType('navigation')[0];
+            if (perfData) {
+              console.log('🚀 页面加载性能:', {
+                'DOM内容加载': Math.round(perfData.domContentLoadedEventEnd - perfData.domContentLoadedEventStart) + 'ms',
+                '页面完全加载': Math.round(perfData.loadEventEnd - perfData.loadEventStart) + 'ms',
+                '总加载时间': Math.round(perfData.loadEventEnd - perfData.fetchStart) + 'ms'
+              });
+            }
+          }, 0);
+        });
+      }
+    </script>
   </body>
 </html>
