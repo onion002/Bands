@@ -31,7 +31,7 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       proxy: {
         '/uploads': isDev ? 'http://localhost:5000' : 'http://47.108.249.242:5000',
-        '/api': isDev ? 'http://localhost:5000' : 'http://47.108.249.242:5000' // 新增这一行
+        '/api': isDev ? 'http://localhost:5000' : 'http://47.108.249.242:5000'
       }
     },
     preview: {
@@ -53,13 +53,84 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       assetsDir: 'assets',
       sourcemap: false, // 生产环境不生成sourcemap
+      minify: 'terser', // 使用terser进行更好的压缩
+      terserOptions: {
+        compress: {
+          drop_console: !isDev, // 生产环境移除console
+          drop_debugger: !isDev, // 生产环境移除debugger
+          pure_funcs: isDev ? [] : ['console.log', 'console.info', 'console.debug']
+        }
+      },
       rollupOptions: {
         output: {
+          // 优化代码分割策略 - 基于实际依赖
           manualChunks: {
-            vendor: ['vue', 'vue-router', 'pinia']
+            // 核心框架库
+            'vue-core': ['vue', 'vue-router', 'pinia'],
+            // 按功能模块分割
+            'admin': [
+              './src/views/admin/AdminUsersView.vue',
+              './src/views/admin/AdminReportsView.vue'
+            ],
+            'band-management': [
+              './src/views/bands/BandManagement.vue',
+              './src/views/bands/MemberManagement.vue',
+              './src/views/bands/EventManagement.vue'
+            ],
+            'auth': [
+              './src/views/auth/LoginView.vue',
+              './src/views/auth/RegisterView.vue'
+            ],
+            'music-features': [
+              './src/views/MusicTeacherView.vue',
+              './src/views/MusicBoxDemo.vue'
+            ]
+          },
+          // 优化chunk命名
+          chunkFileNames: (chunkInfo) => {
+            const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk'
+            return `js/[name]-[hash].js`
+          },
+          // 优化资源命名
+          assetFileNames: (assetInfo) => {
+            const info = assetInfo.name?.split('.') || []
+            const ext = info[info.length - 1]
+            if (/\.(css)$/.test(assetInfo.name || '')) {
+              return `css/[name]-[hash].${ext}`
+            }
+            if (/\.(png|jpe?g|gif|svg|webp|ico)$/.test(assetInfo.name || '')) {
+              return `images/[name]-[hash].${ext}`
+            }
+            return `assets/[name]-[hash].${ext}`
           }
+        },
+        // 优化依赖处理
+        external: [],
+        // 优化模块解析
+        treeshake: {
+          moduleSideEffects: false,
+          propertyReadSideEffects: false,
+          unknownGlobalSideEffects: false
         }
-      }
+      },
+      // 设置chunk大小警告阈值
+      chunkSizeWarningLimit: 1000,
+      // 启用CSS代码分割
+      cssCodeSplit: true,
+      // 优化目标
+      target: 'es2015'
+    },
+    // 优化依赖预构建
+    optimizeDeps: {
+      include: [
+        'vue',
+        'vue-router', 
+        'pinia',
+        'axios'
+      ],
+      exclude: [
+        // 排除不需要预构建的依赖
+      ]
     }
   }
 })
