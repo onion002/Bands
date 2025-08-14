@@ -54,9 +54,9 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
-    path: '/gallery',
-    name: 'Gallery',
-    component: () => import('@/views/bands/GalleryView.vue'),
+    path: '/community',
+    name: 'Community',
+    component: () => import('@/views/bands/CommunityView.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
 
@@ -68,7 +68,7 @@ const routes = [
     props: true
   },
 
-  // 音乐老师（所有用户可用）
+  // AI乐队顾问（所有用户可用）
   {
     path: '/music-teacher',
     name: 'MusicTeacher',
@@ -87,13 +87,6 @@ const routes = [
     path: '/poster-girl-settings',
     name: 'PosterGirlSettings', 
     component: () => import('@/modules/poster-girl').then(module => ({ default: module.PosterGirlSettings }))
-  },
-
-  // 看板娘演示页面（开发/演示用）
-  {
-    path: '/poster-girl-demo',
-    name: 'PosterGirlDemo',
-    component: () => import('@/views/PosterGirlDemo.vue')
   },
 
   // 用户资料页面

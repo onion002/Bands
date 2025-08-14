@@ -253,7 +253,7 @@ onUnmounted(() => {
 @use '@/assets/scss/variables' as *;
 
 .dashboard {
-  min-height: 100vh;
+  min-height: calc(100vh - 4rem);
   padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;

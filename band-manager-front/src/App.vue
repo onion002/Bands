@@ -3,8 +3,8 @@
     <!-- 🎵 导航头部 - 完全独立，固定在顶部 -->
     <NavHeader />
 
-    <!-- 🎵 音乐盒 - 固定在左上角 -->
-    <MusicBox />
+    <!-- 🎵 音乐盒 - 固定在左上角（音乐老师页隐藏） -->
+    <MusicBox v-if="showMusicBox" />
 
     <!-- 🎨 主内容区域 - 在导航栏下方，有适当的上边距 -->
     <main class="main-content">
@@ -21,17 +21,22 @@
 <script setup lang="ts">
 import NavHeader from '@/components/NavHeader.vue'
 import MusicBox from '@/components/MusicBox.vue'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
 
 // 看板娘引用（现在使用全局组件，无需导入）
 const posterGirlRef = ref()
+
+// 根据路由隐藏音乐盒（在音乐老师页面隐藏）
+const route = useRoute()
+const showMusicBox = computed(() => route.name !== 'MusicTeacher')
 </script>
 
 <style lang="scss">
 @use '@/assets/scss/variables' as *;
 
 #app {
-  min-height: 100vh;
+  min-height: calc(100vh - 4rem);
   background: $dark;
   color: $white;
   font-family: $font-family-base;

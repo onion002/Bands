@@ -956,7 +956,7 @@ onMounted(() => {
 @media (max-width: 768px) {
   .auth-container {
     flex-direction: column;
-    min-height: 100vh;
+    min-height: calc(100vh - 4rem);
   }
 
   .auth-image-section {

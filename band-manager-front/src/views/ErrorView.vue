@@ -97,7 +97,7 @@ const refresh = () => {
 @use '@/assets/scss/variables' as *;
 
 .error-page {
-  min-height: 100vh;
+  min-height: calc(100vh - 4rem);
   display: flex;
   align-items: center;
   justify-content: center;

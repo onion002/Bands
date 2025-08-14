@@ -548,7 +548,7 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .poster-girl-settings {
-  min-height: 100vh;
+  min-height: calc(100vh - 4rem);
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 1.5rem 0;
 }

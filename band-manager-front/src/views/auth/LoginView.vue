@@ -194,7 +194,7 @@ onMounted(() => {
 
 .auth-container {
   display: flex;
-  min-height: 100vh;
+  min-height: calc(100vh - 4rem);
   background: linear-gradient(135deg, $dark 0%, $darkgray 50%, $lightgray 100%);
   position: relative;
   overflow: hidden;
@@ -770,10 +770,10 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .auth-container {
-    flex-direction: column;
-    min-height: 100vh;
-  }
+    .auth-container {
+      flex-direction: column;
+      min-height: calc(100vh - 4rem);
+    }
 
   .auth-image-section {
     min-height: 40vh;

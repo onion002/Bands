@@ -743,8 +743,9 @@ function handleError(error: any, context: string = '操作') {
 @use '@/assets/scss/variables' as *;
 
 .teacher-management {
-  min-height: 100vh;
-  height: 100vh;
+  /* 减去固定导航栏4rem的高度，避免出现页面滚动条 */
+  min-height: calc(100vh - 4rem);
+  height: calc(100vh - 4rem);
   padding: 0; // 外壳负责内边距
   overflow: hidden; // 防止页面滚动
 }
@@ -784,10 +785,10 @@ function handleError(error: any, context: string = '操作') {
   }
 }
 
-.shell { display: grid; grid-template-columns: 260px 1fr; gap: 0; height: 100vh; }
+.shell { display: grid; grid-template-columns: 260px 1fr; gap: 0; height: 100%; }
 .shell.collapsed { grid-template-columns: 72px 1fr; }
 
-.sidebar { background: #101010; border-right: 1px solid #2a2a2a; height: 100vh; position: sticky; top: 0; }
+.sidebar { background: #101010; border-right: 1px solid #2a2a2a; height: 100%; position: sticky; top: 0; }
 .sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: .75rem .75rem; border-bottom: 1px solid #2a2a2a; 
   .title { display: flex; align-items: center; gap: .5rem; color: $white; font-weight: 600; }
   .collapse-btn { background: transparent; border: none; color: #bbb; cursor: pointer; }
@@ -901,7 +902,7 @@ function handleError(error: any, context: string = '操作') {
   max-width: 1200px; 
   margin: 0 auto; 
   width: 100%; 
-  height: 100vh; 
+  height: 100%; 
   overflow: visible;
   display: flex;
   flex-direction: column;
@@ -1308,14 +1309,14 @@ function handleError(error: any, context: string = '操作') {
 /* 🌟 移动端响应式优化 */
 @media (max-width: 768px) {
   .teacher-management {
-    height: 100vh;
+    height: calc(100vh - 4rem);
     overflow: hidden;
   }
   
   .shell {
     grid-template-columns: 1fr !important;
     grid-template-rows: auto 1fr;
-    height: 100vh;
+    height: 100%;
     overflow: hidden;
   }
   

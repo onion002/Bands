@@ -42,7 +42,7 @@
         <!-- 音乐老师按钮 -->
         <div 
           class="pio-teacher pio-btn" 
-          title="🎓 音乐老师"
+          title="🎓 AI乐队顾问"
           @click="navigateToMusicTeacher"
         >
           <i class="fas fa-chalkboard-teacher"></i>

@@ -599,7 +599,7 @@ body {
 .band-management {
   background-color: $dark;
   color: $white;
-  min-height: 100vh;
+  min-height: calc(100vh - 4rem);
   padding: 20px;
   position: relative;
   overflow-y: auto;

@@ -173,13 +173,13 @@ onMounted(async () => {
 @use '@/assets/scss/mixins' as *;
 
 .home-view {
-  min-height: 100vh;
+  min-height: calc(100vh - 4rem);
   width: 100%;
 }
 
 // 🎵 英雄区域样式
 .hero-section {
-  min-height: 100vh;
+  min-height: calc(100vh - 4rem);
   display: flex;
   flex-direction: column;
   align-items: center;
