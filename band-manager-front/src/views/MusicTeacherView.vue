@@ -94,7 +94,7 @@
                     <button class="icon-btn" title="导出对话"
                             @click="exportConversation"><i class="fa fa-download"></i></button>
                   </div>
-                  <div class="bubble-content" v-html="renderMarkdown(m.content)"></div>
+                  <div class="bubble-content" v-html="m.renderedContent || m.content"></div>
                 </div>
               </div>
 
@@ -207,15 +207,49 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, nextTick, computed, watch, onMounted, onUnmounted, shallowRef } from 'vue'
 import { MusicTeacherService } from '@/api/musicTeacherService'
-// @ts-ignore - 使用运行时渲染，无需类型
-import { marked } from 'marked'
-// @ts-ignore
-import hljs from 'highlight.js'
+
+// 懒加载重库，减少初始包大小
+const marked = shallowRef<any>(null)
+const hljs = shallowRef<any>(null)
+
+// 异步加载marked库
+const loadMarked = async () => {
+  if (!marked.value) {
+    const { marked: markedModule } = await import('marked')
+    marked.value = markedModule
+  }
+  return marked.value
+}
+
+// 异步加载highlight.js库
+const loadHighlight = async () => {
+  if (!hljs.value) {
+    const hljsModule = await import('highlight.js')
+    hljs.value = hljsModule.default
+  }
+  return hljs.value
+}
+
+// 渲染消息的markdown内容
+const renderMessageMarkdown = async (message: ChatMessage) => {
+  if (message.role === 'assistant' && !message.renderedContent) {
+    try {
+      const markedInstance = await loadMarked()
+      message.renderedContent = markedInstance.parse(message.content || '') as string
+    } catch (error) {
+      message.renderedContent = message.content
+    }
+  }
+}
 
 type Role = 'user' | 'assistant' | 'system'
-interface ChatMessage { role: Role; content: string }
+interface ChatMessage { 
+  role: Role; 
+  content: string; 
+  renderedContent?: string;
+}
 
 const chatWindowRef = ref<HTMLDivElement | null>(null)
 const messages = ref<ChatMessage[]>([])
@@ -343,8 +377,13 @@ marked.setOptions({
   breaks: true
 })
 
-function renderMarkdown(md: string) {
-  try { return marked.parse(md || '') as string } catch { return md }
+async function renderMarkdown(md: string) {
+  try { 
+    const markedInstance = await loadMarked()
+    return markedInstance.parse(md || '') as string 
+  } catch { 
+    return md 
+  }
 }
 
 function scrollToBottom() {
@@ -468,14 +507,21 @@ async function send() {
         max_tokens: maxTokens.value,
         top_p: topP.value
       },
-      (chunk) => { messages.value[idx].content += chunk; scrollToBottom() },
+      async (chunk) => { 
+        messages.value[idx].content += chunk; 
+        // 异步渲染markdown
+        await renderMessageMarkdown(messages.value[idx]);
+        scrollToBottom() 
+      },
       () => { isStreaming.value = false; abortController.value = null; errorMsg.value = '' },
       controller.signal
     )
   } catch (e: any) {
     const errorInfo = handleDeepSeekError(e)
     errorMsg.value = errorInfo.message
-    messages.value.push({ role: 'assistant', content: errorInfo.message })
+    const errorMessage = { role: 'assistant' as Role, content: errorInfo.message }
+    messages.value.push(errorMessage)
+    await renderMessageMarkdown(errorMessage)
     handleError(e, 'AI对话')
   } finally {
     loading.value = false
