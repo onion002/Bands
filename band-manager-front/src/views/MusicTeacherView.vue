@@ -94,7 +94,7 @@
                     <button class="icon-btn" title="导出对话"
                             @click="exportConversation"><i class="fa fa-download"></i></button>
                   </div>
-                  <div class="bubble-content" v-html="renderMarkdown(m.content)"></div>
+                  <div class="bubble-content" v-html="renderMarkdownContent(m.content)"></div>
                 </div>
               </div>
 
@@ -207,12 +207,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, nextTick, computed, watch, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { MusicTeacherService } from '@/api/musicTeacherService'
-// @ts-ignore - 使用运行时渲染，无需类型
-import { marked } from 'marked'
-// @ts-ignore
-import hljs from 'highlight.js'
+// 使用轻量级的自定义markdown渲染器
+import { renderMarkdown, highlightCodeBlocks } from '@/utils/markdownRenderer'
 
 type Role = 'user' | 'assistant' | 'system'
 interface ChatMessage { role: Role; content: string }
@@ -332,19 +330,24 @@ function toHtml(text: string) {
 }
 
 // Markdown 渲染器
-marked.setOptions({
-  // @ts-ignore
-  highlight(code: any, lang: any) {
-    if (lang && hljs.getLanguage(lang)) {
-      return hljs.highlight(code, { language: lang }).value
-    }
-    return hljs.highlightAuto(code).value
-  },
-  breaks: true
-})
+// marked.setOptions({
+//   // @ts-ignore
+//   highlight(code: any, lang: any) {
+//     if (lang && hljs.getLanguage(lang)) {
+//       return hljs.highlight(code, { language: lang }).value
+//     }
+//     return hljs.highlightAuto(code).value
+//   },
+//   breaks: true
+// })
 
-function renderMarkdown(md: string) {
-  try { return marked.parse(md || '') as string } catch { return md }
+function renderMarkdownContent(md: string) {
+  try { 
+    const html = renderMarkdown(md || '')
+    return highlightCodeBlocks(html)
+  } catch { 
+    return md 
+  }
 }
 
 function scrollToBottom() {
@@ -1304,6 +1307,46 @@ function handleError(error: any, context: string = '操作') {
   &[type=number] {
     -moz-appearance: textfield;
   }
+}
+
+/* 代码高亮样式 */
+.code-block {
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+  
+  code {
+    font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #e6e6e6;
+    
+    .keyword {
+      color: #569cd6;
+      font-weight: 600;
+    }
+    
+    .string {
+      color: #ce9178;
+    }
+    
+    .comment {
+      color: #6a9955;
+      font-style: italic;
+    }
+  }
+}
+
+.inline-code {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ff6b9d;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-size: 0.9em;
 }
 
 /* 🌟 移动端响应式优化 */

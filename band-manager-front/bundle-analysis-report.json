@@ -1,0 +1,19 @@
+{
+  "timestamp": "2025-08-14T13:50:10.615Z",
+  "stats": {
+    "jsStats": [
+      {
+        "name": "index-1d615c9a.js",
+        "size": 704,
+        "sizeKB": 1,
+        "gzipSizeKB": 211,
+        "path": "/workspace/band-manager-front/dist/assets/index-1d615c9a.js"
+      }
+    ],
+    "cssStats": [],
+    "totalSize": 704,
+    "totalJsSize": 704,
+    "totalCssSize": 0
+  },
+  "recommendations": []
+}
