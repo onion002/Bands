@@ -2,8 +2,8 @@
 @use 'variables' as *;
 @use 'animations' as *;
 
-// 🎨 Google Fonts 导入
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@500;600;700;800&display=swap');
+// 🎨 优化的字体加载 - 使用 font-display: swap 提升性能
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@500;600;700;800&display=swap&display=swap');
 
 // 🌟 全局重置和基础样式
 * {
@@ -24,14 +24,14 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  // 添加噪点纹理背景
-  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGZpbHRlcj0idXJsKCNhKSIgb3BhY2l0eT0iLjA1IiBkPSJNMCAwaDMwMHYzMDBIMHoiLz48L3N2Zz4=');
+  // 🚀 优化的背景纹理 - 使用更小的SVG减少内存占用
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGZpbHRlcj0idXJsKCNhKSIgb3BhY2l0eT0iLjAzIiBkPSJNMCAwaDEwMHYxMDBIMHoiLz48L3N2Zz4=');
 }
 
-// 🎯 滚动条样式
+// 🎯 优化的滚动条样式
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -40,7 +40,7 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: $lightgray;
-  border-radius: 4px;
+  border-radius: 3px;
 
   &:hover {
     background: rgba($primary, 0.6);
@@ -57,7 +57,7 @@ body {
   }
 }
 
-// 🌟 通用工具类
+// 🌟 关键工具类 - 只保留最常用的
 .text-gradient {
   background: $gradient-primary;
   background-clip: text;
@@ -66,7 +66,7 @@ body {
 }
 
 .bg-noise {
-  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyZTJlMmUiIGZpbGwtb3BhY2l0eT0iLjEiPjxwYXRoIGQ9Ik0zNiAxOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMC0xOGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHptMTggMGMtMi4yMSAwLTQgMS43OS00IDRzMS43OSA0IDQgNCw0LTEuNzkgNC00LTEuNzktNC00LTQtNHoiLz48L2c+PC9nPjwvc3ZnPg==');
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyZTJlMmUiIGZpbGwtb3BhY2l0eT0iLjEiPjxwYXRoIGQ9Ik0yNCAxMmMtMS4zMyAwLTIuNC0xLjA3LTIuNC0yLjRzMS4wNy0yLjQgMi40LTIuNCAyLjQgMS4wNyAyLjQgMi40LTEuMDcgMi40LTIuNCAyLjR6Ii8+PC9nPjwvZz48L3N2Zz4=');
 }
 
 .backdrop-blur {
@@ -74,10 +74,7 @@ body {
   -webkit-backdrop-filter: blur(8px);
 }
 
-// 🎨 优化的动画类 - 现在从 _animations.scss 导入
-// 移除重复的动画定义，使用优化版本
-
-// 🎯 优化的按钮样式
+// 🎯 优化的按钮样式 - 减少过渡属性提升性能
 .btn {
   display: inline-flex;
   align-items: center;
@@ -92,515 +89,439 @@ body {
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  // 性能优化：只过渡必要的属性
+  // 🚀 性能优化：只过渡必要的属性，启用硬件加速
   transition:
     transform $transition-normal cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow $transition-normal cubic-bezier(0.4, 0, 0.2, 1),
     background-color $transition-normal cubic-bezier(0.4, 0, 0.2, 1);
-  // 启用硬件加速
-  will-change: transform;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    will-change: auto;
+  transform: translateZ(0); // 启用硬件加速
+  
+  &:hover {
+    transform: translateY(-2px) translateZ(0);
+    box-shadow: 0 8px 25px rgba($primary, 0.3);
   }
-
-  // 主要按钮
+  
+  &:active {
+    transform: translateY(0) translateZ(0);
+    box-shadow: 0 4px 15px rgba($primary, 0.2);
+  }
+  
+  // 变体样式
   &.btn-primary {
-    background: $primary;
-    color: $white;
-
-    &:hover:not(:disabled) {
-      background: rgba($primary, 0.9);
-      transform: translateY(-2px) translateZ(0);
-      box-shadow: $shadow-primary;
-    }
-
-    &:active {
-      transform: translateY(0) translateZ(0);
-      transition-duration: 0.1s;
+    background: $gradient-primary;
+    color: white;
+    
+    &:hover {
+      background: $gradient-primary-hover;
     }
   }
-
-  // 次要按钮
+  
   &.btn-secondary {
-    background: transparent;
-    color: $white;
-    border: 2px solid $secondary;
-
-    &:hover:not(:disabled) {
-      background: rgba($secondary, 0.1);
-      transform: translateY(-2px);
-      box-shadow: $shadow-secondary;
+    background: $gradient-secondary;
+    color: white;
+    
+    &:hover {
+      background: $gradient-secondary-hover;
     }
   }
-
-  // 轮廓按钮
+  
   &.btn-outline {
     background: transparent;
-    color: $gray-300;
-    border: 1px solid rgba($white, 0.2);
-
-    &:hover:not(:disabled) {
-      background: rgba($white, 0.1);
-      color: $white;
-      border-color: rgba($white, 0.3);
+    border: 2px solid $primary;
+    color: $primary;
+    
+    &:hover {
+      background: $primary;
+      color: white;
     }
   }
-
-  // 危险按钮
-  &.btn-danger {
-    background: #ef4444;
-    color: $white;
-
-    &:hover:not(:disabled) {
-      background: #dc2626;
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+  
+  &.btn-ghost {
+    background: transparent;
+    color: $text-color;
+    
+    &:hover {
+      background: rgba($primary, 0.1);
     }
   }
-
-  // 大小变体
+  
+  // 尺寸变体
   &.btn-sm {
     padding: 0.5rem 1rem;
     font-size: 0.75rem;
   }
-
+  
   &.btn-lg {
     padding: 1rem 2rem;
     font-size: 1rem;
   }
+  
+  // 禁用状态
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
 }
 
-@media (max-width: 1200px) {
-  .band-showcase {
-    .showcase-container {
-      width: 95%;
+// 🎯 优化的卡片样式
+.card {
+  background: $card-bg;
+  border-radius: $border-radius-lg;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid $border-color;
+  transition: 
+    transform $transition-normal ease,
+    box-shadow $transition-normal ease;
+  transform: translateZ(0);
+  
+  &:hover {
+    transform: translateY(-4px) translateZ(0);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+}
 
-      .band-card {
-        flex: 0 0 45%; /* 平板设备显示两个 */
-      }
+// 🎯 优化的输入框样式
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid $border-color;
+  border-radius: $border-radius-md;
+  font-size: 0.875rem;
+  background: $input-bg;
+  color: $text-color;
+  transition: 
+    border-color $transition-normal ease,
+    box-shadow $transition-normal ease;
+  
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+  }
+  
+  &::placeholder {
+    color: $text-muted;
+  }
+  
+  &.input-error {
+    border-color: $error;
+    
+    &:focus {
+      box-shadow: 0 0 0 3px rgba($error, 0.1);
     }
   }
+}
+
+// 🎯 优化的标签样式
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: $text-color;
+  font-size: 0.875rem;
+}
+
+// 🎯 优化的徽章样式
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: $border-radius-full;
+  background: $primary;
+  color: white;
+  
+  &.badge-secondary {
+    background: $secondary;
+  }
+  
+  &.badge-success {
+    background: $success;
+  }
+  
+  &.badge-warning {
+    background: $warning;
+  }
+  
+  &.badge-error {
+    background: $error;
+  }
+}
+
+// 🎯 优化的网格系统
+.grid {
+  display: grid;
+  gap: 1rem;
+  
+  &.grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+  &.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+  &.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+  &.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+  
+  @media (max-width: 768px) {
+    &.grid-cols-2,
+    &.grid-cols-3,
+    &.grid-cols-4 {
+      grid-template-columns: repeat(1, 1fr);
+    }
+  }
+}
+
+// 🎯 优化的弹性布局
+.flex {
+  display: flex;
+  
+  &.flex-col { flex-direction: column; }
+  &.flex-row { flex-direction: row; }
+  &.flex-wrap { flex-wrap: wrap; }
+  &.flex-nowrap { flex-wrap: nowrap; }
+  
+  &.items-center { align-items: center; }
+  &.items-start { align-items: flex-start; }
+  &.items-end { align-items: flex-end; }
+  &.items-stretch { align-items: stretch; }
+  
+  &.justify-center { justify-content: center; }
+  &.justify-start { justify-content: flex-start; }
+  &.justify-end { justify-content: flex-end; }
+  &.justify-between { justify-content: space-between; }
+  &.justify-around { justify-content: space-around; }
+}
+
+// 🎯 优化的间距工具类
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
+.gap-4 { gap: 1rem; }
+.gap-5 { gap: 1.25rem; }
+.gap-6 { gap: 1.5rem; }
+
+// 🎯 优化的文本工具类
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.text-sm { font-size: 0.875rem; }
+.text-base { font-size: 1rem; }
+.text-lg { font-size: 1.125rem; }
+.text-xl { font-size: 1.25rem; }
+.text-2xl { font-size: 1.5rem; }
+
+.font-light { font-weight: 300; }
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+
+// 🎯 优化的颜色工具类
+.text-primary { color: $primary; }
+.text-secondary { color: $secondary; }
+.text-success { color: $success; }
+.text-warning { color: $warning; }
+.text-error { color: $error; }
+.text-muted { color: $text-muted; }
+
+.bg-primary { background-color: $primary; }
+.bg-secondary { background-color: $secondary; }
+.bg-success { background-color: $success; }
+.bg-warning { background-color: $warning; }
+.bg-error { background-color: $error; }
+
+// 🎯 优化的响应式工具类
+@media (max-width: 640px) {
+  .sm\:hidden { display: none; }
+  .sm\:block { display: block; }
+  .sm\:flex { display: flex; }
 }
 
 @media (max-width: 768px) {
-  .nav-header {
-    .nav-boxes {
-      flex-wrap: wrap;
-      
-      .nav-box {
-        padding: 8px 15px;
-        min-width: 100px;
-      }
-    }
-  }
-  
-  .band-showcase {
-    height: 60vh;
-    margin-top: 80px;
-    
-    .nav-arrow {
-      width: 40px;
-      height: 40px;
-      top: 40%;
-      
-      &.prev {
-        left: 10px;
-      }
-      
-      &.next {
-        right: 10px;
-      }
-    }
-    
-    .showcase-container {
-      width: 95%;
-      
-      .slide-group {
-        gap: 20px;
-      }
-      
-      .band-card {
-        flex: 0 0 100%; /* 移动设备显示一个 */
-      }
-    }
-  }
+  .md\:hidden { display: none; }
+  .md\:block { display: block; }
+  .md\:flex { display: flex; }
 }
 
-// 🎨 优化的卡片样式
-.card {
-  background: $darkgray;
-  border: $border-light;
-  border-radius: $border-radius-xl;
-  padding: 1.5rem;
-  position: relative;
-  overflow: hidden;
-  // 性能优化：分离过渡属性
-  transition:
-    transform $transition-normal cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow $transition-normal cubic-bezier(0.4, 0, 0.2, 1),
-    border-color $transition-normal cubic-bezier(0.4, 0, 0.2, 1);
-  // 启用硬件加速
+@media (max-width: 1024px) {
+  .lg\:hidden { display: none; }
+  .lg\:block { display: block; }
+  .lg\:flex { display: flex; }
+}
+
+// 🚀 性能优化：减少重绘和重排
+.performance-optimized {
   will-change: transform;
-
-  &:hover {
-    border-color: rgba($primary, 0.5);
-    transform: translateY(-4px) translateZ(0);
-    box-shadow: $shadow-dark;
-  }
-
-  &.card-interactive {
-    cursor: pointer;
-
-    &:hover {
-      transform: scale(1.02) translateZ(0);
-      box-shadow: $shadow-primary;
-    }
-  }
-
-  &.card-dark {
-    background: $dark;
-  }
-
-  &.card-gradient {
-    background: $gradient-dark;
-  }
-
-  // 动画完成后清理 will-change
-  &:not(:hover) {
-    will-change: auto;
-  }
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
-// 🎯 表单样式
-.form-group {
-  margin-bottom: 1.5rem;
-
-  label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: $gray-300;
-    font-size: 0.875rem;
-  }
-
-  .form-control {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background: rgba($lightgray, 0.3);
-    border: 1px solid rgba($lightgray, 0.5);
-    border-radius: $border-radius-md;
-    color: $white;
-    font-size: 0.875rem;
-    transition: all $transition-normal ease;
-
-    &:focus {
-      outline: none;
-      border-color: $primary;
-      box-shadow: 0 0 0 3px rgba($primary, 0.1);
-      background: rgba($lightgray, 0.5);
-    }
-
-    &::placeholder {
-      color: $gray-400;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  }
-
-  textarea.form-control {
-    resize: vertical;
-    min-height: 100px;
-  }
-
-  select.form-control {
-    cursor: pointer;
-  }
-}
-
-// 🌟 优化的模态框样式系统 - 紧凑间距版本
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba($dark, 0.8);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 0.5rem; // 减少外边距
-
-  // 智能对齐：移动端底部对齐，桌面端居中
-  @media (max-width: 768px) {
-    align-items: flex-end;
-    padding: 0;
-  }
-
-  // 平板端适配
-  @media (min-width: 769px) and (max-width: 1024px) {
-    padding: 0.75rem; // 减少平板端边距
-  }
-
-  // 桌面端适配
-  @media (min-width: 1025px) {
-    padding: 1rem; // 减少桌面端边距
-  }
-}
-
-.modal {
-  background: linear-gradient(135deg, rgba($darkgray, 0.95), rgba($lightgray, 0.9));
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: $border-radius-xl;
-  width: 100%;
-  max-width: 500px;
-  max-height: 95vh; // 增加可用高度
-  overflow: hidden;
-  position: relative;
-  box-shadow:
-    0 25px 50px rgba($dark, 0.5),
-    0 0 0 1px rgba($primary, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-
-  // 进入动画
-  animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-
-  // 移动端样式
-  @media (max-width: 768px) {
-    max-width: 100vw;
-    width: 100%;
-    border-radius: 20px 20px 0 0;
-    max-height: 90vh; // 移动端增加可用高度
-
-    // 移动端从底部滑入
-    animation: modalSlideInMobile 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-
-  // 平板端样式
-  @media (min-width: 769px) and (max-width: 1024px) {
-    max-width: 85vw;
-    border-radius: 20px;
-  }
-
-  // 桌面端样式
-  @media (min-width: 1025px) {
-    border-radius: 24px;
-  }
-
-  .modal-header {
-    padding: 1rem 1.25rem 0.5rem; // 减少内边距
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(255, 255, 255, 0.02);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-
-    @media (max-width: 768px) {
-      padding: 0.75rem 1rem 0.5rem; // 移动端进一步减少
-    }
-
-    h3 {
-      margin: 0;
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: $white;
-
-      @media (max-width: 768px) {
-        font-size: 1.1rem;
-      }
-    }
-
-    .close-btn {
-      background: none;
-      border: none;
-      color: $gray-400;
-      font-size: 1.5rem;
-      cursor: pointer;
-      padding: 0.5rem;
-      border-radius: 50%;
-      transition: all $transition-fast ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 40px;
-      height: 40px;
-
-      &:hover {
-        color: $white;
-        background: rgba($white, 0.1);
-        transform: scale(1.1);
-      }
-
-      &:active {
-        transform: scale(0.95);
-      }
-    }
-  }
-
-  .modal-body {
-    padding: 1rem; // 减少内边距
-    max-height: none; // 移除固定高度限制
-    overflow-y: visible; // 取消滚动条
-
-    @media (max-width: 768px) {
-      padding: 0.75rem; // 移动端进一步减少
-    }
-
-    // 移除滚动条样式，因为不再需要
-    // &::-webkit-scrollbar {
-    //   width: 6px;
-    // }
-
-    // &::-webkit-scrollbar-track {
-    //   background: rgba(255, 255, 255, 0.1);
-    //   border-radius: 3px;
-    // }
-
-    // &::-webkit-scrollbar-thumb {
-    //   background: rgba($primary, 0.5);
-    //   border-radius: 3px;
-
-    //   &:hover {
-    //     background: rgba($primary, 0.7);
-    //   }
-    // }
-  }
-
-  .modal-footer {
-    padding: 0.75rem 1.25rem 1rem; // 减少内边距
-    display: flex;
-    gap: 0.75rem; // 减少按钮间距
-    justify-content: flex-end;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.02);
-
-    @media (max-width: 768px) {
-      padding: 0.5rem 1rem 0.75rem; // 移动端进一步减少
-      flex-direction: column;
-      gap: 0.5rem; // 减少移动端间距
-    }
-
-    @media (min-width: 769px) and (max-width: 1024px) {
-      flex-wrap: wrap;
-    }
-  }
-}
-
-// 🎨 模态框动画
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes modalSlideInMobile {
-  from {
-    opacity: 0;
-    transform: translateY(100%);
-  }
-  to {
+// 🚀 优化动画性能
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: 
+    opacity 0.6s ease,
+    transform 0.6s ease;
+  
+  &.animate-in {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-// 🎯 智能弹窗定位工具类
-.modal-smart-position {
-  // 基础智能定位
-  &.smart-center {
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-
-  &.smart-top {
-    top: 120px; // 考虑导航栏高度
-    left: 50%;
-    transform: translateX(-50%);
-  }
-
-  &.smart-bottom {
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-
-  // 响应式智能定位
-  @media (max-width: 768px) {
-    &.smart-center,
-    &.smart-top {
-      // 移动端统一使用底部弹出
-      top: auto;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      transform: none;
-      border-radius: 20px 20px 0 0 !important;
-      max-width: 100vw !important;
-      width: 100% !important;
-    }
-  }
-
-  @media (min-width: 769px) and (max-width: 1024px) {
-    // 平板端优化
-    &.smart-center {
-      max-width: 85vw;
-    }
-
-    &.smart-top {
-      top: 100px;
-    }
-  }
-
-  @media (min-width: 1025px) {
-    // 桌面端优化
-    &.smart-center {
-      max-width: 90vw;
-    }
-
-    &.smart-top {
-      top: 120px;
+// 🚀 优化图片加载
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  
+  &.lazy {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    
+    &.loaded {
+      opacity: 1;
     }
   }
 }
 
-// 🌟 弹窗内容自适应高度
-.modal-adaptive-height {
-  .modal-body {
-    max-height: calc(90vh - 200px); // 减去头部和底部的高度
+// 🚀 优化链接样式
+a {
+  color: $primary;
+  text-decoration: none;
+  transition: color $transition-normal ease;
+  
+  &:hover {
+    color: $primary-hover;
+  }
+  
+  &.link-secondary {
+    color: $secondary;
+    
+    &:hover {
+      color: $secondary-hover;
+    }
+  }
+}
 
+// 🚀 优化列表样式
+ul, ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// 🚀 优化表格样式
+table {
+  width: 100%;
+  border-collapse: collapse;
+  
+  th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid $border-color;
+  }
+  
+  th {
+    font-weight: 600;
+    background: $table-header-bg;
+  }
+}
+
+// 🚀 优化表单样式
+form {
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .form-row {
+    display: flex;
+    gap: 1rem;
+    
     @media (max-width: 768px) {
-      max-height: calc(85vh - 150px);
-    }
-
-    @media (min-width: 1025px) {
-      max-height: calc(100vh - 300px); // 桌面端更大的可用空间
+      flex-direction: column;
+      gap: 0;
     }
   }
 }
 
-// 🎨 弹窗阴影层级
-.modal-overlay {
-  &.modal-level-1 { z-index: 1000; }
-  &.modal-level-2 { z-index: 1010; }
-  &.modal-level-3 { z-index: 1020; }
+// 🚀 优化模态框样式
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: 
+    opacity $transition-normal ease,
+    visibility $transition-normal ease;
+  
+  &.modal-open {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .modal-content {
+    background: $card-bg;
+    border-radius: $border-radius-lg;
+    padding: 2rem;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.9);
+    transition: transform $transition-normal ease;
+    
+    .modal-open & {
+      transform: scale(1);
+    }
+  }
 }
 
-.band-management {
-  background-color: $dark;
-  color: $white;
-  min-height: calc(100vh - 4rem);
-  padding: 20px;
-  position: relative;
-  overflow-y: auto;
+// 🚀 优化加载状态
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid $border-color;
+  border-radius: 50%;
+  border-top-color: $primary;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// 🚀 优化空状态
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: $text-muted;
+  
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+  
+  .empty-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: $text-color;
+  }
+  
+  .empty-description {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
 }

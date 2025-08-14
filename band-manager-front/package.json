@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "type-check": "vue-tsc --noEmit",
     "check-components": "node scripts/check-components.js",
-    "lint": "eslint . --ext .vue,.ts,.vue"
+    "lint": "eslint . --ext .vue,.ts,.vue",
+    "performance": "node scripts/performance-check.js",
+    "build:analyze": "npm run build && npm run performance"
   },
   "dependencies": {
     "axios": "^1.5.0",
@@ -30,6 +32,7 @@
     "eslint": "^8.49.0",
     "eslint-plugin-vue": "^9.17.0",
     "sass": "^1.89.2",
+    "terser": "^5.28.1",
     "typescript": "^5.2.2",
     "vite": "^4.4.11",
     "vue-tsc": "^1.8.8"
