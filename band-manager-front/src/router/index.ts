@@ -34,6 +34,20 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true }
   },
 
+  // 超级管理员：用户管理、举报管理
+  {
+    path: '/admin/users',
+    name: 'AdminUsers',
+    component: () => import('@/views/admin/AdminUsersView.vue'),
+    meta: { requiresAuth: true, requiresSuperadmin: true }
+  },
+  {
+    path: '/admin/reports',
+    name: 'AdminReports',
+    component: () => import('@/views/admin/AdminReportsView.vue'),
+    meta: { requiresAuth: true, requiresSuperadmin: true }
+  },
+
   // 管理员专用路由
   {
     path: '/bands',
@@ -157,6 +171,12 @@ router.beforeEach(async (to, from, next) => {
     // 检查是否需要管理员权限
     if (to.meta.requiresAdmin && !authStore.isAdmin) {
       // 不是管理员，跳转到公开页面
+      next({ name: 'PublicView' })
+      return
+    }
+
+    // 检查是否需要超级管理员
+    if ((to.meta as any).requiresSuperadmin && authStore.user?.user_type !== ('superadmin' as any)) {
       next({ name: 'PublicView' })
       return
     }

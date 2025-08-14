@@ -12,7 +12,7 @@
       <!-- 🎯 桌面导航菜单 -->
       <nav class="nav-menu">
         <!-- 管理员专用导航 -->
-        <template v-if="authStore.isAuthenticated && authStore.isAdmin">
+        <template v-if="authStore.isAuthenticated && authStore.isAdmin && authStore.user?.user_type !== 'superadmin'">
           <router-link to="/dashboard" class="nav-link">仪表盘</router-link>
           <router-link to="/bands" class="nav-link">乐队管理</router-link>
           <router-link to="/members" class="nav-link">成员管理</router-link>
@@ -20,6 +20,14 @@
           <router-link to="/community" class="nav-link">音乐社区</router-link>
           <router-link to="/public" class="nav-link">公开展示</router-link>
           <router-link to="/music-teacher" class="nav-link">AI乐队顾问</router-link>
+        </template>
+
+        <!-- 超级管理员导航：仅保留指定页面 -->
+        <template v-else-if="authStore.isAuthenticated && authStore.user?.user_type === 'superadmin'">
+          <router-link to="/admin/users" class="nav-link">用户管理</router-link>
+          <router-link to="/admin/reports" class="nav-link">举报信息</router-link>
+          <router-link to="/poster-girl-settings" class="nav-link">看板娘设置</router-link>
+          <router-link to="/community" class="nav-link">社区</router-link>
         </template>
 
         <!-- 普通用户导航 -->
@@ -81,7 +89,7 @@
     <div v-if="showMobileMenu" class="mobile-menu">
       <div class="mobile-menu-content">
         <!-- 移动端导航项 -->
-        <template v-if="authStore.isAuthenticated && authStore.isAdmin">
+        <template v-if="authStore.isAuthenticated && authStore.isAdmin && authStore.user?.user_type !== 'superadmin'">
           <router-link to="/dashboard" class="mobile-nav-link" @click="closeMobileMenu">仪表盘</router-link>
           <router-link to="/bands" class="mobile-nav-link" @click="closeMobileMenu">乐队管理</router-link>
           <router-link to="/members" class="mobile-nav-link" @click="closeMobileMenu">成员管理</router-link>
@@ -89,6 +97,13 @@
           <router-link to="/community" class="mobile-nav-link" @click="closeMobileMenu">音乐社区</router-link>
           <router-link to="/public" class="mobile-nav-link" @click="closeMobileMenu">公开展示</router-link>
           <router-link to="/music-teacher" class="mobile-nav-link" @click="closeMobileMenu">AI乐队顾问</router-link>
+        </template>
+
+        <template v-else-if="authStore.isAuthenticated && authStore.user?.user_type === 'superadmin'">
+          <router-link to="/admin/users" class="mobile-nav-link" @click="closeMobileMenu">用户管理</router-link>
+          <router-link to="/admin/reports" class="mobile-nav-link" @click="closeMobileMenu">举报信息</router-link>
+          <router-link to="/poster-girl-settings" class="mobile-nav-link" @click="closeMobileMenu">看板娘设置</router-link>
+          <router-link to="/community" class="mobile-nav-link" @click="closeMobileMenu">社区</router-link>
         </template>
 
         <template v-else-if="authStore.isAuthenticated && !authStore.isAdmin">

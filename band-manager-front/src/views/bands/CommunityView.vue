@@ -121,7 +121,7 @@
                 {{ post.comment_count }}
               </button>
               <button class="action" @click="reportTarget('post', post.id)"><i class="fa fa-flag"></i> 举报</button>
-              <button v-if="isAdmin" class="action danger" @click="deletePost(post)"><i class="fa fa-trash"></i> 删除</button>
+              <button v-if="canDeletePost(post)" class="action danger" @click="deletePost(post)"><i class="fa fa-trash"></i> 删除</button>
             </footer>
 
             <div v-if="expandedPostId === post.id" class="comments">
@@ -180,6 +180,7 @@ import hljs from 'highlight.js'
 const auth = useAuthStore()
 const isAuthenticated = computed(() => auth.isAuthenticated)
 const isAdmin = computed(() => auth.isAdmin)
+const isSuperadmin = computed(() => auth.user?.user_type === 'superadmin')
 
 const loading = ref(false)
 const error = ref('')
@@ -290,6 +291,12 @@ const liking = ref(false)
 
 function isPostLiked(id: number) { return likedPostIds.value.has(id) }
 function isCommentLiked(id: number) { return likedCommentIds.value.has(id) }
+
+function canDeletePost(post: CommunityPost) {
+  // 超级管理员可删全部，普通/管理员只能删自己发的
+  if (isSuperadmin.value) return true
+  return auth.user?.username && post.author?.username === auth.user.username
+}
 
 async function toggleLikePost(post: CommunityPost) {
   try {

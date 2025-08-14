@@ -3,7 +3,7 @@ import axios from 'axios'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 
 // 用户类型
-export type UserType = 'admin' | 'user'
+export type UserType = 'admin' | 'user' | 'superadmin'
 
 // 用户接口
 export interface User {
@@ -163,6 +163,6 @@ export const AuthService = {
   // 检查是否为管理员
   isAdmin(): boolean {
     const user = this.getStoredUser()
-    return user?.user_type === 'admin'
+    return user?.user_type === 'admin' || user?.user_type === 'superadmin'
   }
 }

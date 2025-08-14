@@ -20,7 +20,8 @@ def create_app():
     CORS(app, resources={r"/api/*": {
         "origins": app.config.get('CORS_ORIGINS'),
         "allow_headers": ["Content-Type", "Authorization"],
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        # 允许 PATCH 以支持管理端更新
+        "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         "supports_credentials": True
     }})
     # 注册蓝图
@@ -99,8 +100,31 @@ def init_extensions(app):
             try:
                 db.create_all()
                 print("✅ 数据库表已创建/验证")
+                ensure_superadmin_account()
             except Exception as e:
                 print(f"⚠️ 数据库初始化失败: {str(e)}")
+
+def ensure_superadmin_account():
+    """如果没有超级管理员，则自动创建一个默认的超级管理员账号。
+    可通过环境变量 DEFAULT_SUPERADMIN_USERNAME/DEFAULT_SUPERADMIN_PASSWORD/DEFAULT_SUPERADMIN_EMAIL 覆盖。
+    """
+    import os
+    from models import User, UserType, db
+    try:
+        existing = User.query.filter(User.user_type == UserType.SUPERADMIN).first()
+        if existing:
+            return
+        username = os.environ.get('DEFAULT_SUPERADMIN_USERNAME', 'superadmin')
+        password = os.environ.get('DEFAULT_SUPERADMIN_PASSWORD', 'SuperAdmin#2025')
+        email = os.environ.get('DEFAULT_SUPERADMIN_EMAIL', 'superadmin@local')
+        display_name = 'Super Admin'
+        user = User(username=username, email=email, user_type=UserType.SUPERADMIN, display_name=display_name, is_active=True)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        print(f"✅ 已创建默认超级管理员: {username} / {password}")
+    except Exception as e:
+        print(f"⚠️ 创建超级管理员失败: {str(e)}")
 
 def register_blueprints(app):
     """注册所有蓝图"""
@@ -112,6 +136,7 @@ def register_blueprints(app):
         from api.auth import auth_bp
         from api.stats import stats_bp
         from api.music_teacher.routes import music_teacher_bp
+        from api.admin import admin_bp
         from api.community import community_bp
 
         # 统一在此处集中管理所有蓝图前缀
@@ -121,6 +146,7 @@ def register_blueprints(app):
         app.register_blueprint(auth_bp, url_prefix='/api/auth')
         app.register_blueprint(stats_bp, url_prefix='/api/stats')
         app.register_blueprint(music_teacher_bp, url_prefix='/api/music-teacher')
+        app.register_blueprint(admin_bp, url_prefix='/api/admin')
         app.register_blueprint(community_bp, url_prefix='/api/community')
 
         if not is_reloader_process():

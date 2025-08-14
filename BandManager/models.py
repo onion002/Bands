@@ -156,6 +156,7 @@ class UserType(Enum):
     """用户类型枚举"""
     ADMIN = 'admin'
     USER = 'user'
+    SUPERADMIN = 'superadmin'
 
 class User(db.Model):
     """用户模型"""
@@ -165,7 +166,8 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False, index=True)
     email = db.Column(db.String(100), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
-    user_type = db.Column(db.Enum(UserType), nullable=False, default=UserType.USER)
+    # 使用枚举的 value 作为存储值（小写字符串），避免大小写不一致
+    user_type = db.Column(db.Enum(UserType, values_callable=lambda e: [m.value for m in e]), nullable=False, default=UserType.USER)
     display_name = db.Column(db.String(100))
     avatar_url = db.Column(db.String(255))
     is_active = db.Column(db.Boolean, nullable=False, default=True)
@@ -194,7 +196,10 @@ class User(db.Model):
 
     def is_admin(self):
         """检查是否为管理员"""
-        return self.user_type == UserType.ADMIN
+        return self.user_type in (UserType.ADMIN, UserType.SUPERADMIN)
+
+    def is_superadmin(self):
+        return self.user_type == UserType.SUPERADMIN
 
     def generate_token(self, expires_in=86400):
         """生成JWT token"""

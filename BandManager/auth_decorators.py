@@ -69,6 +69,29 @@ def require_admin(f):
     
     return decorated_function
 
+def require_superadmin(f):
+    """需要超级管理员权限的装饰器"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        try:
+            auth_header = request.headers.get('Authorization')
+            if not auth_header or not auth_header.startswith('Bearer '):
+                return jsonify({'error': '未提供认证token'}), 401
+            token = auth_header.split(' ')[1]
+            user = User.verify_token(token)
+            if not user:
+                return jsonify({'error': 'token无效或已过期'}), 401
+            if not user.is_active:
+                return jsonify({'error': '账户已被禁用'}), 403
+            if not user.is_superadmin():
+                return jsonify({'error': '需要超级管理员权限'}), 403
+            g.current_user = user
+            return f(*args, **kwargs)
+        except Exception as e:
+            logger.error(f"超级管理员权限验证失败: {str(e)}")
+            return jsonify({'error': '权限验证失败'}), 403
+    return decorated_function
+
 def optional_auth(f):
     """可选认证的装饰器（用于公开API，但如果有token则验证）"""
     @wraps(f)

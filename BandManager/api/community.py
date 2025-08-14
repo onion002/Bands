@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 
 from models import db, User, Post, Comment, Tag, Like, Report
-from auth_decorators import require_auth, require_admin, optional_auth, get_current_user
+from auth_decorators import require_auth, require_admin, optional_auth, get_current_user, require_superadmin
 
 
 community_bp = Blueprint('community', __name__)
@@ -141,13 +141,18 @@ def get_post(post_id: int):
 
 
 @community_bp.route('/posts/<int:post_id>', methods=['DELETE'])
-@require_admin
+@require_auth
 def delete_post(post_id: int):
     try:
         post = Post.query.get(post_id)
         if not post:
             return jsonify({'error': '帖子不存在'}), 404
-        db.session.delete(post)
+        user = get_current_user()
+        # 普通用户可以删除自己发的帖子；管理员可以删除自己发的帖子；超级管理员可删除所有
+        if user.is_superadmin() or post.author_id == user.id:
+            db.session.delete(post)
+        else:
+            return jsonify({'error': '无权删除该帖子'}), 403
         db.session.commit()
         return jsonify({'message': '删除成功'})
     except SQLAlchemyError:
