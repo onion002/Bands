@@ -57,7 +57,7 @@ const routes = [
     path: '/community',
     name: 'Community',
     component: () => import('@/views/bands/CommunityView.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
+    // 社区对所有用户可浏览，发帖/评论在接口层做鉴权
   },
 
   // 公开展示路由

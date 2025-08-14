@@ -67,6 +67,14 @@
               <i class="fa fa-globe"></i>
               公开设置
             </button>
+            <button
+              @click="scrollToSection('favorites')"
+              class="quick-nav-btn"
+              title="跳转到我的收藏"
+            >
+              <i class="fa fa-heart"></i>
+              我的收藏
+            </button>
           </div>
         </div>
       </div>
@@ -126,6 +134,28 @@
             </button>
           </div>
         </form>
+      </div>
+
+      <div id="favorites" class="profile-section">
+        <h2 class="section-title">
+          <i class="fa fa-heart"></i>
+          我的收藏
+        </h2>
+        <div class="favorites-list">
+          <div v-if="favLoading" class="loading"><i class="fa fa-spinner fa-spin"></i> 加载中…</div>
+          <div v-else-if="favorites.length === 0" class="empty">暂无收藏</div>
+          <ul v-else>
+            <li v-for="p in favorites" :key="p.id" class="favorite-item">
+              <div class="title" @click="goToPost(p.id)">{{ p.title || (p.content?.slice(0, 40) + '...') }}</div>
+              <div class="meta"><i class="fa fa-user"></i> {{ p.author?.display_name || p.author?.username || '匿名' }} · <i class="fa fa-clock-o"></i> {{ formatDateTime(p.created_at) }}</div>
+            </li>
+          </ul>
+          <div v-if="favPages > 1" class="pagination">
+            <button class="btn btn-outline btn-sm" :disabled="favPage<=1" @click="loadFavorites(favPage-1)"><i class="fa fa-chevron-left"></i>上一页</button>
+            <span>第 {{ favPage }} / {{ favPages }} 页</span>
+            <button class="btn btn-outline btn-sm" :disabled="favPage>=favPages" @click="loadFavorites(favPage+1)">下一页<i class="fa fa-chevron-right"></i></button>
+          </div>
+        </div>
       </div>
 
       <div id="password-change" class="profile-section">
@@ -246,6 +276,8 @@
           <span>公开设置将影响其他用户在公开展示页面中能看到的内容</span>
         </div>
       </div>
+
+      
     </div>
 
     <div v-if="successMessage" class="success-message">
@@ -265,6 +297,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
 import type { User } from '@/api/authService'
+import { CommunityService, type CommunityPost } from '@/api/communityService'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -293,6 +326,12 @@ const privacySettings = reactive({
   events_public: false
 })
 
+// 收藏（点赞）
+const favorites = ref<CommunityPost[]>([])
+const favPage = ref(1)
+const favPages = ref(1)
+const favLoading = ref(false)
+
 const isPasswordValid = computed(() => {
   return passwordForm.new_password.length >= 6 && 
          passwordForm.new_password === passwordForm.confirm_password
@@ -301,6 +340,10 @@ const isPasswordValid = computed(() => {
 const formatDate = (dateString?: string) => {
   if (!dateString) return ''
   return new Date(dateString).toLocaleDateString('zh-CN')
+}
+const formatDateTime = (dateString?: string) => {
+  if (!dateString) return ''
+  return new Date(dateString).toLocaleString('zh-CN')
 }
 
 const initUserData = () => {
@@ -431,6 +474,23 @@ const scrollToSection = (sectionId: string) => {
   }
 }
 
+const loadFavorites = async (page: number = 1) => {
+  try {
+    favLoading.value = true
+    const res = await CommunityService.listMyLikedPosts({ page, page_size: 10 })
+    favorites.value = res.items
+    favPage.value = res.page
+    favPages.value = res.pages
+  } finally {
+    favLoading.value = false
+  }
+}
+
+const goToPost = (postId: number) => {
+  // 暂用跳转到社区页并依靠 UI 展开（后续可做单帖路由）
+  router.push('/community')
+}
+
 onMounted(() => {
   if (!authStore.isAuthenticated) {
     router.push('/auth/login')
@@ -438,6 +498,7 @@ onMounted(() => {
   }
   
   initUserData()
+  loadFavorites(1)
 })
 </script>
 
@@ -618,6 +679,16 @@ onMounted(() => {
       font-size: 1.25rem;
     }
   }
+}
+
+.favorites-list {
+  .favorite-item { padding: .5rem 0; border-bottom: 1px dashed rgba($primary,.2); }
+  .favorite-item .title { color: $white; cursor: pointer; }
+  .favorite-item .title:hover { color: $primary; }
+  .favorite-item .meta { color: $gray-400; font-size: .9rem; margin-top: .2rem; display:flex; align-items:center; gap:.35rem; }
+  .loading { color:$gray-300; }
+  .empty { color:$gray-400; }
+  .pagination { display:flex; align-items:center; gap:.75rem; margin-top:.75rem; }
 }
 
 .profile-form,

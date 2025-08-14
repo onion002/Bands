@@ -6,6 +6,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 from enum import Enum
+import json
 
 db = SQLAlchemy()
 
@@ -237,3 +238,162 @@ class User(db.Model):
 
     def __repr__(self):
         return f'<User {self.username}>'
+
+
+# 关联表：帖子与标签多对多关系
+post_tags = db.Table(
+    'post_tags',
+    db.Column('post_id', db.Integer, db.ForeignKey('posts.id'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'), primary_key=True)
+)
+
+
+class Tag(db.Model):
+    __tablename__ = 'tags'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, index=True, nullable=False)
+
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name
+        }
+
+
+class Post(db.Model):
+    __tablename__ = 'posts'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200))
+    content = db.Column(db.Text, nullable=False)
+
+    # 存储为JSON字符串：图片URL数组和链接数组
+    image_urls_json = db.Column(db.Text)
+    link_urls_json = db.Column(db.Text)
+
+    like_count = db.Column(db.Integer, nullable=False, default=0)
+    comment_count = db.Column(db.Integer, nullable=False, default=0)
+
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    author = db.relationship('User', backref=db.backref('posts', lazy=True))
+
+    # 标签多对多
+    tags = db.relationship('Tag', secondary=post_tags, backref=db.backref('posts', lazy='dynamic'))
+
+    def get_image_urls(self):
+        if not self.image_urls_json:
+            return []
+        try:
+            return json.loads(self.image_urls_json)
+        except Exception:
+            return []
+
+    def set_image_urls(self, urls):
+        self.image_urls_json = json.dumps(urls or [])
+
+    def get_link_urls(self):
+        if not self.link_urls_json:
+            return []
+        try:
+            return json.loads(self.link_urls_json)
+        except Exception:
+            return []
+
+    def set_link_urls(self, urls):
+        self.link_urls_json = json.dumps(urls or [])
+
+    def to_dict(self, include_author=True):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'content': self.content,
+            'image_urls': self.get_image_urls(),
+            'link_urls': self.get_link_urls(),
+            'like_count': self.like_count,
+            'comment_count': self.comment_count,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'author': {
+                'id': self.author.id,
+                'username': self.author.username,
+                'display_name': self.author.display_name,
+                'avatar_url': self.author.avatar_url
+            } if include_author and self.author else None,
+            'tags': [tag.to_dict() for tag in self.tags] if self.tags else []
+        }
+
+
+class Comment(db.Model):
+    __tablename__ = 'comments'
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    like_count = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False, index=True)
+    post = db.relationship('Post', backref=db.backref('comments', lazy=True, cascade='all, delete-orphan'))
+
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    author = db.relationship('User', backref=db.backref('comments', lazy=True))
+
+    parent_id = db.Column(db.Integer, db.ForeignKey('comments.id'))
+    parent = db.relationship('Comment', remote_side=[id], backref=db.backref('replies', lazy=True, cascade='all, delete-orphan'))
+
+    def to_dict(self, include_author=True):
+        return {
+            'id': self.id,
+            'content': self.content,
+            'like_count': self.like_count,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'post_id': self.post_id,
+            'author': {
+                'id': self.author.id,
+                'username': self.author.username,
+                'display_name': self.author.display_name,
+                'avatar_url': self.author.avatar_url
+            } if include_author and self.author else None,
+            'parent_id': self.parent_id
+        }
+
+
+class Like(db.Model):
+    __tablename__ = 'likes'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=True, index=True)
+    comment_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=True, index=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('likes', lazy=True, cascade='all, delete-orphan'))
+    post = db.relationship('Post', backref=db.backref('likes', lazy=True, cascade='all, delete-orphan'))
+    comment = db.relationship('Comment', backref=db.backref('likes', lazy=True, cascade='all, delete-orphan'))
+
+
+class Report(db.Model):
+    __tablename__ = 'reports'
+    id = db.Column(db.Integer, primary_key=True)
+    reporter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    target_type = db.Column(db.String(20), nullable=False)  # 'post' or 'comment'
+    target_id = db.Column(db.Integer, nullable=False)
+    reason = db.Column(db.String(500))
+    status = db.Column(db.String(20), nullable=False, default='pending')  # pending, resolved, dismissed
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    reporter = db.relationship('User', backref=db.backref('reports', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'reporter_id': self.reporter_id,
+            'target_type': self.target_type,
+            'target_id': self.target_id,
+            'reason': self.reason,
+            'status': self.status,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }

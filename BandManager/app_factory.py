@@ -112,6 +112,7 @@ def register_blueprints(app):
         from api.auth import auth_bp
         from api.stats import stats_bp
         from api.music_teacher.routes import music_teacher_bp
+        from api.community import community_bp
 
         # 统一在此处集中管理所有蓝图前缀
         app.register_blueprint(bands_bp, url_prefix='/api/bands')
@@ -120,6 +121,7 @@ def register_blueprints(app):
         app.register_blueprint(auth_bp, url_prefix='/api/auth')
         app.register_blueprint(stats_bp, url_prefix='/api/stats')
         app.register_blueprint(music_teacher_bp, url_prefix='/api/music-teacher')
+        app.register_blueprint(community_bp, url_prefix='/api/community')
 
         if not is_reloader_process():
             print("✅ 蓝图注册成功")

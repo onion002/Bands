@@ -25,12 +25,14 @@
         <!-- 普通用户导航 -->
         <template v-else-if="authStore.isAuthenticated && !authStore.isAdmin">
           <router-link to="/public" class="nav-link">公开展示</router-link>
+          <router-link to="/community" class="nav-link">音乐社区</router-link>
           <router-link to="/music-teacher" class="nav-link">AI乐队顾问</router-link>
         </template>
 
         <!-- 未登录用户导航 -->
         <template v-else>
           <router-link to="/public" class="nav-link">公开展示</router-link>
+          <router-link to="/community" class="nav-link">音乐社区</router-link>
           <router-link to="/auth/login" class="nav-link">登录</router-link>
           <router-link to="/auth/register" class="nav-link">注册</router-link>
         </template>
@@ -91,11 +93,13 @@
 
         <template v-else-if="authStore.isAuthenticated && !authStore.isAdmin">
           <router-link to="/public" class="mobile-nav-link" @click="closeMobileMenu">我的主页</router-link>
+          <router-link to="/community" class="mobile-nav-link" @click="closeMobileMenu">音乐社区</router-link>
           <router-link to="/music-teacher" class="mobile-nav-link" @click="closeMobileMenu">AI乐队顾问</router-link>
         </template>
 
         <template v-else>
           <router-link to="/public" class="mobile-nav-link" @click="closeMobileMenu">公开展示</router-link>
+          <router-link to="/community" class="mobile-nav-link" @click="closeMobileMenu">音乐社区</router-link>
           <router-link to="/music-teacher" class="mobile-nav-link" @click="closeMobileMenu">AI乐队顾问</router-link>
           <router-link to="/auth/login" class="mobile-nav-link" @click="closeMobileMenu">登录</router-link>
           <router-link to="/auth/register" class="mobile-nav-link" @click="closeMobileMenu">注册</router-link>
