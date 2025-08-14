@@ -1,6 +1,7 @@
 <template>
 <div 
     class="poster-girl-container"
+    ref="containerRef"
     :class="{ 'hidden': isHidden, 'dragging': isDragging, 'hidden-mobile': pioConfig.hidden }"
     :style="containerStyle"
     @mousedown="startDrag"
@@ -101,10 +102,30 @@ const showDialog = ref(false)
 const currentMessage = ref('')
 const live2dCanvas = ref<HTMLCanvasElement>()
 const live2dInstance = ref<any>(null)
+const containerRef = ref<HTMLElement | null>(null)
 
 // 拖拽相关
 const dragStart = ref({ x: 0, y: 0 })
 const dragOffset = ref({ x: 0, y: 0 })
+const containerSize = ref({ width: 0, height: 0 })
+
+// 计算容器尺寸
+const updateContainerSize = () => {
+  const el = containerRef.value
+  if (!el) return
+  const rect = el.getBoundingClientRect()
+  containerSize.value.width = rect.width
+  containerSize.value.height = rect.height
+}
+
+// 约束位置在窗口内
+const clampPosition = (x: number, y: number) => {
+  const maxX = Math.max(0, window.innerWidth - containerSize.value.width)
+  const maxY = Math.max(0, window.innerHeight - containerSize.value.height)
+  const clampedX = Math.min(Math.max(0, x), maxX)
+  const clampedY = Math.min(Math.max(0, y), maxY)
+  return { x: clampedX, y: clampedY }
+}
 
 // 看板娘配置
 const pioConfig = ref<PosterGirlConfig>(getCurrentConfig())
@@ -296,6 +317,7 @@ const startDrag = (event: MouseEvent | TouchEvent) => {
   
   event.preventDefault()
   isDragging.value = true
+  updateContainerSize()
   
   const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX
   const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY
@@ -325,13 +347,14 @@ const handleDrag = (event: MouseEvent | TouchEvent) => {
   
   const newX = clientX - dragOffset.value.x
   const newY = clientY - dragOffset.value.y
+  const { x: clampedX, y: clampedY } = clampPosition(newX, newY)
   
   // 保存拖拽位置
   if (!pioConfig.value.dragPosition) {
     pioConfig.value.dragPosition = { x: 0, y: 0 }
   }
-  pioConfig.value.dragPosition.x = newX
-  pioConfig.value.dragPosition.y = newY
+  pioConfig.value.dragPosition.x = clampedX
+  pioConfig.value.dragPosition.y = clampedY
   
   // 拖拽过程中只更新内存，结束时统一保存
 }
@@ -549,6 +572,17 @@ onMounted(async () => {
   // 监听localStorage变化
   window.addEventListener('storage', handleSettingsChange)
   
+  // 监听窗口尺寸变化，保持看板娘在可视区域内
+  const onResize = () => {
+    updateContainerSize()
+    if (pioConfig.value.dragPosition) {
+      const { x, y } = clampPosition(pioConfig.value.dragPosition.x, pioConfig.value.dragPosition.y)
+      pioConfig.value.dragPosition.x = x
+      pioConfig.value.dragPosition.y = y
+    }
+  }
+  window.addEventListener('resize', onResize)
+  
   // 监听来自设置页面的消息
   window.addEventListener('message', handleMessage)
   window.addEventListener('posterGirl:updated', handleCustomConfigUpdated as EventListener)
@@ -572,6 +606,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('storage', handleSettingsChange)
+  window.removeEventListener('resize', () => {})
   window.removeEventListener('message', handleMessage)
   window.removeEventListener('posterGirl:updated', handleCustomConfigUpdated as EventListener)
   
@@ -590,6 +625,8 @@ onUnmounted(() => {
 .poster-girl-container {
   user-select: none;
   transition: transform 0.3s ease;
+  position: fixed; /* 固定在视口，不随页面内容滚动 */
+  inset: auto; /* 避免意外的定位继承 */
   
   &.dragging {
     transition: none;

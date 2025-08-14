@@ -284,7 +284,7 @@ interface PosterGirlConfig {
 
 ### 添加新模型
 
-1. 将模型文件放置在 `src\modules\poster-girl\assets\models` 目录下
+1. 将模型文件放置在 `/public/pio/models/` 目录下
 2. 在配置文件中添加模型路径
 3. 验证模型完整性
 

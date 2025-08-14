@@ -3,9 +3,10 @@
 
 @use 'variables' as *;
 
-// 🚀 性能优化的基础设置
-* {
-  // 启用硬件加速
+// 🚀 性能优化（按需开启，避免破坏定位上下文）
+// 注意：给任意祖先设置 transform/perspective 会改变 fixed 的包含块，导致 position: fixed 失效
+// 参考：position: fixed 失效原因与解决方案（见文末链接）
+.gpu-accelerated {
   transform: translateZ(0);
   backface-visibility: hidden;
   perspective: 1000px;
