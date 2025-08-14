@@ -209,10 +209,7 @@
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted, onUnmounted } from 'vue'
 import { MusicTeacherService } from '@/api/musicTeacherService'
-// @ts-ignore - 使用运行时渲染，无需类型
-import { marked } from 'marked'
-// @ts-ignore
-import hljs from 'highlight.js'
+import { renderMarkdown as renderMarkdownAsync, preloadMarkdownLibraries } from '@/utils/markdownLoader'
 
 type Role = 'user' | 'assistant' | 'system'
 interface ChatMessage { role: Role; content: string }
@@ -343,8 +340,22 @@ marked.setOptions({
   breaks: true
 })
 
-function renderMarkdown(md: string) {
-  try { return marked.parse(md || '') as string } catch { return md }
+// 使用懒加载的 markdown 渲染器
+const renderedContent = ref<Record<number, string>>({})
+
+async function renderMarkdown(md: string, index: number) {
+  if (renderedContent.value[index]) {
+    return renderedContent.value[index]
+  }
+  
+  try {
+    const html = await renderMarkdown(md || '')
+    renderedContent.value[index] = html
+    return html
+  } catch (error) {
+    console.error('Failed to render markdown:', error)
+    return md || ''
+  }
 }
 
 function scrollToBottom() {
