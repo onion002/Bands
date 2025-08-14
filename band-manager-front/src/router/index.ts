@@ -82,11 +82,12 @@ const routes = [
     props: true
   },
 
-  // AI乐队顾问（所有用户可用）
+  // AI乐队顾问（所有用户可用）- 使用预加载提示
   {
     path: '/music-teacher',
     name: 'MusicTeacher',
-    component: () => import('@/views/MusicTeacherView.vue')
+    component: () => import(/* webpackChunkName: "music-teacher" */ '@/views/MusicTeacherView.vue'),
+    meta: { preload: true } // 标记为可预加载
   },
 
   // 音乐盒演示页面（所有用户可用）
@@ -193,6 +194,20 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
+  next()
+})
+
+// 路由预加载优化
+router.beforeResolve((to, from, next) => {
+  // 预加载标记为可预加载的路由
+  if (to.meta.preload && to.matched.length > 0) {
+    const components = to.matched.map(record => record.components?.default)
+    components.forEach(component => {
+      if (typeof component === 'function') {
+        component()
+      }
+    })
+  }
   next()
 })
 
