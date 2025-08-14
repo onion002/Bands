@@ -85,8 +85,15 @@ const routes = [
   // 看板娘设置页面（所有用户可用）
   {
     path: '/poster-girl-settings',
-    name: 'PosterGirlSettings',
-    component: () => import('@/views/PosterGirlSettings.vue')
+    name: 'PosterGirlSettings', 
+    component: () => import('@/modules/poster-girl').then(module => ({ default: module.PosterGirlSettings }))
+  },
+
+  // 看板娘演示页面（开发/演示用）
+  {
+    path: '/poster-girl-demo',
+    name: 'PosterGirlDemo',
+    component: () => import('@/views/PosterGirlDemo.vue')
   },
 
   // 用户资料页面

@@ -20,12 +20,10 @@
 
 <script setup lang="ts">
 import NavHeader from '@/components/NavHeader.vue'
-
 import MusicBox from '@/components/MusicBox.vue'
-import PosterGirl from '@/components/PosterGirl.vue'
 import { ref } from 'vue'
 
-// 看板娘引用
+// 看板娘引用（现在使用全局组件，无需导入）
 const posterGirlRef = ref()
 </script>
 

@@ -32,10 +32,10 @@
         <div 
           v-if="pioConfig.model && pioConfig.model.length > 1"
           class="pio-skin pio-btn" 
-          title="🔄 切换模型"
+          title="🎲 随机切换模型"
           @click="switchModel"
         >
-          <i class="fas fa-user-cog"></i>
+          <i class="fas fa-random"></i>
         </div>
         
         <!-- 音乐老师按钮 -->
@@ -89,8 +89,9 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, computed, nextTick } from 'vue'
-import { getCurrentConfig, saveConfig, type PosterGirlConfig } from '@/config/posterGirl'
-import { live2dService } from '@/services/live2dService'
+import { getCurrentConfig, saveConfig, type PosterGirlConfig } from '@/modules/poster-girl/config/posterGirl'
+import { live2dService } from '@/modules/poster-girl/services/live2dService'
+import { modelManager } from '@/modules/poster-girl/services/modelManager'
 
 // 响应式数据
 const isHidden = ref(false)
@@ -141,16 +142,36 @@ const initLive2D = async () => {
       return
     }
 
+    console.log('🎭 开始初始化Live2D...')
+
     // 使用Live2D服务初始化
     const success = await live2dService.init(canvas)
     if (success) {
-      // 加载当前模型
-      const currentModel = pioConfig.value.model?.[0] || '/pio/models/pio/model.json'
-      await live2dService.loadModel(currentModel)
-      console.log('Live2D初始化成功')
+      // 初始化模型管理器
+      await modelManager.init()
+      
+      // 加载默认模型
+      const defaultModelPath = pioConfig.value.defaultModel
+      const loadSuccess = await modelManager.loadDefaultModel(defaultModelPath)
+      
+      if (loadSuccess) {
+        console.log('✅ Live2D初始化成功')
+        showMessage('看板娘加载成功！🎉')
+        
+        // 显示模型统计信息
+        const stats = modelManager.getModelStats()
+        console.log(`📊 模型统计: ${stats.available}/${stats.total} 个可用`)
+      } else {
+        console.error('❌ 模型加载失败')
+        showMessage('看板娘模型加载失败')
+      }
+    } else {
+      console.error('❌ Live2D服务初始化失败')
+      showMessage('Live2D初始化失败，请刷新页面重试')
     }
   } catch (error) {
-    console.error('Live2D初始化失败:', error)
+    console.error('Live2D初始化异常:', error)
+    showMessage('Live2D初始化出现异常')
   }
 }
 
@@ -178,47 +199,29 @@ const handleTouch = () => {
   showMessage(touchMessages)
 }
 
-// 切换模型
+// 切换模型 - 随机切换
 const switchModel = async () => {
-  if (!pioConfig.value.model || pioConfig.value.model.length <= 1) {
-    console.warn('没有可切换的模型')
-    showMessage("没有可切换的模型")
-    return
-  }
-
   try {
-    // 获取当前模型索引
-    const currentModel = live2dService.getCurrentModel()
-    let currentModelIndex = -1
+    console.log('🎲 开始随机切换模型...')
     
-    if (currentModel) {
-      currentModelIndex = pioConfig.value.model.findIndex(model => model === currentModel)
-    }
+    const result = await modelManager.switchToRandomModel()
     
-    // 计算下一个模型索引，如果找不到当前模型则从第一个开始
-    const nextModelIndex = currentModelIndex >= 0 
-      ? (currentModelIndex + 1) % pioConfig.value.model.length 
-      : 0
-    
-    const nextModel = pioConfig.value.model[nextModelIndex]
-    
-    if (!nextModel) {
-      throw new Error('下一个模型路径无效')
-    }
-    
-    console.log('切换模型:', nextModel)
-    
-    // 加载新模型
-    const success = await live2dService.loadModel(nextModel)
-    
-    if (success) {
-      const skinMessages = pioConfig.value.content?.skin || ["想看看我的新服装吗？", "新衣服真漂亮~"]
+    if (result.success) {
+      console.log(`✅ 随机切换成功: ${result.modelName}`)
+      
+      const skinMessages = pioConfig.value.content?.skin || [
+        `切换到了 ${result.modelName}！`,
+        "新的造型怎么样？",
+        "我换了个新形象~",
+        "随机变身完成！✨"
+      ]
       showMessage(skinMessages)
     } else {
+      console.warn('⚠️ 模型切换失败')
       showMessage("模型切换失败，请稍后再试")
     }
   } catch (error) {
-    console.error('模型切换失败:', error)
+    console.error('模型切换异常:', error)
     showMessage("模型切换出错")
   }
 }

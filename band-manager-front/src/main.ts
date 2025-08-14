@@ -12,11 +12,31 @@ import './assets/scss/components.scss'
 // 🚀 导入动画系统
 import { animationConfig, animationMonitor } from './utils/animationUtils'
 
+// 🎭 导入看板娘插件
+import { posterGirlPlugin } from '@/modules/poster-girl'
+
 const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
 app.use(router)
+
+// 🎭 注册看板娘插件
+app.use(posterGirlPlugin, {
+  // 自动注册全局组件
+  globalComponents: true,
+  // 自动初始化
+  autoInit: true,
+  // 默认配置
+  defaultConfig: {
+    mode: 'draggable',  // 支持拖拽
+    tips: true,         // 显示智能提示
+    size: {
+      width: 280,
+      height: 250
+    }
+  }
+})
 
 
 

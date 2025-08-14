@@ -1,13 +1,26 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
+import { copyModuleAssetsPlugin, POSTER_GIRL_ASSET_CONFIG } from './build/plugins/copy-module-assets'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const isDev = mode === 'development'
 
   return {
-    plugins: [vue()],
+    plugins: [
+      vue(),
+      // 📦 模块资源复制插件
+      copyModuleAssetsPlugin({
+        modules: [
+          POSTER_GIRL_ASSET_CONFIG,
+          // 未来可以轻松添加其他模块：
+          // MUSIC_BOX_ASSET_CONFIG,
+          // OTHER_MODULE_ASSET_CONFIG
+        ],
+        verbose: isDev // 开发模式显示详细日志
+      })
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src')

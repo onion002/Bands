@@ -32,6 +32,7 @@
         <template v-else>
           <router-link to="/public" class="nav-link">公开展示</router-link>
           <router-link to="/music-teacher" class="nav-link">音乐老师</router-link>
+          <router-link to="/poster-girl-demo" class="nav-link">🎭 看板娘</router-link>
           <router-link to="/auth/login" class="nav-link">登录</router-link>
           <router-link to="/auth/register" class="nav-link">注册</router-link>
         </template>

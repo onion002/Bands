@@ -115,13 +115,13 @@
 
         <!-- 模型设置 -->
         <div class="settings-section">
-          <h3>🎨 模型设置</h3>
+          <h3>🎨 默认模型设置</h3>
           
           <div class="form-group">
-            <label for="model">当前模型</label>
+            <label for="defaultModel">默认启动模型</label>
             <select 
-              id="model" 
-              v-model="settings.model[0]" 
+              id="defaultModel" 
+              v-model="settings.defaultModel" 
               class="form-control"
             >
               <option 
@@ -132,25 +132,32 @@
                 {{ model.name }}
               </option>
             </select>
-            <small class="form-help">选择要使用的看板娘模型</small>
+            <small class="form-help">选择看板娘启动时默认加载的模型</small>
           </div>
 
           <div class="model-preview">
-            <h4>可用模型</h4>
+            <h4>可用模型预览</h4>
             <div class="model-list">
               <div 
                 v-for="model in availableModels" 
                 :key="model.path"
                 class="model-item"
-                :class="{ active: model.path === settings.model[0] }"
-                @click="selectModel(model.path)"
+                :class="{ active: model.path === settings.defaultModel }"
+                @click="selectDefaultModel(model.path)"
               >
                 <img :src="model.preview" :alt="model.name" class="model-preview-img">
                 <div class="model-info">
                   <span class="model-name">{{ model.name }}</span>
-                  <span class="model-path">{{ model.path }}</span>
+                  <span class="model-description">{{ model.description }}</span>
                 </div>
               </div>
+            </div>
+            
+            <div class="switch-model-info">
+              <h5>💡 提示</h5>
+              <p>• <strong>默认模型</strong>：看板娘启动时加载的模型</p>
+              <p>• <strong>随机切换</strong>：点击看板娘的切换按钮可随机切换所有可用模型</p>
+              <p>• 共有 <strong>{{ availableModels.length }}</strong> 个模型可供切换</p>
             </div>
           </div>
         </div>
@@ -371,30 +378,14 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { getCurrentConfig, saveConfig, defaultPosterGirlConfig, type PosterGirlConfig } from '@/config/posterGirl'
+import { getCurrentConfig, saveConfig, defaultPosterGirlConfig, type PosterGirlConfig, AVAILABLE_MODELS } from '@/modules/poster-girl/config/posterGirl'
 
 // 响应式数据
 const showPreview = ref(false)
 const settings = reactive<PosterGirlConfig>(getCurrentConfig())
 
-// 可用模型列表
-const availableModels = ref([
-  {
-    name: '默认模型 (Pio)',
-    path: '/pio/models/pio/model.json',
-    preview: '/pio/static/avatar.jpg'
-  },
-  {
-    name: 'Remu 模型',
-    path: '/pio/models/remu/model.json',
-    preview: '/pio/static/avatar.jpg'
-  },
-  {
-    name: 'umaru 模型',
-    path: '/pio/models/umaru/model.json',
-    preview: '/pio/static/avatar.jpg'
-  }
-])
+// 可用模型列表（从全局配置导入）
+const availableModels = ref(AVAILABLE_MODELS)
 
 // 添加数组项
 const addArrayItem = (key: 'welcome' | 'touch') => {
@@ -463,9 +454,9 @@ const removeCustomTip = (index: number) => {
   }
 }
 
-// 选择模型
-const selectModel = (path: string) => {
-  settings.model[0] = path
+// 选择默认模型
+const selectDefaultModel = (path: string) => {
+  settings.defaultModel = path
 }
 
 // 预览尺寸
@@ -769,10 +760,37 @@ onMounted(() => {
         font-size: 0.95rem;
       }
       
-      .model-path {
+      .model-description {
         font-size: 0.8rem;
         color: #666;
-        font-family: monospace;
+        margin-top: 0.2rem;
+      }
+    }
+  }
+  
+  .switch-model-info {
+    margin-top: 1.2rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    
+    h5 {
+      margin: 0 0 0.8rem 0;
+      color: #667eea;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    
+    p {
+      margin: 0.4rem 0;
+      font-size: 0.9rem;
+      color: #555;
+      line-height: 1.5;
+      
+      strong {
+        color: #333;
+        font-weight: 600;
       }
     }
   }
