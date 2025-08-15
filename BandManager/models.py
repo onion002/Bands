@@ -337,6 +337,7 @@ class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     like_count = db.Column(db.Integer, nullable=False, default=0)
+    is_pinned = db.Column(db.Boolean, nullable=False, default=False)  # 是否置顶
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -354,6 +355,7 @@ class Comment(db.Model):
             'id': self.id,
             'content': self.content,
             'like_count': self.like_count,
+            'is_pinned': self.is_pinned,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'post_id': self.post_id,

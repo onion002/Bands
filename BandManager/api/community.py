@@ -4,12 +4,13 @@ from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.utils import secure_filename
 import os
 import uuid
+import logging
 from datetime import datetime
 
 from models import db, User, Post, Comment, Tag, Like, Report
 from auth_decorators import require_auth, require_admin, optional_auth, get_current_user, require_superadmin
 
-
+logger = logging.getLogger(__name__)
 community_bp = Blueprint('community', __name__)
 
 
@@ -137,7 +138,64 @@ def get_post(post_id: int):
     post = Post.query.get(post_id)
     if not post:
         return jsonify({'error': '帖子不存在'}), 404
-    return jsonify({'post': _serialize_post(post)})
+    return jsonify(_serialize_post(post))
+
+
+@community_bp.route('/posts/<int:post_id>', methods=['PUT'])
+@require_auth
+def update_post(post_id: int):
+    """更新帖子（仅作者可以操作）"""
+    try:
+        user = get_current_user()
+        post = Post.query.get(post_id)
+        if not post:
+            return jsonify({'error': '帖子不存在'}), 404
+        
+        # 只有帖子作者可以编辑
+        if post.author_id != user.id:
+            return jsonify({'error': '只能编辑自己的帖子'}), 403
+        
+        data = request.json or {}
+        content = (data.get('content') or '').strip()
+        
+        if not content:
+            return jsonify({'error': '帖子内容不能为空'}), 400
+        
+        # 更新帖子内容
+        post.content = content
+        post.updated_at = datetime.utcnow()
+        
+        # 处理标签
+        tags = data.get('tags') or []
+        tag_objs = []
+        for t in tags:
+            name = (t or '').strip()
+            if not name:
+                continue
+            tag_obj = Tag.query.filter_by(name=name).first()
+            if not tag_obj:
+                tag_obj = Tag(name=name)
+                db.session.add(tag_obj)
+            tag_objs.append(tag_obj)
+        post.tags = tag_objs
+        
+        # 处理链接URLs（如果提供的话）
+        if 'link_urls' in data:
+            post.set_link_urls(data.get('link_urls', []))
+        
+        # 处理图片URLs（如果提供的话）
+        if 'image_urls' in data:
+            post.set_image_urls(data.get('image_urls', []))
+        
+        db.session.commit()
+        return jsonify({
+            'message': '帖子更新成功',
+            'post': _serialize_post(post)
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"更新帖子失败: {str(e)}")
+        return jsonify({'error': '更新失败'}), 500
 
 
 @community_bp.route('/posts/<int:post_id>', methods=['DELETE'])
@@ -256,6 +314,151 @@ def like_comment(comment_id: int):
     except SQLAlchemyError:
         db.session.rollback()
         return jsonify({'error': '操作失败'}), 500
+
+
+@community_bp.route('/comments', methods=['GET'])
+@optional_auth
+def list_comments_general():
+    """通用评论列表API，支持分页和排序"""
+    try:
+        post_id = request.args.get('post_id', type=int)
+        page = int(request.args.get('page', 1))
+        page_size = min(int(request.args.get('page_size', 20)), 100)  # 限制最大20条
+        
+        if not post_id:
+            return jsonify({'error': '缺少post_id参数'}), 400
+            
+        post = Post.query.get(post_id)
+        if not post:
+            return jsonify({'error': '帖子不存在'}), 404
+        
+        # 按置顶状态优先，然后按点赞数降序，点赞数相同时按创建时间降序（最新的优先）
+        query = Comment.query.filter_by(post_id=post_id).order_by(
+            Comment.is_pinned.desc(),  # 置顶评论优先
+            Comment.like_count.desc(),
+            Comment.created_at.desc()
+        )
+        
+        pagination = query.paginate(page=page, per_page=page_size, error_out=False)
+        comments = [c.to_dict(include_author=True) for c in pagination.items]
+        
+        # 标记当前用户是否点赞
+        user = get_current_user()
+        if user and pagination.items:
+            comment_ids = [c.id for c in pagination.items]
+            liked = Like.query.filter(Like.user_id == user.id, Like.comment_id.in_(comment_ids)).all()
+            liked_ids = {l.comment_id for l in liked if l.comment_id}
+            for c in comments:
+                c['liked_by_me'] = c['id'] in liked_ids
+        
+        return jsonify({
+            'items': comments,
+            'total': pagination.total,
+            'page': pagination.page,
+            'pages': pagination.pages
+        })
+    except Exception as e:
+        logger.error(f"获取评论列表失败: {str(e)}")
+        return jsonify({'error': '获取评论失败'}), 500
+
+
+@community_bp.route('/comments', methods=['POST'])
+@require_auth
+def create_comment_general():
+    """通用创建评论API"""
+    try:
+        user = get_current_user()
+        data = request.json or {}
+        
+        post_id = data.get('post_id')
+        content = (data.get('content') or '').strip()
+        
+        if not post_id:
+            return jsonify({'error': '缺少post_id参数'}), 400
+        if not content:
+            return jsonify({'error': '评论内容不能为空'}), 400
+            
+        post = Post.query.get(post_id)
+        if not post:
+            return jsonify({'error': '帖子不存在'}), 404
+        
+        comment = Comment(
+            post_id=post_id,
+            author_id=user.id,
+            content=content
+        )
+        
+        db.session.add(comment)
+        post.comment_count = (post.comment_count or 0) + 1
+        db.session.commit()
+        
+        return jsonify({
+            'message': '评论成功',
+            'comment': comment.to_dict(include_author=True),
+            'comment_count': post.comment_count
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"创建评论失败: {str(e)}")
+        return jsonify({'error': '评论失败'}), 500
+
+
+@community_bp.route('/comments/<int:comment_id>/pin', methods=['PATCH'])
+@require_auth
+def pin_comment(comment_id: int):
+    """置顶/取消置顶评论（仅帖子作者可以操作）"""
+    try:
+        user = get_current_user()
+        comment = Comment.query.get(comment_id)
+        if not comment:
+            return jsonify({'error': '评论不存在'}), 404
+        
+        post = comment.post
+        if not post:
+            return jsonify({'error': '帖子不存在'}), 404
+        
+        # 只有帖子作者可以置顶评论
+        if post.author_id != user.id:
+            return jsonify({'error': '只有帖子作者可以置顶评论'}), 403
+        
+        # 切换置顶状态
+        comment.is_pinned = not comment.is_pinned
+        db.session.commit()
+        
+        return jsonify({
+            'message': '置顶成功' if comment.is_pinned else '取消置顶成功',
+            'is_pinned': comment.is_pinned
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"置顶评论失败: {str(e)}")
+        return jsonify({'error': '操作失败'}), 500
+
+
+@community_bp.route('/comments/<int:comment_id>', methods=['DELETE'])
+@require_auth
+def delete_comment(comment_id: int):
+    try:
+        user = get_current_user()
+        comment = Comment.query.get(comment_id)
+        if not comment:
+            return jsonify({'error': '评论不存在'}), 404
+        
+        # 允许用户删除自己的评论，或超级管理员删除任何评论
+        if comment.author_id != user.id and not user.is_superadmin():
+            return jsonify({'error': '无权限删除此评论'}), 403
+        
+        # 删除相关的点赞记录
+        Like.query.filter_by(comment_id=comment_id).delete()
+        # 删除相关的举报记录
+        Report.query.filter_by(target_id=comment_id, target_type='comment').delete()
+        # 删除评论
+        db.session.delete(comment)
+        db.session.commit()
+        return jsonify({'message': '删除成功'})
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({'error': '删除失败'}), 500
 
 
 @community_bp.route('/upload-image', methods=['POST'])

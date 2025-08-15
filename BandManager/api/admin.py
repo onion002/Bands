@@ -14,6 +14,13 @@ def list_users():
     keyword = (request.args.get('q') or '').strip()
     page = int(request.args.get('page', 1))
     page_size = int(request.args.get('page_size', 20))
+    
+    # 新增筛选参数
+    role_filter = request.args.get('role')  # user, admin, superadmin
+    status_filter = request.args.get('status')  # active, inactive
+    date_from = request.args.get('date_from')  # YYYY-MM-DD
+    date_to = request.args.get('date_to')  # YYYY-MM-DD
+    export_csv = request.args.get('export') == 'csv'
 
     query = User.query
     if keyword:
@@ -24,7 +31,70 @@ def list_users():
             User.email.like(like),
             User.display_name.like(like)
         ))
+    
+    # 角色筛选
+    if role_filter:
+        query = query.filter(User.user_type == role_filter)
+    
+    # 状态筛选
+    if status_filter == 'active':
+        query = query.filter(User.is_active == True)
+    elif status_filter == 'inactive':
+        query = query.filter(User.is_active == False)
+    
+    # 时间筛选
+    if date_from:
+        try:
+            from datetime import datetime
+            start_date = datetime.strptime(date_from, '%Y-%m-%d')
+            query = query.filter(User.created_at >= start_date)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            from datetime import datetime
+            end_date = datetime.strptime(date_to, '%Y-%m-%d')
+            # 包含整天，所以加1天
+            end_date = end_date.replace(hour=23, minute=59, second=59)
+            query = query.filter(User.created_at <= end_date)
+        except ValueError:
+            pass
+    
     query = query.order_by(User.created_at.desc())
+    
+    # CSV导出
+    if export_csv:
+        users = query.all()
+        import csv
+        import io
+        from flask import make_response
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # CSV标题行
+        writer.writerow(['ID', '用户名', '显示名', '邮箱', '用户类型', '状态', '注册时间', '最后登录'])
+        
+        for user in users:
+            writer.writerow([
+                user.id,
+                user.username,
+                user.display_name or '',
+                user.email,
+                {'user': '普通用户', 'admin': '管理员', 'superadmin': '超级管理员'}.get(user.user_type, user.user_type),
+                '激活' if user.is_active else '禁用',
+                user.created_at.strftime('%Y-%m-%d %H:%M:%S') if user.created_at else '',
+                user.last_login.strftime('%Y-%m-%d %H:%M:%S') if user.last_login else ''
+            ])
+        
+        output.seek(0)
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+        response.headers['Content-Disposition'] = 'attachment; filename="users_export.csv"'
+        return response
+    
+    # 正常分页返回
     pagination = query.paginate(page=page, per_page=page_size, error_out=False)
     users = [u.to_dict(include_sensitive=True) for u in pagination.items]
     return jsonify({'items': users, 'total': pagination.total, 'page': pagination.page, 'pages': pagination.pages})
@@ -124,8 +194,51 @@ def force_delete_post(post_id: int):
 @admin_bp.route('/reports', methods=['GET'])
 @require_superadmin
 def admin_list_reports():
-    reports = Report.query.order_by(Report.created_at.desc()).all()
-    return jsonify({'items': [r.to_dict() for r in reports], 'total': len(reports)})
+    page = int(request.args.get('page', 1))
+    page_size = int(request.args.get('page_size', 20))
+    status_filter = request.args.get('status')  # pending, resolved, dismissed
+    
+    query = Report.query
+    
+    # 状态筛选
+    if status_filter:
+        query = query.filter(Report.status == status_filter)
+    
+    query = query.order_by(Report.created_at.desc())
+    pagination = query.paginate(page=page, per_page=page_size, error_out=False)
+    
+    reports = []
+    for r in pagination.items:
+        report_dict = r.to_dict()
+        # 添加目标内容信息
+        if r.target_type == 'post':
+            post = Post.query.get(r.target_id)
+            if post:
+                report_dict['target_content'] = {
+                    'id': post.id,
+                    'author': post.author.username if post.author else 'Unknown',
+                    'content': post.content[:100] + '...' if len(post.content) > 100 else post.content,
+                    'created_at': post.created_at.isoformat() if post.created_at else None
+                }
+        elif r.target_type == 'comment':
+            from models import Comment
+            comment = Comment.query.get(r.target_id)
+            if comment:
+                report_dict['target_content'] = {
+                    'id': comment.id,
+                    'author': comment.author.username if comment.author else 'Unknown',
+                    'content': comment.content[:100] + '...' if len(comment.content) > 100 else comment.content,
+                    'post_id': comment.post_id,
+                    'created_at': comment.created_at.isoformat() if comment.created_at else None
+                }
+        reports.append(report_dict)
+    
+    return jsonify({
+        'items': reports,
+        'total': pagination.total,
+        'page': pagination.page,
+        'pages': pagination.pages
+    })
 
 
 @admin_bp.route('/reports/<int:report_id>', methods=['PATCH'])

@@ -73,6 +73,12 @@ const routes = [
     component: () => import('@/views/bands/CommunityView.vue'),
     // 社区对所有用户可浏览，发帖/评论在接口层做鉴权
   },
+  {
+    path: '/community/post/:id',
+    name: 'PostDetail',
+    component: () => import('@/views/bands/PostDetailView.vue'),
+    // 单帖详情页
+  },
 
   // 公开展示路由
   {

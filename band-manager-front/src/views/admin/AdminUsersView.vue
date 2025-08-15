@@ -12,8 +12,26 @@
           <button class="btn btn-outline" @click="fetchUsers(1)"><i class="fa fa-search"></i> 搜索</button>
         </div>
         <div class="right">
+          <button class="btn btn-outline" @click="exportCSV()"><i class="fa fa-download"></i> 导出CSV</button>
           <button class="btn btn-outline" @click="fetchUsers()"><i class="fa fa-sync"></i> 刷新</button>
         </div>
+      </div>
+      <!-- 筛选器 -->
+      <div class="filters">
+        <select v-model="roleFilter" @change="fetchUsers(1)">
+          <option value="">所有角色</option>
+          <option value="user">普通用户</option>
+          <option value="admin">管理员</option>
+          <option value="superadmin">超级管理员</option>
+        </select>
+        <select v-model="statusFilter" @change="fetchUsers(1)">
+          <option value="">所有状态</option>
+          <option value="active">激活</option>
+          <option value="inactive">禁用</option>
+        </select>
+        <input type="date" v-model="dateFrom" @change="fetchUsers(1)" placeholder="注册开始日期" />
+        <input type="date" v-model="dateTo" @change="fetchUsers(1)" placeholder="注册结束日期" />
+        <button class="btn btn-outline btn-sm" @click="clearFilters()">清除筛选</button>
       </div>
       <div class="bulk-bar">
         <label><input type="checkbox" :checked="allChecked" @change="toggleAll($event)" /> 全选</label>
@@ -81,14 +99,69 @@ const total = ref(0)
 const selectedIds = ref<number[]>([])
 const allChecked = computed(() => users.value.length>0 && selectedIds.value.length === users.value.length)
 
+// 筛选器
+const roleFilter = ref('')
+const statusFilter = ref('')
+const dateFrom = ref('')
+const dateTo = ref('')
+
 async function fetchUsers(targetPage?: number){
   if (targetPage) page.value = targetPage
-  const res = await api.get('/users', { params: { q: q.value, page: page.value, page_size: 20 } })
+  const params: any = { 
+    q: q.value, 
+    page: page.value, 
+    page_size: 20 
+  }
+  if (roleFilter.value) params.role = roleFilter.value
+  if (statusFilter.value) params.status = statusFilter.value
+  if (dateFrom.value) params.date_from = dateFrom.value
+  if (dateTo.value) params.date_to = dateTo.value
+  
+  const res = await api.get('/users', { params })
   users.value = res.items
   pages.value = res.pages
   total.value = res.total
   // 校正选择框
   selectedIds.value = selectedIds.value.filter(id => users.value.some(u => u.id === id))
+}
+
+async function exportCSV() {
+  const params: any = { export: 'csv' }
+  if (q.value) params.q = q.value
+  if (roleFilter.value) params.role = roleFilter.value
+  if (statusFilter.value) params.status = statusFilter.value
+  if (dateFrom.value) params.date_from = dateFrom.value
+  if (dateTo.value) params.date_to = dateTo.value
+  
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/admin/users`, {
+      params,
+      responseType: 'blob',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('auth_token')}`
+      }
+    })
+    
+    // 创建下载链接
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `users_export_${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    alert('导出失败')
+  }
+}
+
+function clearFilters() {
+  roleFilter.value = ''
+  statusFilter.value = ''
+  dateFrom.value = ''
+  dateTo.value = ''
+  fetchUsers(1)
 }
 
 async function saveUser(u: any){
@@ -140,6 +213,7 @@ function bulkDelete(){
 .table-card { background: rgba($darkgray,.6); border:1px solid rgba($primary,.2); border-radius:$border-radius-lg; padding:1rem; }
 .toolbar { display:flex; justify-content:space-between; align-items:center; gap:.75rem; margin-bottom:.75rem }
 .toolbar .left { display:flex; gap:.5rem; align-items:center }
+.filters { display:flex; gap:.5rem; align-items:center; margin-bottom:.75rem; flex-wrap:wrap; }
 .bulk-bar { display:flex; align-items:center; gap:.5rem; margin-bottom:.5rem; color:$gray-300 }
 table { width:100%; border-collapse: collapse; }
 th, td { padding:.5rem .75rem; border-bottom:1px solid rgba($primary,.2); }

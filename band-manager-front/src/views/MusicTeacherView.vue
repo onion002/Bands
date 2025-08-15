@@ -9,6 +9,10 @@
             <i class="fa fa-comments"></i>
             <span v-if="!sidebarCollapsed">会话列表</span>
           </div>
+          <div v-if="!sidebarCollapsed" class="user-info">
+            <span class="user-name">{{ displayName }}</span>
+            <span class="session-count">({{ sessions.length }}个会话)</span>
+          </div>
           <button class="collapse-btn" @click="toggleSidebar" :title="sidebarCollapsed ? '展开' : '收起'">
             <i :class="sidebarCollapsed ? 'fa fa-angles-right' : 'fa fa-angles-left'"></i>
           </button>
@@ -31,7 +35,10 @@
           <li v-for="s in visibleSessions" :key="s.id" :class="{ active: s.id === activeSessionId }">
             <button class="session-item" @click="selectSession(s.id)" :title="sidebarCollapsed ? (s.title || '未命名对话') : ''">
               <i class="fa fa-message"></i>
-              <span v-if="!sidebarCollapsed" class="text">{{ s.title || '未命名对话' }}</span>
+              <div v-if="!sidebarCollapsed" class="session-info">
+                <span class="text">{{ s.title || '未命名对话' }}</span>
+                <span class="time">{{ formatSessionTime(s.lastUpdated) }}</span>
+              </div>
             </button>
             <div v-if="!sidebarCollapsed" class="item-actions">
               <button class="icon-btn" @click.stop="renameSession(s.id)" title="重命名"><i class="fa fa-pen"></i></button>
@@ -72,40 +79,88 @@
               <button class="icon-btn" @click="errorMsg=''" title="关闭"><i class="fa fa-times"></i></button>
             </div>
             
-            <div ref="chatWindowRef" class="chat-window" @scroll="checkScrollPosition">
-              <div v-if="messages.length === 0 && !loading" class="welcome-screen">
-                <h1 class="hi">Hi, {{ displayName || 'Musician' }}</h1>
-
-              </div>
-
-              <div
-                v-for="(m, idx) in messages"
-                :key="idx"
-                class="msg"
-                :class="m.role"
-              >
-                <div class="avatar">
-                  <i :class="m.role === 'user' ? 'fa fa-user' : 'fa fa-music'"></i>
-                </div>
-                <div class="bubble">
-                  <div class="bubble-toolbar" v-if="m.role==='assistant'">
-                    <button class="icon-btn" title="复制"
-                            @click="copyText(m.content)"><i class="fa fa-copy"></i></button>
-                    <button class="icon-btn" title="导出对话"
-                            @click="exportConversation"><i class="fa fa-download"></i></button>
+            <!-- 聊天消息容器 -->
+            <div class="chat-messages-container">
+              <div ref="chatWindowRef" class="chat-window" @scroll="checkScrollPosition">
+                <div v-if="messages.length === 0 && !loading" class="welcome-screen">
+                  <div class="welcome-avatar">
+                    <i class="fa fa-music"></i>
                   </div>
-                  <div class="bubble-content" v-html="renderMarkdown(m.content)"></div>
+                  <h1 class="welcome-title">Hi, {{ displayName || 'Musician' }} 🎵</h1>
+                  <p class="welcome-subtitle">我是你的AI音乐顾问，专精于音乐理论、演奏技巧和创作指导</p>
+                  <div class="welcome-features">
+                    <div class="feature-item">
+                      <i class="fa fa-guitar"></i>
+                      <span>乐器演奏指导</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fa fa-music"></i>
+                      <span>音乐理论解析</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fa fa-users"></i>
+                      <span>乐队合作建议</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fa fa-lightbulb"></i>
+                      <span>创作灵感启发</span>
+                    </div>
+                  </div>
+                  <div class="welcome-prompt">
+                    <i class="fa fa-arrow-down bounce"></i>
+                    <span>从下方的建议问题开始，或直接输入你的音乐疑问</span>
+                  </div>
                 </div>
-              </div>
 
-              <div v-if="loading" class="msg assistant loading">
-                <div class="avatar"><i class="fa fa-music"></i></div>
-                <div class="bubble">
-                  <div class="loading-content">
-                    <i class="fa fa-spinner fa-spin"></i> 
-                    <span>正在思考…</span>
-                    <div class="loading-dots">
-                      <span></span><span></span><span></span>
+                <div
+                  v-for="(m, idx) in messages"
+                  :key="idx"
+                  class="msg"
+                  :class="m.role"
+                >
+                  <div class="avatar">
+                    <i :class="m.role === 'user' ? 'fa fa-user' : 'fa fa-music'"></i>
+                  </div>
+                  <div class="bubble">
+                    <div class="bubble-toolbar" v-if="m.role==='assistant'">
+                      <button class="icon-btn" title="复制"
+                              @click="copyText(m.content)"><i class="fa fa-copy"></i></button>
+                      <button class="icon-btn" title="重新生成"
+                              @click="regenerateResponse(idx)"><i class="fa fa-refresh"></i></button>
+                      <button class="icon-btn" title="导出对话"
+                              @click="exportConversation"><i class="fa fa-download"></i></button>
+                    </div>
+                    <div class="bubble-content" v-html="renderMarkdown(m.content)"></div>
+                    
+                    <!-- AI回答后的建议问题 -->
+                    <div v-if="m.role === 'assistant' && m.suggestions && m.suggestions.length > 0" class="follow-up-suggestions">
+                      <div class="suggestions-header">
+                        <i class="fa fa-lightbulb"></i>
+                        <span>相关问题</span>
+                      </div>
+                      <div class="suggestions-list">
+                        <button 
+                          v-for="suggestion in m.suggestions" 
+                          :key="suggestion"
+                          class="suggestion-chip"
+                          @click="useSuggestion(suggestion)"
+                        >
+                          {{ suggestion }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="loading" class="msg assistant loading">
+                  <div class="avatar"><i class="fa fa-music"></i></div>
+                  <div class="bubble">
+                    <div class="loading-content">
+                      <i class="fa fa-spinner fa-spin"></i> 
+                      <span>正在思考…</span>
+                      <div class="loading-dots">
+                        <span></span><span></span><span></span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -118,69 +173,85 @@
               <span>{{ toast.message }}</span>
             </div>
 
-            <!-- 作文区（底部工具条与发送按钮） -->
-            <div class="composer">
-                              <!-- 输入区域 -->
-                <div class="input-area">
+            <!-- 固定的输入区域 -->
+            <div class="composer-container">
+              <div class="composer">
+                <!-- 快速操作栏 -->
+                <div class="quick-actions-bar" v-if="messages.length > 0">
+                  <button class="quick-action-btn" @click="clearChat" title="清空对话">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                  <button class="quick-action-btn" @click="exportConversation" title="导出对话">
+                    <i class="fa fa-download"></i>
+                  </button>
+                  <button class="quick-action-btn" @click="toggleSettings" title="显示/隐藏设置">
+                    <i class="fa fa-cog"></i>
+                  </button>
+                </div>
                 
-                <textarea
-                  v-model="composer"
-                  class="composer-input form-control"
-                  placeholder="描述你的问题… Enter 发送 / Shift+Enter 换行 / Ctrl+Enter 快速发送"
-                  rows="3"
-                  @keydown.enter.exact.prevent="send"
-                  @keydown.shift.enter.stop
-                />
-                <!-- 字符计数提示 -->
-                <div class="char-counter" v-if="composer.length > 0">
-                  <span :class="{ 'warning': composer.length > 1000, 'danger': composer.length > 2000 }">
-                    {{ composer.length }} 字符
-                  </span>
+                <!-- 输入区域 -->
+                <div class="input-area">
+                  <textarea
+                    v-model="composer"
+                    class="composer-input form-control"
+                    :placeholder="inputPlaceholder"
+                    rows="3"
+                    @keydown.enter.exact.prevent="send"
+                    @keydown.shift.enter.stop
+                    @focus="onInputFocus"
+                    @blur="onInputBlur"
+                  />
+                  <!-- 字符计数提示 -->
+                  <div class="char-counter" v-if="composer.length > 0">
+                    <span :class="{ 'warning': composer.length > 1000, 'danger': composer.length > 2000 }">
+                      {{ composer.length }} 字符
+                    </span>
+                  </div>
                 </div>
-              </div>
-              
-              <div class="composer-actions">
-                <div class="knobs">
-                  <label>
-                    温度
-                    <input type="range" min="0" max="1" step="0.1" v-model.number="temperature" />
-                    <span class="value">{{ temperature.toFixed(1) }}</span>
-                  </label>
-                  <label>
-                    最大字数
-                    <input type="number" min="200" max="4000" step="100" v-model.number="maxTokens" class="max-tokens-input" />
-                  </label>
-                  <label>
-                    Top P
-                    <input type="range" min="0" max="1" step="0.1" v-model.number="topP" />
-                    <span class="value">{{ topP.toFixed(1) }}</span>
-                  </label>
-                  <!-- 模型选择 -->
-                  <label class="model-select-label">
-                    模型
-                    <select v-model="model" class="form-control model-select">
-                      <option v-for="option in modelOptions" :key="option.value" :value="option.value">
-                        {{ option.label }}
-                      </option>
-                    </select>
-                    <div class="model-description">{{ getCurrentModelDescription() }}</div>
-                  </label>
+                
+                <div class="composer-actions">
+                  <div class="knobs" :class="{ collapsed: !showSettings }">
+                    <label>
+                      温度
+                      <input type="range" min="0" max="1" step="0.1" v-model.number="temperature" />
+                      <span class="value">{{ temperature.toFixed(1) }}</span>
+                    </label>
+                    <label>
+                      最大字数
+                      <input type="number" min="200" max="4000" step="100" v-model.number="maxTokens" class="max-tokens-input" />
+                    </label>
+                    <label>
+                      Top P
+                      <input type="range" min="0" max="1" step="0.1" v-model.number="topP" />
+                      <span class="value">{{ topP.toFixed(1) }}</span>
+                    </label>
+                    <!-- 模型选择 -->
+                    <label class="model-select-label">
+                      模型
+                      <select v-model="model" class="form-control model-select">
+                        <option v-for="option in modelOptions" :key="option.value" :value="option.value">
+                          {{ option.label }}
+                        </option>
+                      </select>
+                      <div class="model-description">{{ getCurrentModelDescription() }}</div>
+                    </label>
+                  </div>
+                  <button v-if="!isStreaming" class="btn btn-primary send-btn" :disabled="loading || !composer.trim()" @click="send">
+                    <i :class="loading ? 'fa fa-spinner fa-spin' : 'fa fa-paper-plane'"></i>
+                    发送
+                  </button>
+                  <button v-else class="btn btn-danger send-btn" @click="stopGenerating">
+                    <i class="fa fa-stop"></i>
+                    停止
+                  </button>
                 </div>
-                <button v-if="!isStreaming" class="btn btn-primary" :disabled="loading || !composer.trim()" @click="send">
-                  <i :class="loading ? 'fa fa-spinner fa-spin' : 'fa fa-paper-plane'"></i>
-                  发送
-                </button>
-                <button v-else class="btn btn-danger" @click="stopGenerating">
-                  <i class="fa fa-stop"></i>
-                  停止
-                </button>
               </div>
             </div>
           </div>
         </section>
         
         <!-- 页脚 - AI生成提示 -->
-        <footer class="page-footer">
+        <footer class="page-footer" v-if="messages.length > 0">
           <div class="ai-disclaimer">
             <span class="non-selectable">内容由AI生成，仅供参考</span>
           </div>
@@ -215,7 +286,12 @@ import { marked } from 'marked'
 import hljs from 'highlight.js'
 
 type Role = 'user' | 'assistant' | 'system'
-interface ChatMessage { role: Role; content: string }
+interface ChatMessage { 
+  role: Role; 
+  content: string;
+  suggestions?: string[];
+  timestamp?: number;
+}
 
 const chatWindowRef = ref<HTMLDivElement | null>(null)
 const messages = ref<ChatMessage[]>([])
@@ -229,13 +305,23 @@ const topP = ref(0.9)
 
 
 // 侧边栏会话列表
-interface Session { id: string; title: string; messages: ChatMessage[]; pinned?: boolean }
+interface Session { 
+  id: string; 
+  title: string; 
+  messages: ChatMessage[]; 
+  pinned?: boolean;
+  lastUpdated?: number;
+  createdAt?: number;
+}
 const sessions = ref<Session[]>([])
 const activeSessionId = ref<string>('')
 const sidebarCollapsed = ref(false)
 
 // 移动端快速操作工具栏显示状态
 const showMobileQuickActions = ref(false)
+
+// 设置显示状态
+const showSettings = ref(true)
 
 // 模型选项配置
 const modelOptions = [
@@ -248,11 +334,17 @@ const suggestionChips = [
   '帮我制定一周吉他练习计划（进阶）',
   '我们要办校园演出，给出舞台流程与注意事项',
   '写一段电子/流行混合风格的主歌和弦走向',
+  '分析一下爵士乐和蓝调的区别',
+  '如何选择适合新手的第一把吉他？',
+  '请推荐一些适合练习指弹的经典曲目',
+  '乐队排练时如何协调各声部的音量平衡？'
 ]
 
-// 显示名（从本地用户信息或匿名）
+// 用户信息管理
 const storedUser = localStorage.getItem('user_info')
-const displayName = storedUser ? (JSON.parse(storedUser).display_name || JSON.parse(storedUser).username) : ''
+const currentUser = storedUser ? JSON.parse(storedUser) : null
+const userId = currentUser?.id || currentUser?.user_id || 'anonymous'
+const displayName = currentUser?.display_name || currentUser?.username || '匿名用户'
 
 // 获取当前模型描述
 function getCurrentModelDescription() {
@@ -327,9 +419,7 @@ const visibleSessions = computed(() => {
   return list.filter(s => (s.title || '').toLowerCase().includes(keyword))
 })
 
-function toHtml(text: string) {
-  return (text || '').replace(/\n/g, '<br/>')
-}
+
 
 // Markdown 渲染器
 marked.setOptions({
@@ -345,6 +435,65 @@ marked.setOptions({
 
 function renderMarkdown(md: string) {
   try { return marked.parse(md || '') as string } catch { return md }
+}
+
+function onInputFocus() {
+  inputFocused.value = true
+}
+
+function onInputBlur() {
+  inputFocused.value = false
+  placeholderIndex = (placeholderIndex + 1) % inputPlaceholders.length
+}
+
+function generateFollowUpSuggestions(originalQuestion: string, aiResponse: string): string[] {
+  const suggestions: string[] = []
+  const question = originalQuestion.toLowerCase()
+  const response = aiResponse.toLowerCase()
+  
+  if (question.includes('吉他') || response.includes('吉他')) {
+    suggestions.push('吉他的不同演奏技巧有哪些？', '如何选择吉他的音效器？')
+  }
+  if (question.includes('鼓') || response.includes('鼓')) {
+    suggestions.push('不同鼓点风格的特点是什么？', '如何设置鼓的录音？')
+  }
+  if (question.includes('乐队') || response.includes('乐队')) {
+    suggestions.push('乐队成员之间如何配合？', '乐队演出前需要准备什么？')
+  }
+  if (question.includes('练习') || response.includes('练习')) {
+    suggestions.push('制定有效的练习计划', '如何克服练习中的困难？')
+  }
+  if (question.includes('和弦') || response.includes('和弦')) {
+    suggestions.push('常用和弦进行有哪些？', '如何快速转换和弦？')
+  }
+  if (question.includes('节奏') || response.includes('节奏')) {
+    suggestions.push('复杂节奏的练习方法', '不同音乐风格的节奏特点')
+  }
+  
+  const generalSuggestions = [
+    '推荐一些音乐理论入门书籍',
+    '如何提高音乐听力？',
+    '音乐创作的灵感来源',
+    '现代音乐制作软件推荐'
+  ]
+  
+  if (suggestions.length === 0) {
+    const randomSuggestions = generalSuggestions.sort(() => 0.5 - Math.random()).slice(0, 2)
+    suggestions.push(...randomSuggestions)
+  }
+  
+  return suggestions.slice(0, 3)
+}
+
+function regenerateResponse(messageIndex: number) {
+  if (messageIndex <= 0 || messageIndex >= messages.value.length) return
+  
+  const userMessage = messages.value[messageIndex - 1]
+  if (userMessage.role !== 'user') return
+  
+  messages.value = messages.value.slice(0, messageIndex)
+  composer.value = userMessage.content
+  send()
 }
 
 function scrollToBottom() {
@@ -387,8 +536,16 @@ function showToast(message: string, type: 'success' | 'error' | 'info' = 'succes
 }
 
 function newChat() {
-  const id = `${Date.now()}`
-  const session: Session = { id, title: '新对话', messages: [], pinned: false as any }
+  const now = Date.now()
+  const id = `${now}`
+  const session: Session = { 
+    id, 
+    title: '新对话', 
+    messages: [], 
+    pinned: false,
+    createdAt: now,
+    lastUpdated: now
+  }
   sessions.value.unshift(session)
   activeSessionId.value = id
   messages.value = session.messages
@@ -430,6 +587,24 @@ const isStreaming = ref(false)
 const abortController = ref<AbortController | null>(null)
 const errorMsg = ref('')
 let lastMsgSnapshot = ''
+
+// 输入框状态
+const inputFocused = ref(false)
+const inputPlaceholders = [
+  '问我任何音乐相关的问题... 💭',
+  '比如：如何提升吉他演奏技巧？',
+  '例如：分析一下爵士乐的和声特点',
+  '试试：为我推荐适合新手的练习曲目',
+  '询问：如何组建一个乐队？'
+]
+let placeholderIndex = 0
+
+const inputPlaceholder = computed(() => {
+  if (inputFocused.value) {
+    return 'Enter 发送 / Shift+Enter 换行 / Ctrl+Enter 快速发送'
+  }
+  return inputPlaceholders[placeholderIndex] || inputPlaceholders[0]
+})
 async function send() {
   const content = composer.value.trim()
       if (!content) return
@@ -437,12 +612,18 @@ async function send() {
   
   // 构建消息内容
   let messageContent = content
+  const originalQuestion = content
   
-  messages.value.push({ role: 'user', content: messageContent })
+  messages.value.push({ role: 'user', content: messageContent, timestamp: Date.now() })
   
-  // 更新会话标题（首条消息时）
+  // 更新会话标题和时间戳（首条消息时）
   const session = sessions.value.find(s => s.id === activeSessionId.value)
-  if (session && session.title === '新对话') session.title = content.slice(0, 18) || '新对话'
+  if (session) {
+    if (session.title === '新对话') {
+      session.title = content.slice(0, 18) || '新对话'
+    }
+    session.lastUpdated = Date.now()
+  }
   
   // 清空输入
   composer.value = ''
@@ -451,7 +632,7 @@ async function send() {
   try {
     loading.value = true
     isStreaming.value = true
-    messages.value.push({ role: 'assistant', content: '' })
+    messages.value.push({ role: 'assistant', content: '', timestamp: Date.now() })
     const idx = messages.value.length - 1
     lastMsgSnapshot = content
     
@@ -469,13 +650,22 @@ async function send() {
         top_p: topP.value
       },
       (chunk) => { messages.value[idx].content += chunk; scrollToBottom() },
-      () => { isStreaming.value = false; abortController.value = null; errorMsg.value = '' },
+      () => { 
+        isStreaming.value = false; 
+        abortController.value = null; 
+        errorMsg.value = '';
+        
+        // 生成建议问题
+        const aiResponse = messages.value[idx].content
+        const suggestions = generateFollowUpSuggestions(originalQuestion, aiResponse)
+        messages.value[idx].suggestions = suggestions
+      },
       controller.signal
     )
   } catch (e: any) {
     const errorInfo = handleDeepSeekError(e)
     errorMsg.value = errorInfo.message
-    messages.value.push({ role: 'assistant', content: errorInfo.message })
+    messages.value.push({ role: 'assistant', content: errorInfo.message, timestamp: Date.now() })
     handleError(e, 'AI对话')
   } finally {
     loading.value = false
@@ -515,8 +705,15 @@ function selectSession(id: string) {
   activeSessionId.value = id
   const session = sessions.value.find(s => s.id === id)
   messages.value = session ? session.messages : []
+  
+  // 更新会话的最后访问时间
+  if (session) {
+    session.lastUpdated = Date.now()
+  }
+  
   const sessionTitle = session?.title || '未命名对话'
   showToast(`已切换到：${sessionTitle}`, 'info')
+  persist()
 }
 
 function deleteSession(id: string) {
@@ -538,6 +735,11 @@ function deleteSession(id: string) {
 }
 
 function toggleSidebar() { sidebarCollapsed.value = !sidebarCollapsed.value }
+
+function toggleSettings() { 
+  showSettings.value = !showSettings.value
+  showToast(showSettings.value ? '设置已显示' : '设置已隐藏', 'info')
+}
 
 
 
@@ -571,14 +773,86 @@ function togglePin(id: string) {
 }
 
 // 本地持久化
-const STORAGE_KEY = 'music_teacher_sessions_v1'
+// 动态生成存储键，支持用户切换
+const getStorageKey = () => `music_teacher_sessions_${userId}_v1`
+
+// 会话存储管理
+const MAX_SESSIONS_PER_USER = 50 // 每个用户最大会话数
+const MAX_STORAGE_SIZE = 10 * 1024 * 1024 // 最大存储大小 10MB
+
+// 清理过期和过多的会话
+function cleanupSessions() {
+  if (sessions.value.length > MAX_SESSIONS_PER_USER) {
+    // 按最后更新时间排序，保留最新的会话
+    sessions.value.sort((a, b) => (b.lastUpdated || 0) - (a.lastUpdated || 0))
+    sessions.value = sessions.value.slice(0, MAX_SESSIONS_PER_USER)
+    
+    // 如果当前活动会话被删除，选择第一个会话
+    if (!sessions.value.find(s => s.id === activeSessionId.value)) {
+      activeSessionId.value = sessions.value[0]?.id || ''
+      messages.value = sessions.value[0]?.messages || []
+    }
+  }
+}
+
+// 清理旧会话数据
+function cleanupOldSessions() {
+  // 删除30天前的会话
+  const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000)
+  sessions.value = sessions.value.filter(session => {
+    return (session.lastUpdated || 0) > thirtyDaysAgo
+  })
+  
+  // 如果所有会话都被清理，创建新会话
+  if (sessions.value.length === 0) {
+    newChat()
+  }
+}
+
+// 格式化会话时间
+function formatSessionTime(timestamp?: number): string {
+  if (!timestamp) return ''
+  
+  const now = Date.now()
+  const diff = now - timestamp
+  
+  if (diff < 60 * 1000) return '刚刚'
+  if (diff < 60 * 60 * 1000) return `${Math.floor(diff / (60 * 1000))}分钟前`
+  if (diff < 24 * 60 * 60 * 1000) return `${Math.floor(diff / (60 * 60 * 1000))}小时前`
+  if (diff < 7 * 24 * 60 * 60 * 1000) return `${Math.floor(diff / (24 * 60 * 60 * 1000))}天前`
+  
+  const date = new Date(timestamp)
+  return `${date.getMonth() + 1}/${date.getDate()}`
+}
+
 function persist() {
   try {
+    // 清理过期和过多的会话
+    cleanupSessions()
+    
     const data = {
       sessions: sessions.value,
-      activeId: activeSessionId.value
+      activeId: activeSessionId.value,
+      userId: userId,
+      lastUpdated: Date.now()
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    
+    // 检查存储空间
+    const dataString = JSON.stringify(data)
+    if (dataString.length > MAX_STORAGE_SIZE) {
+      console.warn('会话数据过大，清理旧数据')
+      cleanupOldSessions()
+      // 重新生成数据
+      const cleanedData = {
+        sessions: sessions.value,
+        activeId: activeSessionId.value,
+        userId: userId,
+        lastUpdated: Date.now()
+      }
+      localStorage.setItem(getStorageKey(), JSON.stringify(cleanedData))
+    } else {
+      localStorage.setItem(getStorageKey(), dataString)
+    }
   } catch (e) {
     console.error('保存会话失败:', e)
     showToast('保存会话失败', 'error')
@@ -587,10 +861,17 @@ function persist() {
 
 function restore() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(getStorageKey())
     if (!raw) return false
     const data = JSON.parse(raw)
     if (!data || !Array.isArray(data.sessions)) return false
+    
+    // 验证用户ID匹配
+    if (data.userId && data.userId !== userId) {
+      console.warn('用户ID不匹配，清除旧会话数据')
+      return false
+    }
+    
     sessions.value = data.sessions
     activeSessionId.value = data.activeId || (sessions.value[0]?.id || '')
     const session = sessions.value.find(s => s.id === activeSessionId.value)
@@ -604,9 +885,43 @@ if (!restore()) {
   newChat()
 }
 
+// 用户切换检测
+function checkUserChange() {
+  const newStoredUser = localStorage.getItem('user_info')
+  const newUser = newStoredUser ? JSON.parse(newStoredUser) : null
+  const newUserId = newUser?.id || newUser?.user_id || 'anonymous'
+  
+  if (newUserId !== userId) {
+    console.log('检测到用户切换，清理当前会话')
+    // 清理当前会话
+    sessions.value = []
+    activeSessionId.value = ''
+    messages.value = []
+    // 重新加载新用户的会话
+    if (newUserId !== 'anonymous') {
+      restore()
+    } else {
+      newChat()
+    }
+  }
+}
+
+// 监听localStorage变化，检测用户切换
+function setupUserChangeListener() {
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'user_info') {
+      checkUserChange()
+    }
+  })
+  
+  // 定期检查用户信息变化（处理同标签页内的变化）
+  setInterval(checkUserChange, 5000)
+}
+
 // 组件挂载时的设置
 onMounted(() => {
   setupMobileOptimizations()
+  setupUserChangeListener()
   window.addEventListener('resize', handleResize)
   
   // 设置焦点到主容器以启用键盘快捷键
@@ -785,12 +1100,96 @@ function handleError(error: any, context: string = '操作') {
   }
 }
 
+/* AI回答后的建议问题样式 */
+.follow-up-suggestions {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba($darkgray, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba($lightgray, 0.15);
+  
+  .suggestions-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: $gray-300;
+    font-size: 0.875rem;
+    font-weight: 500;
+    
+    i {
+      color: $warning;
+      font-size: 0.875rem;
+    }
+  }
+  
+  .suggestions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .suggestion-chip {
+    background: rgba($lightgray, 0.2);
+    border: 1px solid rgba($white, 0.1);
+    color: $gray-300;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all $transition-fast ease;
+    text-align: left;
+    font-size: 0.875rem;
+    
+    &:hover {
+      color: $white;
+      background: rgba($primary, 0.15);
+      border-color: rgba($primary, 0.4);
+      transform: translateX(4px);
+    }
+    
+    &:active {
+      transform: translateX(2px);
+    }
+  }
+}
+
 .shell { display: grid; grid-template-columns: 260px 1fr; gap: 0; height: 100%; }
 .shell.collapsed { grid-template-columns: 72px 1fr; }
 
 .sidebar { background: #101010; border-right: 1px solid #2a2a2a; height: 100%; position: sticky; top: 0; }
-.sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: .75rem .75rem; border-bottom: 1px solid #2a2a2a; 
-  .title { display: flex; align-items: center; gap: .5rem; color: $white; font-weight: 600; }
+.sidebar-header { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  padding: .75rem .75rem; 
+  border-bottom: 1px solid #2a2a2a; 
+  
+  .title { 
+    display: flex; 
+    align-items: center; 
+    gap: .5rem; 
+    color: $white; 
+    font-weight: 600; 
+  }
+  
+  .user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    
+    .user-name {
+      color: $primary;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    
+    .session-count {
+      color: $gray-400;
+      font-size: 0.75rem;
+    }
+  }
+  
   .collapse-btn { background: transparent; border: none; color: #bbb; cursor: pointer; }
   .mobile-toggle-btn { display: none; background: transparent; border: none; color: #bbb; cursor: pointer; padding: 0.25rem; }
 }
@@ -864,7 +1263,36 @@ function handleError(error: any, context: string = '操作') {
 }
 .session-list li { display: grid; grid-template-columns: 1fr auto; align-items: center; border-radius: 8px; }
 .session-list li.active { background: rgba(229,57,53,0.08); }
-.session-item { text-align: left; background: transparent; border: none; color: #ddd; padding: .5rem .5rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: .5rem; width: 100%; }
+.session-item { 
+  text-align: left; 
+  background: transparent; 
+  border: none; 
+  color: #ddd; 
+  padding: .5rem .5rem; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+  gap: .5rem; 
+  width: 100%; 
+  
+  .session-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1;
+    
+    .text {
+      color: #ddd;
+      font-weight: 500;
+    }
+    
+    .time {
+      color: $gray-400;
+      font-size: 0.75rem;
+    }
+  }
+}
 .item-actions { display: flex; gap: .25rem; padding-right: .25rem; }
 .icon-btn { background: transparent; border: none; color: #888; cursor: pointer; padding: .25rem .35rem; border-radius: 6px; transition: all $transition-fast ease; &:hover { color: $primary; background: rgba($primary, .08);} }
 
@@ -890,11 +1318,137 @@ function handleError(error: any, context: string = '操作') {
   }
 }
 
-.welcome-screen { display: grid; place-items: center; min-height: 360px; 
-  .hi { font-weight: 800; font-size: 2.2rem; letter-spacing: .3px; color: $white; }
-  :deep(pre code) { display: block; padding: 1rem; border-radius: 10px; background: #0f111a; border: 1px solid #222; }
+.welcome-screen { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; 
+  min-height: 400px; 
+  padding: 2rem 1rem;
+  text-align: center;
   
+  .welcome-avatar {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #ff6b9d 0%, #4ecdc4 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    animation: welcomePulse 2s ease-in-out infinite;
+    
+    i {
+      font-size: 2rem;
+      color: white;
+    }
+  }
+  
+  .welcome-title { 
+    font-weight: 700; 
+    font-size: 2.2rem; 
+    letter-spacing: .2px; 
+    color: $white; 
+    margin: 0 0 1rem 0;
+    background: linear-gradient(135deg, #ff6b9d 0%, #4ecdc4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .welcome-subtitle {
+    color: $gray-300;
+    font-size: 1.1rem;
+    margin: 0 0 2rem 0;
+    max-width: 500px;
+    line-height: 1.6;
+  }
+  
+  .welcome-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+    max-width: 600px;
+    width: 100%;
+    
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: rgba($lightgray, 0.1);
+      border-radius: 8px;
+      border: 1px solid rgba($lightgray, 0.2);
+      transition: all $transition-normal ease;
+      
+      i {
+        font-size: 1.25rem;
+        color: $primary;
+        width: 20px;
+        text-align: center;
+      }
+      
+      span {
+        color: $gray-300;
+        font-weight: 500;
+      }
+      
+      &:hover {
+        background: rgba($primary, 0.1);
+        border-color: rgba($primary, 0.3);
+        transform: translateY(-2px);
+      }
+    }
+  }
+  
+  .welcome-prompt {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: $gray-400;
+    font-size: 0.95rem;
+    
+    i {
+      color: $warning;
+      font-size: 1.1rem;
+    }
+  }
+  
+  :deep(pre code) { 
+    display: block; 
+    padding: 1rem; 
+    border-radius: 10px; 
+    background: #0f111a; 
+    border: 1px solid #222; 
+  }
+}
 
+@keyframes welcomePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 20px rgba(255, 107, 157, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(255, 107, 157, 0.5), 0 8px 25px rgba(78, 205, 196, 0.3);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+.bounce {
+  animation: bounce 2s infinite;
 }
 
 .content-box { 
@@ -903,7 +1457,6 @@ function handleError(error: any, context: string = '操作') {
   margin: 0 auto; 
   width: 100%; 
   height: 100%; 
-  overflow: visible;
   display: flex;
   flex-direction: column;
 }
@@ -912,36 +1465,74 @@ function handleError(error: any, context: string = '操作') {
   height: 100%; 
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
-.chat-card { padding: 0 0 1rem 0; height: 100%; display: flex; flex-direction: column; }
+.chat-card { 
+  padding: 0; 
+  height: 100%; 
+  display: flex; 
+  flex-direction: column; 
+  min-height: 0;
+}
+
+.chat-messages-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 100%;
+}
+
 .chat-window { 
-  padding: 0.75rem 0.75rem 1.5rem 0.75rem; 
-  flex: 1; 
+  flex: 1;
+  min-height: 0;
+  max-height: calc(100vh - 280px);
+  padding: 0.75rem; 
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+  height: 100%;
   
-  /* 自定义滚动条样式 */
+  /* 增强的滚动条样式 */
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 10px;
   }
   
   &::-webkit-scrollbar-track {
-    background: rgba($darkgray, 0.3);
-    border-radius: 4px;
+    background: rgba($darkgray, 0.4);
+    border-radius: 6px;
+    margin: 4px 0;
   }
   
   &::-webkit-scrollbar-thumb {
-    background: rgba($primary, 0.6);
-    border-radius: 4px;
+    background: linear-gradient(135deg, rgba($primary, 0.8) 0%, rgba($secondary, 0.8) 100%);
+    border-radius: 6px;
+    border: 1px solid rgba($white, 0.1);
     
     &:hover {
-      background: rgba($primary, 0.8);
+      background: linear-gradient(135deg, rgba($primary, 1) 0%, rgba($secondary, 1) 100%);
+      box-shadow: 0 2px 8px rgba($primary, 0.3);
     }
   }
   
   /* Firefox 滚动条 */
   scrollbar-width: thin;
-  scrollbar-color: rgba($primary, 0.6) rgba($darkgray, 0.3);
+  scrollbar-color: rgba($primary, 0.8) rgba($darkgray, 0.4);
+}
+
+.composer-container {
+  flex-shrink: 0;
+  border-top: 1px solid #2a2a2a;
+  background: rgba(255,255,255,.02);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  max-height: calc(100vh - 100px);
+  overflow: hidden;
 }
 
 /* 滚动锚点优化：用户向上滚动浏览时不强制跟随到底部 */
@@ -949,7 +1540,7 @@ function handleError(error: any, context: string = '操作') {
 
 /* 页脚样式 */
 .page-footer {
-  margin-top: auto;
+  flex-shrink: 0;
   border-top: 1px solid rgba($lightgray, 0.2);
   background: rgba($darkgray, 0.3);
   backdrop-filter: blur(8px);
@@ -1070,19 +1661,22 @@ function handleError(error: any, context: string = '操作') {
 .assistant .bubble { background: #121212; border-color: #2a2a2a; }
 .user .bubble { background: rgba($primary, .15); border-color: rgba($primary, .35); }
 
-.composer { border-top: 1px solid #2a2a2a; padding: .70rem .70rem 1rem .70rem; background: rgba(255,255,255,.02); flex-shrink: 0; }
+.composer { 
+  padding: 0.5rem 0.5rem 0.75rem 0.5rem; 
+  background: rgba(255,255,255,.02);
+}
 
 /* 输入区域样式 */
 .input-area {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .composer-input { 
   width: 100%; 
   resize: vertical; 
-  min-height: 100px; 
+  min-height: 60px; 
 }
 
 .char-counter {
@@ -1103,12 +1697,74 @@ function handleError(error: any, context: string = '操作') {
 
 
 
-.composer-actions { display: flex; align-items: center; gap: .75rem; margin-top: .5rem; }
+/* 快速操作栏 */
+.quick-actions-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.2rem;
+  padding: 0.1rem;
+  background: rgba($darkgray, 0.2);
+  border-radius: 6px;
+  border: 1px solid rgba($lightgray, 0.1);
+  
+  .quick-action-btn {
+    background: rgba($lightgray, 0.2);
+    border: 1px solid rgba($white, 0.1);
+    color: $gray-300;
+    padding: 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all $transition-fast ease;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+      color: $white;
+      background: rgba($primary, 0.15);
+      border-color: rgba($primary, 0.4);
+      transform: translateY(-1px);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+    
+    i {
+      font-size: 0.875rem;
+    }
+  }
+}
+
+.composer-actions { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.5rem; 
+  margin-top: 0.4rem; 
+  
+  .send-btn {
+    min-width: 80px;
+    height: 40px;
+  }
+}
 .knobs { 
   display: flex; 
   align-items: center; 
-  gap: 14px; 
+  gap: 10px; 
   color: $gray-400; 
+  max-height: 180px;
+  overflow: hidden;
+  transition: all $transition-normal ease;
+  opacity: 1;
+  
+  &.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+    padding: 0;
+  }
   
   label { 
     display: flex; 
@@ -1119,6 +1775,7 @@ function handleError(error: any, context: string = '操作') {
   /* 自定义滑动按钮样式 */
   input[type="range"] {
     -webkit-appearance: none;
+    -moz-appearance: none;
     appearance: none;
     width: 120px;
     height: 6px;
@@ -1131,6 +1788,7 @@ function handleError(error: any, context: string = '操作') {
     /* 滑块样式 */
     &::-webkit-slider-thumb {
       -webkit-appearance: none;
+      -moz-appearance: none;
       appearance: none;
       width: 18px;
       height: 18px;
@@ -1303,10 +1961,11 @@ function handleError(error: any, context: string = '操作') {
   
   &[type=number] {
     -moz-appearance: textfield;
+    appearance: textfield;
   }
 }
 
-/* 🌟 移动端响应式优化 */
+
 @media (max-width: 768px) {
   .teacher-management {
     height: calc(100vh - 4rem);
@@ -1344,7 +2003,6 @@ function handleError(error: any, context: string = '操作') {
   .content-box {
     padding: 1rem 1rem 0 1rem;
     height: 100%;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
   }
@@ -1352,7 +2010,6 @@ function handleError(error: any, context: string = '操作') {
   .conversation-panel {
     flex: 1;
     min-height: 0;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
   }
@@ -1365,17 +2022,48 @@ function handleError(error: any, context: string = '操作') {
     margin-bottom: 0;
   }
   
+  .chat-messages-container {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+  }
+  
   .chat-window {
     flex: 1;
     min-height: 0;
+    max-height: calc(100vh - 220px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding: 0.75rem 0.75rem 1rem 0.75rem;
+    height: 100%;
+    
+    /* 移动端滚动条优化 */
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: rgba($primary, 0.6);
+      border-radius: 3px;
+    }
+    
+    /* 确保移动端滚动正常工作 */
+    overflow-x: hidden;
+    word-wrap: break-word;
+  }
+  
+  .composer-container {
+    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+    max-height: calc(100vh - 80px);
+    overflow: hidden;
   }
   
   .composer {
-    flex-shrink: 0;
-    margin-top: auto;
+    margin-top: 0;
+    padding: 0.4rem 0.4rem 0.6rem 0.4rem;
   }
   
   .page-footer {
@@ -1405,7 +2093,7 @@ function handleError(error: any, context: string = '操作') {
   
   .session-list {
     max-height: 200px;
-    -webkit-overflow-scrolling: touch; /* iOS滚动优化 */
+    -webkit-overflow-scrolling: touch;
   }
   
   .msg {
@@ -1426,7 +2114,7 @@ function handleError(error: any, context: string = '操作') {
   
   .composer-input {
     min-height: 80px;
-    font-size: 16px; /* 防止iOS缩放 */
+    font-size: 16px;
   }
   
 
@@ -1443,7 +2131,17 @@ function handleError(error: any, context: string = '操作') {
   
   .chat-window {
     padding: 0.5rem 0.5rem 0.75rem 0.5rem;
-    -webkit-overflow-scrolling: touch; /* iOS滚动优化 */
+    max-height: calc(100vh - 180px);
+    -webkit-overflow-scrolling: touch;
+    
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: rgba($primary, 0.5);
+      border-radius: 2px;
+    }
   }
   
   .welcome-screen .hi {

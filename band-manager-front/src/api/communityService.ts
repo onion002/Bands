@@ -53,6 +53,7 @@ export interface CommunityComment {
   id: number
   content: string
   like_count: number
+  is_pinned: boolean
   created_at: string
   updated_at?: string
   post_id: number
@@ -66,12 +67,16 @@ export const CommunityService = {
     return communityApi.get('/posts', { params })
   },
 
-  async getPost(postId: number): Promise<{ post: CommunityPost }> {
+  async getPost(postId: number): Promise<CommunityPost> {
     return communityApi.get(`/posts/${postId}`)
   },
 
   async createPost(data: { title?: string; content: string; image_urls?: string[]; link_urls?: string[]; tags?: string[] }): Promise<{ message: string; post: CommunityPost }> {
     return communityApi.post('/posts', data)
+  },
+
+  async updatePost(postId: number, data: { content: string; tags?: string[]; link_urls?: string[]; image_urls?: string[] }): Promise<{ message: string; post: CommunityPost }> {
+    return communityApi.put(`/posts/${postId}`, data)
   },
 
   async deletePost(postId: number): Promise<{ message: string }> {
@@ -82,12 +87,20 @@ export const CommunityService = {
     return communityApi.post(`/posts/${postId}/like`)
   },
 
-  async listComments(postId: number): Promise<{ items: CommunityComment[]; total: number }> {
-    return communityApi.get(`/posts/${postId}/comments`)
+  async listComments(params: { post_id?: number; page?: number; page_size?: number } = {}): Promise<{ items: CommunityComment[]; total: number; page: number; pages: number }> {
+    return communityApi.get('/comments', { params })
   },
 
-  async createComment(postId: number, data: { content: string; parent_id?: number }): Promise<{ message: string; comment: CommunityComment; comment_count: number }> {
-    return communityApi.post(`/posts/${postId}/comments`, data)
+  async createComment(data: { post_id: number; content: string; parent_id?: number }): Promise<{ message: string; comment: CommunityComment; comment_count: number }> {
+    return communityApi.post('/comments', data)
+  },
+
+  async deleteComment(commentId: number): Promise<{ message: string }> {
+    return communityApi.delete(`/comments/${commentId}`)
+  },
+
+  async pinComment(commentId: number): Promise<{ message: string; is_pinned: boolean }> {
+    return communityApi.patch(`/comments/${commentId}/pin`)
   },
 
   async likeComment(commentId: number): Promise<{ message: string; action: 'liked' | 'unliked'; like_count: number }> {
@@ -100,7 +113,7 @@ export const CommunityService = {
     return communityApi.post('/upload-image', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
   },
 
-  async report(data: { target_type: 'post' | 'comment'; target_id: number; reason: string }): Promise<{ message: string }> {
+  async reportContent(data: { target_type: 'post' | 'comment'; target_id: number; reason: string }): Promise<{ message: string }> {
     return communityApi.post('/reports', data)
   },
 

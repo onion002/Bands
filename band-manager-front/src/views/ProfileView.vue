@@ -38,7 +38,10 @@
         
         <div class="avatar-info">
           <h3>{{ user?.username }}</h3>
-          <p>{{ user?.user_type === 'admin' ? '管理员' : '用户' }}</p>
+          <p>{{ 
+            user?.user_type === 'superadmin' ? '超级管理员' : 
+            user?.user_type === 'admin' ? '管理员' : '用户' 
+          }}</p>
           <p class="join-date">加入时间：{{ formatDate(user?.created_at) }}</p>
           
           <!-- 快捷跳转按钮 -->
@@ -60,6 +63,7 @@
               修改密码
             </button>
             <button 
+              v-if="user?.user_type === 'admin'"
               @click="scrollToSection('privacy-settings')" 
               class="quick-nav-btn"
               title="跳转到公开设置"
@@ -218,7 +222,7 @@
       </div>
 
       <!-- 公开设置 -->
-      <div id="privacy-settings" class="profile-section">
+      <div v-if="user?.user_type === 'admin'" id="privacy-settings" class="profile-section">
         <h2 class="section-title">
           <i class="fa fa-globe"></i>
           公开设置
