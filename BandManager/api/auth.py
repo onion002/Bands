@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
-from models import db, User, UserType
+from models import db, User, UserType, EmailVerification
 from sqlalchemy.exc import IntegrityError
+from services.email_service import EmailService
 import os
 import re
 import logging
@@ -11,6 +12,9 @@ auth_bp = Blueprint('auth', __name__)
 # 配置日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# 初始化邮件服务
+email_service = EmailService()
 
 def validate_email(email):
     """验证邮箱格式"""
@@ -33,9 +37,180 @@ def validate_developer_key(key):
     valid_keys = [k.strip() for k in valid_keys if k.strip()]
     return key in valid_keys
 
+@auth_bp.route('/send-verification-code', methods=['POST'])
+def send_verification_code():
+    """发送邮箱验证码"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': '请提供邮箱地址'}), 400
+        
+        email = data.get('email', '').strip()
+        verification_type = data.get('verification_type', 'register')
+        
+        # 验证邮箱格式
+        if not validate_email(email):
+            return jsonify({'error': '邮箱格式不正确'}), 400
+        
+        # 验证验证码类型
+        valid_types = ['register', 'login', 'reset_password']
+        if verification_type not in valid_types:
+            return jsonify({'error': '验证码类型无效'}), 400
+        
+        # 如果是注册验证，检查邮箱是否已被注册
+        if verification_type == 'register':
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user:
+                return jsonify({'error': '该邮箱已被注册'}), 409
+        
+        # 生成验证码
+        code = email_service.generate_verification_code()
+        
+        # 发送验证码邮件
+        if email_service.send_verification_email(email, code, verification_type):
+            return jsonify({
+                'message': '验证码发送成功',
+                'email': email,
+                'verification_type': verification_type
+            }), 200
+        else:
+            return jsonify({'error': '验证码发送失败，请稍后重试'}), 500
+            
+    except Exception as e:
+        logger.error(f"发送验证码失败: {str(e)}")
+        return jsonify({'error': '服务器内部错误'}), 500
+
+@auth_bp.route('/verify-email', methods=['POST'])
+def verify_email():
+    """验证邮箱验证码"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': '请提供验证信息'}), 400
+        
+        email = data.get('email', '').strip()
+        code = data.get('code', '').strip()
+        verification_type = data.get('verification_type', 'register')
+        
+        # 验证必填字段
+        if not email or not code:
+            return jsonify({'error': '邮箱和验证码不能为空'}), 400
+        
+        # 验证邮箱格式
+        if not validate_email(email):
+            return jsonify({'error': '邮箱格式不正确'}), 400
+        
+        # 验证验证码（不标记为已使用，因为这只是验证，不是最终使用）
+        is_valid, message = email_service.verify_code(email, code, verification_type, mark_used=False)
+        
+        if is_valid:
+            return jsonify({
+                'message': message,
+                'email': email,
+                'verification_type': verification_type
+            }), 200
+        else:
+            return jsonify({'error': message}), 400
+            
+    except Exception as e:
+        logger.error(f"验证邮箱失败: {str(e)}")
+        return jsonify({'error': '服务器内部错误'}), 500
+
+@auth_bp.route('/register-with-verification', methods=['POST'])
+def register_with_verification():
+    """使用邮箱验证码注册"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': '请提供注册信息'}), 400
+        
+        # 获取注册信息
+        username = data.get('username', '').strip()
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
+        verification_code = data.get('verification_code', '').strip()
+        user_type = data.get('user_type', 'user')
+        display_name = data.get('display_name', '').strip()
+        developer_key = data.get('developer_key', '').strip()
+        
+        # 验证必填字段
+        if not username or not email or not password or not verification_code:
+            return jsonify({'error': '用户名、邮箱、密码和验证码不能为空'}), 400
+        
+        # 验证用户名格式
+        if not re.match(r'^[a-zA-Z0-9_]{3,20}$', username):
+            return jsonify({'error': '用户名只能包含字母、数字和下划线，长度3-20位'}), 400
+        
+        # 验证邮箱格式
+        if not validate_email(email):
+            return jsonify({'error': '邮箱格式不正确'}), 400
+        
+        # 验证密码强度
+        is_valid, error_msg = validate_password(password)
+        if not is_valid:
+            return jsonify({'error': error_msg}), 400
+        
+        # 验证用户类型
+        if user_type not in ['user', 'admin']:
+            return jsonify({'error': '用户类型无效'}), 400
+        
+        # 如果是管理员注册，验证开发者密钥
+        if user_type == 'admin':
+            if not developer_key:
+                return jsonify({'error': '管理员注册需要提供开发者密钥'}), 400
+            if not validate_developer_key(developer_key):
+                return jsonify({'error': '开发者密钥无效'}), 403
+        
+        # 验证邮箱验证码（标记为已使用，因为这是最终使用）
+        is_valid, message = email_service.verify_code(email, verification_code, 'register', mark_used=True)
+        if not is_valid:
+            return jsonify({'error': message}), 400
+        
+        # 检查用户名和邮箱是否已存在
+        existing_user = User.query.filter(
+            (User.username == username) | (User.email == email)
+        ).first()
+        
+        if existing_user:
+            if existing_user.username == username:
+                return jsonify({'error': '用户名已存在'}), 409
+            else:
+                return jsonify({'error': '邮箱已被注册'}), 409
+        
+        # 创建新用户
+        new_user = User(
+            username=username,
+            email=email,
+            user_type=UserType.ADMIN if user_type == 'admin' else UserType.USER,
+            display_name=display_name or username
+        )
+        new_user.set_password(password)
+        
+        db.session.add(new_user)
+        db.session.commit()
+        
+        # 生成JWT token
+        token = new_user.generate_token()
+        
+        logger.info(f"用户注册成功: {username} ({email})")
+        
+        return jsonify({
+            'message': '注册成功',
+            'user': new_user.to_dict(),
+            'token': token
+        }), 201
+        
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({'error': '用户名或邮箱已存在'}), 409
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"用户注册失败: {str(e)}")
+        return jsonify({'error': '服务器内部错误'}), 500
+
 @auth_bp.route('/register', methods=['POST'])
 def register():
-    """用户注册"""
+    """用户注册（原有接口，保持向后兼容）"""
     try:
         data = request.get_json()
         if not data:
@@ -100,10 +275,10 @@ def register():
         db.session.add(new_user)
         db.session.commit()
         
-        logger.info(f"新用户注册成功: {username} ({user_type})")
-        
-        # 生成token
+        # 生成JWT token
         token = new_user.generate_token()
+        
+        logger.info(f"新用户注册成功: {username} ({user_type})")
         
         return jsonify({
             'message': '注册成功',

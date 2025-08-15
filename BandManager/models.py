@@ -10,6 +10,32 @@ import json
 
 db = SQLAlchemy()
 
+class EmailVerification(db.Model):
+    """邮箱验证码模型"""
+    __tablename__ = 'email_verifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(100), nullable=False, index=True)
+    code = db.Column(db.String(10), nullable=False)
+    verification_type = db.Column(db.String(20), nullable=False, default='register')  # register, login, reset_password
+    is_used = db.Column(db.Boolean, nullable=False, default=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    
+    def is_expired(self):
+        """检查验证码是否过期"""
+        return datetime.utcnow() > self.expires_at
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'email': self.email,
+            'verification_type': self.verification_type,
+            'is_used': self.is_used,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
 class Band(db.Model):
     __tablename__ = 'bands'
     id = db.Column(db.Integer, primary_key=True)

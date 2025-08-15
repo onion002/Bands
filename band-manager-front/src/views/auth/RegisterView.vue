@@ -110,6 +110,14 @@
             </div>
           </div>
 
+          <!-- 邮箱验证组件 -->
+          <EmailVerification 
+            ref="emailVerificationRef"
+            :initial-email="registerForm.email"
+            @email-verified="handleEmailVerified"
+            @email-changed="handleEmailChanged"
+          />
+
           <!-- 显示名称输入 -->
           <div class="form-group">
             <label for="display_name">显示名称</label>
@@ -204,8 +212,9 @@
             :disabled="loading || !isFormValid"
           >
             <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+            <i v-else-if="!emailVerified" class="fas fa-envelope"></i>
             <i v-else class="fas fa-user-plus"></i>
-            {{ loading ? '注册中...' : '注册账户' }}
+            {{ loading ? '注册中...' : emailVerified ? '注册账户' : '请先验证邮箱' }}
           </button>
         </form>
 
@@ -227,7 +236,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import type { RegisterData, UserType } from '@/api/authService'
+import type { RegisterData, UserType, RegisterWithVerificationData } from '@/api/authService'
+import EmailVerification from '@/components/EmailVerification.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -249,14 +259,20 @@ const showConfirmPassword = ref(false)
 const loading = ref(false)
 const error = ref('')
 
+// 邮箱验证状态
+const emailVerified = ref(false)
+const verificationCode = ref('')
+const emailVerificationRef = ref<InstanceType<typeof EmailVerification> | null>(null)
+
 // 表单验证
 const isFormValid = computed(() => {
   const form = registerForm.value
   const basic = form.username && form.email && form.password && confirmPassword.value
   const passwordMatch = form.password === confirmPassword.value
   const adminKey = form.user_type === 'admin' ? form.developer_key : true
+  const emailVerification = emailVerified.value
   
-  return basic && passwordMatch && adminKey
+  return basic && passwordMatch && adminKey && emailVerification
 })
 
 // 处理注册
@@ -288,7 +304,19 @@ const handleRegister = async () => {
       return
     }
     
-    await authStore.register(registerForm.value)
+    // 检查邮箱是否已验证
+    if (!emailVerified.value) {
+      error.value = '请先完成邮箱验证'
+      return
+    }
+    
+    // 使用邮箱验证注册
+    const registerData: RegisterWithVerificationData = {
+      ...registerForm.value,
+      verification_code: verificationCode.value
+    }
+    
+    await authStore.registerWithVerification(registerData)
     
     // 注册成功，跳转到相应页面
     if (authStore.isAdmin) {
@@ -301,6 +329,21 @@ const handleRegister = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 邮箱验证相关方法
+const handleEmailVerified = (email: string, code: string) => {
+  emailVerified.value = true
+  verificationCode.value = code
+  registerForm.value.email = email
+  error.value = ''
+}
+
+const handleEmailChanged = (email: string) => {
+  registerForm.value.email = email
+  emailVerified.value = false
+  verificationCode.value = ''
+  error.value = ''
 }
 
 // 清除错误信息

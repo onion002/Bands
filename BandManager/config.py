@@ -12,6 +12,22 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key-change-in-production'
     WTF_CSRF_ENABLED = True
 
+    # ====== 邮件配置 ======
+    MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.qq.com'
+    MAIL_PORT = int(os.environ.get('MAIL_PORT') or 587)
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
+    MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'false').lower() in ['true', 'on', '1']
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or 'your-email@qq.com'
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or 'your-email-password'
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or 'your-email@qq.com'
+    
+    # ====== Redis配置 ======
+    REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
+    
+    # ====== 验证码配置 ======
+    VERIFICATION_CODE_EXPIRE = int(os.environ.get('VERIFICATION_CODE_EXPIRE') or 300)  # 5分钟过期
+    VERIFICATION_CODE_LENGTH = int(os.environ.get('VERIFICATION_CODE_LENGTH') or 6)  # 6位验证码
+
     # ====== 上传配置 ======
     UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}

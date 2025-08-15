@@ -83,16 +83,21 @@ def init_extensions(app):
     # 确保配置已设置
     if not app.config.get('SQLALCHEMY_DATABASE_URI'):
         # 如果还没有设置，使用默认值
-        app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite:///band_db.sqlite')
+        app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite:///sqlite:///band_db.sqlite')
     
     from models import db
     from flask_migrate import Migrate
+    from services.email_service import EmailService
     
     # 初始化数据库
     db.init_app(app)
     
     # 初始化迁移扩展
     Migrate(app, db)
+    
+    # 初始化邮件服务
+    email_service = EmailService()
+    email_service.init_app(app)
     
     # 创建数据库表（如果不存在）只在主进程执行
     if not is_reloader_process():

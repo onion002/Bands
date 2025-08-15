@@ -30,6 +30,17 @@ export interface RegisterData {
   developer_key?: string
 }
 
+// 邮箱验证注册数据接口
+export interface RegisterWithVerificationData {
+  username: string
+  email: string
+  password: string
+  verification_code: string
+  user_type: UserType
+  display_name?: string
+  developer_key?: string
+}
+
 // 登录数据接口
 export interface LoginData {
   login: string // 用户名或邮箱
@@ -48,6 +59,20 @@ export interface VerifyResponse {
   valid: boolean
   user?: User
   error?: string
+}
+
+// 邮箱验证码响应接口
+export interface EmailVerificationResponse {
+  message: string
+  email: string
+  verification_type: string
+}
+
+// 邮箱验证响应接口
+export interface VerifyEmailResponse {
+  message: string
+  email: string
+  verification_type: string
 }
 
 // 创建axios实例
@@ -90,7 +115,22 @@ authApi.interceptors.response.use(
 )
 
 export const AuthService = {
-  // 用户注册
+  // 发送邮箱验证码
+  async sendVerificationCode(email: string, verification_type: string = 'register'): Promise<EmailVerificationResponse> {
+    return authApi.post('/send-verification-code', { email, verification_type })
+  },
+
+  // 验证邮箱验证码
+  async verifyEmail(email: string, code: string, verification_type: string = 'register'): Promise<VerifyEmailResponse> {
+    return authApi.post('/verify-email', { email, code, verification_type })
+  },
+
+  // 使用验证码注册
+  async registerWithVerification(data: RegisterWithVerificationData): Promise<AuthResponse> {
+    return authApi.post('/register-with-verification', data)
+  },
+
+  // 用户注册（原有接口，保持向后兼容）
   async register(data: RegisterData): Promise<AuthResponse> {
     return authApi.post('/register', data)
   },

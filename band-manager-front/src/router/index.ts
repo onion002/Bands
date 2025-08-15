@@ -95,6 +95,13 @@ const routes = [
     component: () => import('@/views/MusicTeacherView.vue')
   },
 
+  // 邮箱验证演示页面（所有用户可用）
+  {
+    path: '/email-verification-demo',
+    name: 'EmailVerificationDemo',
+    component: () => import('@/views/EmailVerificationDemo.vue')
+  },
+
   // 音乐盒演示页面（所有用户可用）
   {
     path: '/music-box-demo',

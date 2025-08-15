@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { AuthService, type User, type LoginData, type RegisterData } from '@/api/authService'
+import { AuthService, type User, type LoginData, type RegisterData, type RegisterWithVerificationData } from '@/api/authService'
 import { useMusicBoxStore } from './musicBoxStore'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -64,6 +64,32 @@ export const useAuthStore = defineStore('auth', () => {
       error.value = ''
       
       const response = await AuthService.register(registerData)
+      
+      // 注册成功后自动登录
+      token.value = response.token
+      user.value = response.user
+      AuthService.saveAuthInfo(response.token, response.user)
+      
+      // 初始化音乐盒用户数据
+      const musicBoxStore = useMusicBoxStore()
+      musicBoxStore.setUser(response.user.username)
+      
+      return response
+    } catch (err: any) {
+      error.value = err.error || '注册失败'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 邮箱验证注册
+  const registerWithVerification = async (registerData: RegisterWithVerificationData) => {
+    try {
+      loading.value = true
+      error.value = ''
+      
+      const response = await AuthService.registerWithVerification(registerData)
       
       // 注册成功后自动登录
       token.value = response.token
@@ -244,6 +270,7 @@ export const useAuthStore = defineStore('auth', () => {
     initAuth,
     login,
     register,
+    registerWithVerification,
     logout,
     fetchProfile,
     updateProfile,
