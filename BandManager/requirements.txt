@@ -22,3 +22,4 @@ Werkzeug @ file:///C:/b/abs_c7bupijx2_/croot/werkzeug_173744872/work
 wheel==45.1
 PyJWT==2.8.0
 redis==5.0.1
+schedule==1.2.0

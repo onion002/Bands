@@ -1,0 +1,122 @@
+2025-08-16 16:35:37,846 - sqlalchemy.engine.Engine - INFO - SELECT DATABASE()
+2025-08-16 16:35:37,846 - sqlalchemy.engine.Engine - INFO - [raw sql] {}
+2025-08-16 16:35:37,847 - sqlalchemy.engine.Engine - INFO - SELECT @@sql_mode
+2025-08-16 16:35:37,847 - sqlalchemy.engine.Engine - INFO - [raw sql] {}
+2025-08-16 16:35:37,847 - sqlalchemy.engine.Engine - INFO - SELECT @@lower_case_table_names
+2025-08-16 16:35:37,847 - sqlalchemy.engine.Engine - INFO - [raw sql] {}
+2025-08-16 16:35:37,848 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-08-16 16:35:37,848 - sqlalchemy.engine.Engine - INFO - DESCRIBE `band_db`.`email_verifications`
+2025-08-16 16:35:37,848 - sqlalchemy.engine.Engine - INFO - [raw sql] {}
+2025-08-16 16:35:37,850 - sqlalchemy.engine.Engine - INFO - DESCRIBE `band_db`.`bands`
+2025-08-16 16:35:37,850 - sqlalchemy.engine.Engine - INFO - [raw sql] {}
+2025-08-16 16:35:37,852 - sqlalchemy.engine.Engine - INFO - DESCRIBE `band_db`.`members`
+2025-08-16 16:35:37,852 - sqlalchemy.engine.Engine - INFO - [raw sql] {}
+2025-08-16 16:35:37,853 - sqlalchemy.engine.Engine - INFO - DESCRIBE `band_db`.`event_bands`
+2025-08-16 16:35:37,853 - sqlalchemy.engine.Engine - INFO - [raw sql] {}
+2025-08-16 16:35:37,854 - sqlalchemy.engine.Engine - INFO - DESCRIBE `band_db`.`events`
+2025-08-16 16:35:37,854 - sqlalchemy.engine.Engine - INFO - [raw sql] {}
+2025-08-16 16:35:37,855 - sqlalchemy.engine.Engine - INFO - DESCRIBE `band_db`.`users`
+2025-08-16 16:35:37,855 - sqlalchemy.engine.Engine - INFO - [raw sql] {}
+2025-08-16 16:35:37,856 - sqlalchemy.engine.Engine - INFO - DESCRIBE `band_db`.`post_tags`
+2025-08-16 16:35:37,856 - sqlalchemy.engine.Engine - INFO - [raw sql] {}
+2025-08-16 16:35:37,857 - sqlalchemy.engine.Engine - INFO - DESCRIBE `band_db`.`tags`
+2025-08-16 16:35:37,857 - sqlalchemy.engine.Engine - INFO - [raw sql] {}
+2025-08-16 16:35:37,858 - sqlalchemy.engine.Engine - INFO - DESCRIBE `band_db`.`posts`
+2025-08-16 16:35:37,858 - sqlalchemy.engine.Engine - INFO - [raw sql] {}
+2025-08-16 16:35:37,859 - sqlalchemy.engine.Engine - INFO - DESCRIBE `band_db`.`comments`
+2025-08-16 16:35:37,860 - sqlalchemy.engine.Engine - INFO - [raw sql] {}
+2025-08-16 16:35:37,861 - sqlalchemy.engine.Engine - INFO - DESCRIBE `band_db`.`likes`
+2025-08-16 16:35:37,861 - sqlalchemy.engine.Engine - INFO - [raw sql] {}
+2025-08-16 16:35:37,862 - sqlalchemy.engine.Engine - INFO - DESCRIBE `band_db`.`reports`
+2025-08-16 16:35:37,863 - sqlalchemy.engine.Engine - INFO - [raw sql] {}
+2025-08-16 16:35:37,864 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-08-16 16:35:37,885 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-08-16 16:35:37,887 - sqlalchemy.engine.Engine - INFO - SELECT users.id AS users_id, users.username AS users_username, users.email AS users_email, users.password_hash AS users_password_hash, users.user_type AS users_user_type, users.display_name AS users_display_name, users.avatar_url AS users_avatar_url, users.is_active AS users_is_active, users.bands_public AS users_bands_public, users.members_public AS users_members_public, users.events_public AS users_events_public, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.user_type = %(user_type_1)s 
+ LIMIT %(param_1)s
+2025-08-16 16:35:37,888 - sqlalchemy.engine.Engine - INFO - [generated in 0.00092s] {'user_type_1': 'superadmin', 'param_1': 1}
+2025-08-16 16:35:37,889 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2025-08-16 16:35:38,422 - __main__ - INFO - 🚀 启动数据清理服务...
+2025-08-16 16:35:41,460 - __main__ - INFO - 开始运行完整清理任务...
+2025-08-16 16:35:41,461 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-08-16 16:35:41,462 - sqlalchemy.engine.Engine - INFO - SELECT email_verifications.id AS email_verifications_id, email_verifications.email AS email_verifications_email, email_verifications.code AS email_verifications_code, email_verifications.verification_type AS email_verifications_verification_type, email_verifications.is_used AS email_verifications_is_used, email_verifications.expires_at AS email_verifications_expires_at, email_verifications.created_at AS email_verifications_created_at 
+FROM email_verifications 
+WHERE email_verifications.expires_at < %(expires_at_1)s
+2025-08-16 16:35:41,463 - sqlalchemy.engine.Engine - INFO - [generated in 0.00075s] {'expires_at_1': datetime.datetime(2025, 8, 16, 8, 35, 41, 461937)}
+2025-08-16 16:35:41,464 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-08-16 16:35:41,464 - __main__ - INFO - 清理过期邮箱验证码完成，共删除 0 条记录
+2025-08-16 16:35:41,465 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-08-16 16:35:41,466 - sqlalchemy.engine.Engine - INFO - SELECT reports.id AS reports_id, reports.reporter_id AS reports_reporter_id, reports.target_type AS reports_target_type, reports.target_id AS reports_target_id, reports.reason AS reports_reason, reports.status AS reports_status, reports.created_at AS reports_created_at 
+FROM reports 
+WHERE reports.status IN (%(status_1_1)s, %(status_1_2)s) AND reports.created_at < %(created_at_1)s
+2025-08-16 16:35:41,467 - sqlalchemy.engine.Engine - INFO - [generated in 0.00093s] {'created_at_1': datetime.datetime(2025, 7, 17, 8, 35, 41, 465938), 'status_1_1': 'resolved', 'status_1_2': 'dismissed'}
+2025-08-16 16:35:41,469 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-08-16 16:35:41,470 - __main__ - INFO - 清理旧举报记录完成，共删除 0 条记录
+2025-08-16 16:35:41,470 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-08-16 16:35:41,471 - sqlalchemy.engine.Engine - INFO - SELECT likes.id AS likes_id, likes.user_id AS likes_user_id, likes.post_id AS likes_post_id, likes.comment_id AS likes_comment_id, likes.created_at AS likes_created_at 
+FROM likes LEFT OUTER JOIN posts ON likes.post_id = posts.id 
+WHERE likes.post_id IS NOT NULL AND posts.id IS NULL
+2025-08-16 16:35:41,472 - sqlalchemy.engine.Engine - INFO - [generated in 0.00075s] {}
+2025-08-16 16:35:41,474 - sqlalchemy.engine.Engine - INFO - SELECT likes.id AS likes_id, likes.user_id AS likes_user_id, likes.post_id AS likes_post_id, likes.comment_id AS likes_comment_id, likes.created_at AS likes_created_at 
+FROM likes LEFT OUTER JOIN comments ON likes.comment_id = comments.id 
+WHERE likes.comment_id IS NOT NULL AND comments.id IS NULL
+2025-08-16 16:35:41,474 - sqlalchemy.engine.Engine - INFO - [generated in 0.00058s] {}
+2025-08-16 16:35:41,475 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-08-16 16:35:41,475 - __main__ - INFO - 清理孤立点赞记录完成，共删除 0 条记录
+2025-08-16 16:35:41,476 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-08-16 16:35:41,477 - sqlalchemy.engine.Engine - INFO - SELECT bands.id AS bands_id, bands.name AS bands_name, bands.year AS bands_year, bands.genre AS bands_genre, bands.bio AS bands_bio, bands.member_count AS bands_member_count, bands.banner_image_url AS bands_banner_image_url, bands.profile_image_url AS bands_profile_image_url, bands.primary_color AS bands_primary_color, bands.secondary_color AS bands_secondary_color, bands.created_at AS bands_created_at, bands.updated_at AS bands_updated_at, bands.is_deleted AS bands_is_deleted, bands.owner_id AS bands_owner_id 
+FROM bands LEFT OUTER JOIN users ON bands.owner_id = users.id 
+WHERE bands.owner_id IS NOT NULL AND users.id IS NULL
+2025-08-16 16:35:41,478 - sqlalchemy.engine.Engine - INFO - [generated in 0.00093s] {}
+2025-08-16 16:35:41,481 - sqlalchemy.engine.Engine - INFO - SELECT members.id AS members_id, members.name AS members_name, members.`role` AS members_role, members.join_date AS members_join_date, members.band_id AS members_band_id, members.avatar_url AS members_avatar_url, members.created_at AS members_created_at, members.updated_at AS members_updated_at, members.is_deleted AS members_is_deleted, members.owner_id AS members_owner_id 
+FROM members LEFT OUTER JOIN users ON members.owner_id = users.id 
+WHERE members.owner_id IS NOT NULL AND users.id IS NULL
+2025-08-16 16:35:41,482 - sqlalchemy.engine.Engine - INFO - [generated in 0.00075s] {}
+2025-08-16 16:35:41,484 - sqlalchemy.engine.Engine - INFO - SELECT events.id AS events_id, events.title AS events_title, events.description AS events_description, events.event_date AS events_event_date, events.venue AS events_venue, events.address AS events_address, events.ticket_price AS events_ticket_price, events.capacity AS events_capacity, events.status AS events_status, events.poster_image_url AS events_poster_image_url, events.created_at AS events_created_at, events.updated_at AS events_updated_at, events.is_deleted AS events_is_deleted, events.owner_id AS events_owner_id 
+FROM events LEFT OUTER JOIN users ON events.owner_id = users.id 
+WHERE events.owner_id IS NOT NULL AND users.id IS NULL
+2025-08-16 16:35:41,485 - sqlalchemy.engine.Engine - INFO - [generated in 0.00096s] {}
+2025-08-16 16:35:41,487 - sqlalchemy.engine.Engine - INFO - SELECT posts.id AS posts_id, posts.title AS posts_title, posts.content AS posts_content, posts.image_urls_json AS posts_image_urls_json, posts.link_urls_json AS posts_link_urls_json, posts.like_count AS posts_like_count, posts.comment_count AS posts_comment_count, posts.created_at AS posts_created_at, posts.updated_at AS posts_updated_at, posts.author_id AS posts_author_id 
+FROM posts LEFT OUTER JOIN users ON posts.author_id = users.id 
+WHERE posts.author_id IS NOT NULL AND users.id IS NULL
+2025-08-16 16:35:41,487 - sqlalchemy.engine.Engine - INFO - [generated in 0.00071s] {}
+2025-08-16 16:35:41,490 - sqlalchemy.engine.Engine - INFO - SELECT comments.id AS comments_id, comments.content AS comments_content, comments.like_count AS comments_like_count, comments.is_pinned AS comments_is_pinned, comments.created_at AS comments_created_at, comments.updated_at AS comments_updated_at, comments.post_id AS comments_post_id, comments.author_id AS comments_author_id, comments.parent_id AS comments_parent_id 
+FROM comments LEFT OUTER JOIN users ON comments.author_id = users.id 
+WHERE comments.author_id IS NOT NULL AND users.id IS NULL
+2025-08-16 16:35:41,490 - sqlalchemy.engine.Engine - INFO - [generated in 0.00082s] {}
+2025-08-16 16:35:41,492 - sqlalchemy.engine.Engine - INFO - SELECT likes.id AS likes_id, likes.user_id AS likes_user_id, likes.post_id AS likes_post_id, likes.comment_id AS likes_comment_id, likes.created_at AS likes_created_at 
+FROM likes LEFT OUTER JOIN users ON likes.user_id = users.id 
+WHERE likes.user_id IS NOT NULL AND users.id IS NULL
+2025-08-16 16:35:41,492 - sqlalchemy.engine.Engine - INFO - [generated in 0.00055s] {}
+2025-08-16 16:35:41,494 - sqlalchemy.engine.Engine - INFO - SELECT reports.id AS reports_id, reports.reporter_id AS reports_reporter_id, reports.target_type AS reports_target_type, reports.target_id AS reports_target_id, reports.reason AS reports_reason, reports.status AS reports_status, reports.created_at AS reports_created_at 
+FROM reports LEFT OUTER JOIN users ON reports.reporter_id = users.id 
+WHERE reports.reporter_id IS NOT NULL AND users.id IS NULL
+2025-08-16 16:35:41,494 - sqlalchemy.engine.Engine - INFO - [generated in 0.00091s] {}
+2025-08-16 16:35:41,496 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-08-16 16:35:41,496 - __main__ - INFO - 清理已删除用户关联数据完成，共删除 0 项数据: {'bands': 0, 'members': 0, 'events': 0, 'posts': 0, 'comments': 0, 'likes': 0, 'reports': 0}
+2025-08-16 16:35:41,497 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-08-16 16:35:41,497 - sqlalchemy.engine.Engine - INFO - SELECT bands.id AS bands_id, bands.name AS bands_name, bands.year AS bands_year, bands.genre AS bands_genre, bands.bio AS bands_bio, bands.member_count AS bands_member_count, bands.banner_image_url AS bands_banner_image_url, bands.profile_image_url AS bands_profile_image_url, bands.primary_color AS bands_primary_color, bands.secondary_color AS bands_secondary_color, bands.created_at AS bands_created_at, bands.updated_at AS bands_updated_at, bands.is_deleted AS bands_is_deleted, bands.owner_id AS bands_owner_id 
+FROM bands
+2025-08-16 16:35:41,498 - sqlalchemy.engine.Engine - INFO - [generated in 0.00059s] {}
+2025-08-16 16:35:41,499 - sqlalchemy.engine.Engine - INFO - SELECT members.id AS members_id, members.name AS members_name, members.`role` AS members_role, members.join_date AS members_join_date, members.band_id AS members_band_id, members.avatar_url AS members_avatar_url, members.created_at AS members_created_at, members.updated_at AS members_updated_at, members.is_deleted AS members_is_deleted, members.owner_id AS members_owner_id 
+FROM members
+2025-08-16 16:35:41,500 - sqlalchemy.engine.Engine - INFO - [generated in 0.00068s] {}
+2025-08-16 16:35:41,501 - sqlalchemy.engine.Engine - INFO - SELECT events.id AS events_id, events.title AS events_title, events.description AS events_description, events.event_date AS events_event_date, events.venue AS events_venue, events.address AS events_address, events.ticket_price AS events_ticket_price, events.capacity AS events_capacity, events.status AS events_status, events.poster_image_url AS events_poster_image_url, events.created_at AS events_created_at, events.updated_at AS events_updated_at, events.is_deleted AS events_is_deleted, events.owner_id AS events_owner_id 
+FROM events
+2025-08-16 16:35:41,502 - sqlalchemy.engine.Engine - INFO - [generated in 0.00067s] {}
+2025-08-16 16:35:41,503 - __main__ - INFO - 清理孤立活动海报: E:\git-bands\BandManager\uploads\events\event_poster_1754624155_ComfyUI_00127_.png
+2025-08-16 16:35:41,504 - __main__ - INFO - 清理孤立活动海报: E:\git-bands\BandManager\uploads\events\event_poster_1754904306_ComfyUI_00074_.png
+2025-08-16 16:35:41,505 - sqlalchemy.engine.Engine - INFO - SELECT users.id AS users_id, users.username AS users_username, users.email AS users_email, users.password_hash AS users_password_hash, users.user_type AS users_user_type, users.display_name AS users_display_name, users.avatar_url AS users_avatar_url, users.is_active AS users_is_active, users.bands_public AS users_bands_public, users.members_public AS users_members_public, users.events_public AS users_events_public, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users
+2025-08-16 16:35:41,505 - sqlalchemy.engine.Engine - INFO - [generated in 0.00081s] {}
+2025-08-16 16:35:41,507 - __main__ - INFO - 清理孤立用户头像: E:\git-bands\BandManager\uploads\avatars\avatar_5_ab1d245e97c7438f8d85bbf32d0fc1cd.png
+2025-08-16 16:35:41,507 - __main__ - INFO - 检查帖子图片目录: E:\git-bands\BandManager\uploads\community
+2025-08-16 16:35:41,508 - sqlalchemy.engine.Engine - INFO - SELECT posts.id AS posts_id, posts.title AS posts_title, posts.content AS posts_content, posts.image_urls_json AS posts_image_urls_json, posts.link_urls_json AS posts_link_urls_json, posts.like_count AS posts_like_count, posts.comment_count AS posts_comment_count, posts.created_at AS posts_created_at, posts.updated_at AS posts_updated_at, posts.author_id AS posts_author_id 
+FROM posts
+2025-08-16 16:35:41,509 - sqlalchemy.engine.Engine - INFO - [generated in 0.00071s] {}
+2025-08-16 16:35:41,510 - __main__ - INFO - 数据库中引用的帖子图片: 0 个
+2025-08-16 16:35:41,510 - __main__ - INFO - 清理孤立文件完成，共删除 3 个文件
+2025-08-16 16:35:41,510 - __main__ - INFO - 完整清理任务完成，共清理 3 项数据
+2025-08-16 16:35:41,511 - __main__ - INFO - 🎯 数据清理服务执行完成
+2025-08-16 16:35:41,511 - sqlalchemy.engine.Engine - INFO - ROLLBACK

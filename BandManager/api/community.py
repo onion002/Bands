@@ -18,6 +18,58 @@ def _serialize_post(post: Post):
     return post.to_dict(include_author=True)
 
 
+def delete_post_related_files(post):
+    """删除帖子相关的所有图片文件"""
+    deleted_files = []
+    
+    try:
+        # 1. 删除帖子中的图片文件
+        image_urls = post.get_image_urls()
+        if image_urls:
+            # 检查多个可能的帖子图片目录
+            possible_dirs = [
+                os.path.join(current_app.config['UPLOAD_FOLDER'], 'posts'),
+                os.path.join(current_app.config['UPLOAD_FOLDER'], 'community'),
+                os.path.join(current_app.config['UPLOAD_FOLDER'], 'community', 'posts')
+            ]
+            
+            for posts_upload_dir in possible_dirs:
+                if not os.path.exists(posts_upload_dir):
+                    continue
+                
+                logger.info(f"检查帖子图片目录: {posts_upload_dir}")
+                
+                for image_url in image_urls:
+                    if not image_url:
+                        continue
+                        
+                    try:
+                        filename = image_url.split('/')[-1]
+                        file_path = os.path.join(posts_upload_dir, filename)
+                        if os.path.exists(file_path):
+                            os.remove(file_path)
+                            deleted_files.append(file_path)
+                            logger.info(f"删除帖子图片: {file_path}")
+                    except Exception as e:
+                        logger.warning(f"删除帖子图片失败 {image_url}: {str(e)}")
+                
+                # 如果找到了目录并处理了，就跳出循环
+                break
+        
+        logger.info(f"帖子 {post.id} 相关文件删除完成，共删除 {len(deleted_files)} 个文件")
+        return deleted_files
+        
+    except Exception as e:
+        logger.error(f"删除帖子相关文件时发生错误: {str(e)}")
+        return deleted_files
+
+
+def delete_comment_related_files(comment):
+    """删除评论相关的所有文件（目前评论没有文件，预留接口）"""
+    # 评论目前没有文件附件，预留接口以便将来扩展
+    return []
+
+
 @community_bp.route('/posts', methods=['GET'])
 @optional_auth
 def list_posts():
@@ -198,24 +250,112 @@ def update_post(post_id: int):
         return jsonify({'error': '更新失败'}), 500
 
 
+# 删除帖子
 @community_bp.route('/posts/<int:post_id>', methods=['DELETE'])
 @require_auth
-def delete_post(post_id: int):
+def delete_post(post_id):
+    """删除帖子（作者或超级管理员可删除）"""
     try:
+        user = get_current_user()
         post = Post.query.get(post_id)
+        
         if not post:
             return jsonify({'error': '帖子不存在'}), 404
-        user = get_current_user()
-        # 普通用户可以删除自己发的帖子；管理员可以删除自己发的帖子；超级管理员可删除所有
-        if user.is_superadmin() or post.author_id == user.id:
-            db.session.delete(post)
-        else:
+        
+        # 检查权限：只有作者或超级管理员可以删除
+        if not user.is_superadmin() and post.author_id != user.id:
             return jsonify({'error': '无权删除该帖子'}), 403
+        
+        # 记录帖子信息用于日志
+        post_title = post.title or f"帖子#{post.id}"
+        
+        # 删除帖子相关的所有文件
+        deleted_files = delete_post_related_files(post)
+        
+        # 删除数据库记录（由于设置了cascade='all, delete-orphan'，评论和点赞会自动删除）
+        db.session.delete(post)
         db.session.commit()
-        return jsonify({'message': '删除成功'})
-    except SQLAlchemyError:
+        
+        return jsonify({
+            'message': f'帖子 "{post_title}" 删除成功',
+            'deleted_files_count': len(deleted_files)
+        }), 200
+        
+    except Exception as e:
         db.session.rollback()
-        return jsonify({'error': '删除失败'}), 500
+        logger.error(f"删除帖子失败: {str(e)}", exc_info=True)
+        return jsonify({'error': '删除帖子失败'}), 500
+
+
+# 批量删除帖子
+@community_bp.route('/posts/batch_delete', methods=['POST'])
+@require_auth
+def batch_delete_posts():
+    """批量删除帖子（作者或超级管理员可删除）"""
+    try:
+        user = get_current_user()
+        data = request.json or {}
+        
+        if not data or 'post_ids' not in data:
+            return jsonify({'error': '请提供要删除的帖子ID列表'}), 400
+        
+        post_ids = data['post_ids']
+        if not isinstance(post_ids, list) or not post_ids:
+            return jsonify({'error': '帖子ID列表不能为空'}), 400
+        
+        # 验证所有帖子是否存在
+        posts = Post.query.filter(Post.id.in_(post_ids)).all()
+        if len(posts) != len(post_ids):
+            found_ids = [post.id for post in posts]
+            missing_ids = [pid for pid in post_ids if pid not in found_ids]
+            return jsonify({'error': f'以下帖子不存在: {missing_ids}'}), 404
+        
+        # 检查权限：只有作者或超级管理员可以删除
+        if not user.is_superadmin():
+            unauthorized_posts = [post for post in posts if post.author_id != user.id]
+            if unauthorized_posts:
+                unauthorized_ids = [post.id for post in unauthorized_posts]
+                return jsonify({'error': f'无权删除以下帖子: {unauthorized_ids}'}), 403
+        
+        deleted_posts = []
+        total_deleted_files = 0
+        
+        # 逐个删除帖子
+        for post in posts:
+            try:
+                post_title = post.title or f"帖子#{post.id}"
+                
+                # 删除相关文件
+                deleted_files = delete_post_related_files(post)
+                total_deleted_files += len(deleted_files)
+                
+                # 删除数据库记录
+                db.session.delete(post)
+                
+                deleted_posts.append({
+                    'id': post.id,
+                    'title': post_title,
+                    'deleted_files_count': len(deleted_files)
+                })
+                
+            except Exception as e:
+                logger.error(f"删除帖子 {post.id} 时发生错误: {str(e)}")
+                # 继续删除其他帖子，不中断整个过程
+                continue
+        
+        # 提交所有删除操作
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'成功删除 {len(deleted_posts)} 个帖子',
+            'deleted_posts': deleted_posts,
+            'total_deleted_files': total_deleted_files
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"批量删除帖子失败: {str(e)}", exc_info=True)
+        return jsonify({'error': '批量删除帖子失败'}), 500
 
 
 @community_bp.route('/posts/<int:post_id>/like', methods=['POST'])
@@ -435,30 +575,118 @@ def pin_comment(comment_id: int):
         return jsonify({'error': '操作失败'}), 500
 
 
+# 删除评论
 @community_bp.route('/comments/<int:comment_id>', methods=['DELETE'])
 @require_auth
-def delete_comment(comment_id: int):
+def delete_comment(comment_id):
+    """删除评论（作者、帖子作者或超级管理员可删除）"""
     try:
         user = get_current_user()
         comment = Comment.query.get(comment_id)
+        
         if not comment:
             return jsonify({'error': '评论不存在'}), 404
         
-        # 允许用户删除自己的评论，或超级管理员删除任何评论
-        if comment.author_id != user.id and not user.is_superadmin():
-            return jsonify({'error': '无权限删除此评论'}), 403
+        # 检查权限：评论作者、帖子作者或超级管理员可以删除
+        post = Post.query.get(comment.post_id)
+        if not post:
+            return jsonify({'error': '帖子不存在'}), 404
         
-        # 删除相关的点赞记录
-        Like.query.filter_by(comment_id=comment_id).delete()
-        # 删除相关的举报记录
-        Report.query.filter_by(target_id=comment_id, target_type='comment').delete()
-        # 删除评论
+        if not user.is_superadmin() and comment.author_id != user.id and post.author_id != user.id:
+            return jsonify({'error': '无权删除该评论'}), 403
+        
+        # 记录评论信息用于日志
+        comment_content = comment.content[:50] + '...' if len(comment.content) > 50 else comment.content
+        
+        # 删除评论相关的所有文件
+        deleted_files = delete_comment_related_files(comment)
+        
+        # 删除数据库记录（由于设置了cascade='all, delete-orphan'，回复会自动删除）
         db.session.delete(comment)
         db.session.commit()
-        return jsonify({'message': '删除成功'})
-    except SQLAlchemyError:
+        
+        return jsonify({
+            'message': f'评论删除成功',
+            'deleted_files_count': len(deleted_files)
+        }), 200
+        
+    except Exception as e:
         db.session.rollback()
-        return jsonify({'error': '删除失败'}), 500
+        logger.error(f"删除评论失败: {str(e)}", exc_info=True)
+        return jsonify({'error': '删除评论失败'}), 500
+
+
+# 批量删除评论
+@community_bp.route('/comments/batch_delete', methods=['POST'])
+@require_auth
+def batch_delete_comments():
+    """批量删除评论（作者、帖子作者或超级管理员可删除）"""
+    try:
+        user = get_current_user()
+        data = request.json or {}
+        
+        if not data or 'comment_ids' not in data:
+            return jsonify({'error': '请提供要删除的评论ID列表'}), 400
+        
+        comment_ids = data['comment_ids']
+        if not isinstance(comment_ids, list) or not comment_ids:
+            return jsonify({'error': '评论ID列表不能为空'}), 400
+        
+        # 验证所有评论是否存在
+        comments = Comment.query.filter(Comment.id.in_(comment_ids)).all()
+        if len(comments) != len(comment_ids):
+            found_ids = [comment.id for comment in comments]
+            missing_ids = [cid for cid in comment_ids if cid not in found_ids]
+            return jsonify({'error': f'以下评论不存在: {missing_ids}'}), 404
+        
+        # 检查权限：评论作者、帖子作者或超级管理员可以删除
+        if not user.is_superadmin():
+            unauthorized_comments = []
+            for comment in comments:
+                post = Post.query.get(comment.post_id)
+                if post and comment.author_id != user.id and post.author_id != user.id:
+                    unauthorized_comments.append(comment)
+            
+            if unauthorized_comments:
+                unauthorized_ids = [comment.id for comment in unauthorized_comments]
+                return jsonify({'error': f'无权删除以下评论: {unauthorized_ids}'}), 403
+        
+        deleted_comments = []
+        total_deleted_files = 0
+        
+        # 逐个删除评论
+        for comment in comments:
+            try:
+                # 删除相关文件
+                deleted_files = delete_comment_related_files(comment)
+                total_deleted_files += len(deleted_files)
+                
+                # 删除数据库记录
+                db.session.delete(comment)
+                
+                deleted_comments.append({
+                    'id': comment.id,
+                    'deleted_files_count': len(deleted_files)
+                })
+                
+            except Exception as e:
+                logger.error(f"删除评论 {comment.id} 时发生错误: {str(e)}")
+                # 继续删除其他评论，不中断整个过程
+                continue
+        
+        # 提交所有删除操作
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'成功删除 {len(deleted_comments)} 个评论',
+            'deleted_comments': deleted_comments,
+            'total_deleted_files': total_deleted_files
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"批量删除评论失败: {str(e)}", exc_info=True)
+        return jsonify({'error': '批量删除评论失败'}), 500
 
 
 @community_bp.route('/upload-image', methods=['POST'])
@@ -542,5 +770,64 @@ def update_report(report_id: int):
     except SQLAlchemyError:
         db.session.rollback()
         return jsonify({'error': '更新失败'}), 500
+
+
+# 清理孤立的帖子图片
+@community_bp.route('/posts/cleanup_orphaned_images', methods=['POST'])
+@require_admin
+def cleanup_orphaned_post_images():
+    """清理孤立的帖子图片文件（没有被数据库记录引用的图片）"""
+    try:
+        cleaned_files = []
+        
+        # 检查多个可能的帖子图片目录
+        possible_dirs = [
+            os.path.join(current_app.config['UPLOAD_FOLDER'], 'posts'),
+            os.path.join(current_app.config['UPLOAD_FOLDER'], 'community'),
+            os.path.join(current_app.config['UPLOAD_FOLDER'], 'community', 'posts')
+        ]
+        
+        for posts_upload_dir in possible_dirs:
+            if not os.path.exists(posts_upload_dir):
+                continue
+            
+            logger.info(f"检查帖子图片目录: {posts_upload_dir}")
+            
+            # 获取所有数据库中引用的帖子图片
+            referenced_post_images = set()
+            posts = Post.query.all()
+            for post in posts:
+                image_urls = post.get_image_urls()
+                for image_url in image_urls:
+                    if image_url:
+                        filename = image_url.split('/')[-1]
+                        referenced_post_images.add(filename)
+            
+            logger.info(f"数据库中引用的帖子图片: {len(referenced_post_images)} 个")
+            
+            # 检查目录中的所有图片文件
+            for filename in os.listdir(posts_upload_dir):
+                file_path = os.path.join(posts_upload_dir, filename)
+                if os.path.isfile(file_path) and filename not in referenced_post_images:
+                    # 检查文件是否是图片文件
+                    if any(filename.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
+                        try:
+                            os.remove(file_path)
+                            cleaned_files.append(f"{os.path.basename(posts_upload_dir)}/{filename}")
+                            logger.info(f"清理孤立帖子图片: {file_path}")
+                        except Exception as e:
+                            logger.warning(f"清理孤立帖子图片失败 {file_path}: {str(e)}")
+            
+            # 如果找到了目录并处理了，就跳出循环
+            break
+        
+        return jsonify({
+            'message': f'清理完成，共删除 {len(cleaned_files)} 个孤立图片文件',
+            'cleaned_files': cleaned_files
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"清理孤立帖子图片失败: {str(e)}", exc_info=True)
+        return jsonify({'error': '清理孤立帖子图片失败'}), 500
 
 
