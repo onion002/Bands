@@ -959,7 +959,7 @@ onUnmounted(() => {
   position: absolute;
   top: 100px;
   left: 0;
-  width: 450px;
+  min-width: 400px;
   max-height: 100vh;
   background: $darkgray;
   border: $border-primary;

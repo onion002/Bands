@@ -72,6 +72,14 @@
               公开设置
             </button>
             <button
+              @click="scrollToSection('my-posts')"
+              class="quick-nav-btn"
+              title="跳转到我的帖子"
+            >
+              <i class="fa fa-file-text"></i>
+              我的帖子
+            </button>
+            <button
               @click="scrollToSection('favorites')"
               class="quick-nav-btn"
               title="跳转到我的收藏"
@@ -138,6 +146,48 @@
             </button>
           </div>
         </form>
+      </div>
+
+      <div id="my-posts" class="profile-section">
+        <h2 class="section-title">
+          <i class="fa fa-file-text"></i>
+          我的帖子
+        </h2>
+        <div class="my-posts-list">
+          <div v-if="postsLoading" class="loading"><i class="fa fa-spinner fa-spin"></i> 加载中…</div>
+          <div v-else-if="myPosts.length === 0" class="empty">暂无帖子</div>
+          <ul v-else>
+            <li v-for="p in myPosts" :key="p.id" class="post-item">
+              <div class="post-content">
+                <div class="title" @click="goToPost(p.id)">{{ p.content?.slice(0, 50) + '...' }}</div>
+                <div class="meta">
+                  <span class="stats">
+                    <i class="fa fa-heart"></i> {{ p.like_count }}
+                    <i class="fa fa-comment"></i> {{ p.comment_count }}
+                  </span>
+                  <span class="time"><i class="fa fa-clock-o"></i> {{ formatDateTime(p.created_at) }}</span>
+                </div>
+              </div>
+              <div class="post-actions">
+                <button class="btn btn-outline btn-sm" @click="editPost(p)" title="编辑">
+                  <i class="fa fa-edit"></i>
+                </button>
+                <button class="btn btn-outline btn-sm danger" @click="deletePost(p)" title="删除">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </div>
+            </li>
+          </ul>
+          <div v-if="postsPages > 1" class="pagination">
+            <button class="btn btn-outline btn-sm" :disabled="postsPage<=1" @click="loadMyPosts(postsPage-1)">
+              <i class="fa fa-chevron-left"></i>上一页
+            </button>
+            <span>第 {{ postsPage }} / {{ postsPages }} 页</span>
+            <button class="btn btn-outline btn-sm" :disabled="postsPage>=postsPages" @click="loadMyPosts(postsPage+1)">
+              下一页<i class="fa fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div id="favorites" class="profile-section">
@@ -336,6 +386,12 @@ const favPage = ref(1)
 const favPages = ref(1)
 const favLoading = ref(false)
 
+// 我的帖子
+const myPosts = ref<CommunityPost[]>([])
+const postsPage = ref(1)
+const postsPages = ref(1)
+const postsLoading = ref(false)
+
 const isPasswordValid = computed(() => {
   return passwordForm.new_password.length >= 6 && 
          passwordForm.new_password === passwordForm.confirm_password
@@ -490,6 +546,47 @@ const loadFavorites = async (page: number = 1) => {
   }
 }
 
+// 加载我的帖子
+const loadMyPosts = async (page: number = 1) => {
+  try {
+    postsLoading.value = true
+    // 暂时使用listPosts API获取所有帖子，然后在客户端筛选
+    const res = await CommunityService.listPosts({ 
+      page, 
+      page_size: 50 // 获取更多帖子以便筛选
+    })
+    // 在客户端筛选当前用户的帖子
+    const myPostsFiltered = res.items.filter(post => 
+      post.author?.username === user.value?.username
+    )
+    myPosts.value = myPostsFiltered
+    postsPage.value = res.page
+    postsPages.value = res.pages
+  } finally {
+    postsLoading.value = false
+  }
+}
+
+// 编辑帖子
+const editPost = (post: CommunityPost) => {
+  // 跳转到社区页面进行编辑
+  router.push('/community')
+}
+
+// 删除帖子
+const deletePost = async (post: CommunityPost) => {
+  if (!confirm('确定要删除这篇帖子吗？')) return
+  
+  try {
+    await CommunityService.deletePost(post.id)
+    showSuccess('帖子删除成功')
+    // 重新加载帖子列表
+    await loadMyPosts(postsPage.value)
+  } catch (error: any) {
+    showError(error.error || '删除失败')
+  }
+}
+
 const goToPost = (postId: number) => {
   // 暂用跳转到社区页并依靠 UI 展开（后续可做单帖路由）
   router.push('/community')
@@ -503,6 +600,7 @@ onMounted(() => {
   
   initUserData()
   loadFavorites(1)
+  loadMyPosts(1)
 })
 </script>
 
@@ -685,14 +783,107 @@ onMounted(() => {
   }
 }
 
-.favorites-list {
-  .favorite-item { padding: .5rem 0; border-bottom: 1px dashed rgba($primary,.2); }
-  .favorite-item .title { color: $white; cursor: pointer; }
-  .favorite-item .title:hover { color: $primary; }
-  .favorite-item .meta { color: $gray-400; font-size: .9rem; margin-top: .2rem; display:flex; align-items:center; gap:.35rem; }
+.favorites-list,
+.my-posts-list {
+  .favorite-item,
+  .post-item { 
+    padding: .75rem 0; 
+    border-bottom: 1px dashed rgba($primary,.2); 
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+  
+  .favorite-item .title,
+  .post-item .title { 
+    color: $white; 
+    cursor: pointer; 
+    flex: 1;
+    
+    &:hover { 
+      color: $primary; 
+    }
+  }
+  
+  .favorite-item .meta,
+  .post-item .meta { 
+    color: $gray-400; 
+    font-size: .9rem; 
+    margin-top: .2rem; 
+    display: flex; 
+    align-items: center; 
+    gap: .35rem; 
+  }
+  
+  .post-item {
+    .post-content {
+      flex: 1;
+      
+      .meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.5rem;
+        
+        .stats {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          
+          i {
+            margin-right: 0.25rem;
+            color: $primary;
+          }
+        }
+        
+        .time {
+          color: $gray-500;
+          font-size: 0.8rem;
+        }
+      }
+    }
+    
+    .post-actions {
+      display: flex;
+      gap: 0.5rem;
+      
+      .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+        
+        &.danger {
+          color: #ef4444;
+          border-color: rgba(#ef4444, 0.4);
+          
+          &:hover {
+            background: rgba(#ef4444, 0.1);
+            border-color: #ef4444;
+          }
+        }
+      }
+    }
+  }
+  
   .loading { color:$gray-300; }
   .empty { color:$gray-400; }
-  .pagination { display:flex; align-items:center; gap:.75rem; margin-top:.75rem; }
+  .pagination { 
+    display: flex; 
+    align-items: center; 
+    gap: .75rem; 
+    margin-top: .75rem; 
+    justify-content: center;
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+  }
 }
 
 .profile-form,

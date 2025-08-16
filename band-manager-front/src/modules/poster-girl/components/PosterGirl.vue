@@ -21,13 +21,6 @@
         </div>
         
         <!-- 设置按钮 -->
-        <div 
-          class="pio-settings pio-btn" 
-          title="🎭 看板娘设置"
-          @click="navigateToSettings"
-        >
-          <i class="fas fa-cog"></i>
-        </div>
         
         <!-- 模型切换按钮 -->
         <div 

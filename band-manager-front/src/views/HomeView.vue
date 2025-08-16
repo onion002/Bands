@@ -11,7 +11,7 @@
         <div class="hero-text">
           <h1 class="hero-title">
             <span class="title-line">
-              <span class="text-gradient">独立音乐人</span>
+              <span class="text-gradient">Bands</span>
             </span>
             <span class="title-line">管理平台</span>
           </h1>

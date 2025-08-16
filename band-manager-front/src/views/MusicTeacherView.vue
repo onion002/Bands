@@ -315,7 +315,7 @@ interface Session {
 }
 const sessions = ref<Session[]>([])
 const activeSessionId = ref<string>('')
-const sidebarCollapsed = ref(false)
+const sidebarCollapsed = ref(true)
 
 // 移动端快速操作工具栏显示状态
 const showMobileQuickActions = ref(false)
@@ -975,8 +975,7 @@ function isMobileDevice() {
 // 移动端适配
 function setupMobileOptimizations() {
   if (isMobileDevice()) {
-    // 移动端默认收起侧边栏
-    sidebarCollapsed.value = true
+    // 移动端默认收起侧边栏（已经是默认状态）
     // 显示移动端快速操作工具栏
     showMobileQuickActions.value = true
   }
@@ -1985,11 +1984,13 @@ function handleError(error: any, context: string = '操作') {
   
   .sidebar {
     height: auto;
-    max-height: 300px;
+    max-height: 280px;
     border-right: none;
     border-bottom: 1px solid #2a2a2a;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    background: rgba(16, 16, 16, 0.98);
+    backdrop-filter: blur(20px);
     
     .mobile-toggle-btn {
       display: block;
@@ -1998,10 +1999,78 @@ function handleError(error: any, context: string = '操作') {
     .collapse-btn {
       display: none;
     }
+    
+    .sidebar-header {
+      padding: 0.5rem 0.75rem;
+      
+      .title {
+        font-size: 0.9rem;
+      }
+      
+      .user-info {
+        .user-name {
+          font-size: 0.8rem;
+        }
+        
+        .session-count {
+          font-size: 0.7rem;
+        }
+      }
+    }
+    
+    .search-box {
+      padding: 0.4rem 0.75rem 0.2rem;
+      
+      .search-input {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.6rem;
+      }
+    }
+    
+    .new-chat-btn {
+      margin: 0.5rem 0.75rem;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      
+      i {
+        font-size: 0.9rem;
+      }
+    }
+    
+    .session-list {
+      max-height: 180px;
+      margin: 0.4rem 0.5rem 0.5rem;
+      gap: 0.3rem;
+      
+      li {
+        .session-item {
+          padding: 0.4rem 0.5rem;
+          
+          .session-info {
+            .text {
+              font-size: 0.85rem;
+            }
+            
+            .time {
+              font-size: 0.7rem;
+            }
+          }
+        }
+        
+        .item-actions {
+          gap: 0.2rem;
+          
+          .icon-btn {
+            padding: 0.2rem 0.3rem;
+            font-size: 0.8rem;
+          }
+        }
+      }
+    }
   }
   
   .content-box {
-    padding: 1rem 1rem 0 1rem;
+    padding: 0.75rem 0.75rem 0 0.75rem;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -2020,6 +2089,7 @@ function handleError(error: any, context: string = '操作') {
     display: flex;
     flex-direction: column;
     margin-bottom: 0;
+    border-radius: 0.75rem;
   }
   
   .chat-messages-container {
@@ -2031,20 +2101,28 @@ function handleError(error: any, context: string = '操作') {
   .chat-window {
     flex: 1;
     min-height: 0;
-    max-height: calc(100vh - 220px);
+    max-height: calc(100vh - 200px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 0.75rem 0.75rem 1rem 0.75rem;
+    padding: 0.6rem 0.6rem 0.8rem 0.6rem;
     height: 100%;
     
     /* 移动端滚动条优化 */
     &::-webkit-scrollbar {
-      width: 6px;
+      width: 4px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: rgba($darkgray, 0.2);
     }
     
     &::-webkit-scrollbar-thumb {
-      background: rgba($primary, 0.6);
-      border-radius: 3px;
+      background: rgba($primary, 0.5);
+      border-radius: 2px;
+      
+      &:hover {
+        background: rgba($primary, 0.7);
+      }
     }
     
     /* 确保移动端滚动正常工作 */
@@ -2057,8 +2135,9 @@ function handleError(error: any, context: string = '操作') {
     position: sticky;
     bottom: 0;
     z-index: 100;
-    max-height: calc(100vh - 80px);
+    max-height: calc(100vh - 70px);
     overflow: hidden;
+    border-radius: 0.75rem 0.75rem 0 0;
   }
   
   .composer {
@@ -2068,74 +2147,244 @@ function handleError(error: any, context: string = '操作') {
   
   .page-footer {
     flex-shrink: 0;
-    padding: 0.75rem 1rem;
+    padding: 0.6rem 0.75rem;
     
     .ai-disclaimer span {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
     }
   }
   
   .composer-actions {
     flex-direction: column;
     align-items: stretch;
-    gap: 1rem;
+    gap: 0.75rem;
+    
+    .send-btn {
+      height: 44px;
+      font-size: 0.9rem;
+      border-radius: 0.75rem;
+    }
   }
   
   .knobs {
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    background: rgba($darkgray, 0.3);
+    border-radius: 0.5rem;
+    border: 1px solid rgba($lightgray, 0.1);
     
     label {
       justify-content: space-between;
       align-items: center;
+      font-size: 0.85rem;
+      
+      input[type="range"] {
+        width: 100px;
+      }
+      
+      input[type="number"] {
+        width: 70px;
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+      }
+      
+      .value {
+        font-size: 0.8rem;
+        color: $primary;
+        font-weight: 600;
+      }
+    }
+    
+    .model-select-label {
+      .model-select {
+        width: 100%;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.85rem;
+      }
+      
+      .model-description {
+        font-size: 0.7rem;
+        margin-top: 0.3rem;
+      }
     }
   }
   
   .session-list {
-    max-height: 200px;
+    max-height: 180px;
     -webkit-overflow-scrolling: touch;
   }
   
   .msg {
-    gap: 8px;
+    gap: 6px;
+    margin-bottom: 10px;
     
     .avatar {
       width: 32px;
       height: 32px;
-      font-size: 0.875rem;
+      font-size: 0.8rem;
     }
     
     .bubble {
-      max-width: 85%;
+      max-width: 88%;
       padding: 8px 10px;
       font-size: 0.875rem;
+      border-radius: 0.75rem;
+      
+      .bubble-toolbar {
+        top: 4px;
+        right: 4px;
+        
+        .icon-btn {
+          padding: 0.3rem;
+          font-size: 0.8rem;
+        }
+      }
+      
+      .bubble-content {
+        margin-top: 16px;
+      }
     }
   }
   
   .composer-input {
     min-height: 80px;
     font-size: 16px;
+    border-radius: 0.75rem;
+    padding: 0.6rem 0.75rem;
   }
   
-
+  .quick-actions-bar {
+    margin-bottom: 0.3rem;
+    padding: 0.3rem;
+    gap: 0.4rem;
+    
+    .quick-action-btn {
+      width: 32px;
+      height: 32px;
+      padding: 0.4rem;
+      
+      i {
+        font-size: 0.8rem;
+      }
+    }
+  }
   
   .mobile-quick-actions {
     display: flex;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    
+    .quick-action-btn {
+      width: 52px;
+      height: 52px;
+      font-size: 1.2rem;
+      box-shadow: 0 6px 20px rgba($primary, 0.4);
+      
+      &:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 25px rgba($primary, 0.5);
+      }
+    }
+  }
+  
+  /* 欢迎界面移动端优化 */
+  .welcome-screen {
+    padding: 1.5rem 1rem;
+    min-height: 300px;
+    
+    .welcome-avatar {
+      width: 70px;
+      height: 70px;
+      margin-bottom: 1.2rem;
+      
+      i {
+        font-size: 1.8rem;
+      }
+    }
+    
+    .welcome-title {
+      font-size: 1.8rem;
+      margin-bottom: 0.8rem;
+    }
+    
+    .welcome-subtitle {
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+      max-width: 100%;
+    }
+    
+    .welcome-features {
+      grid-template-columns: 1fr;
+      gap: 0.8rem;
+      margin-bottom: 1.5rem;
+      
+      .feature-item {
+        padding: 0.6rem 0.8rem;
+        
+        i {
+          font-size: 1.1rem;
+        }
+        
+        span {
+          font-size: 0.9rem;
+        }
+      }
+    }
+    
+    .welcome-prompt {
+      font-size: 0.9rem;
+      
+      i {
+        font-size: 1rem;
+      }
+    }
+  }
+  
+  /* 建议问题移动端优化 */
+  .suggestions {
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+    
+    .chip {
+      padding: 0.4rem 0.6rem;
+      font-size: 0.85rem;
+      border-radius: 0.75rem;
+      min-width: 120px;
+      text-align: center;
+    }
+  }
+  
+  /* 后续建议移动端优化 */
+  .follow-up-suggestions {
+    margin-top: 0.8rem;
+    padding: 0.6rem;
+    
+    .suggestions-header {
+      font-size: 0.8rem;
+      margin-bottom: 0.6rem;
+    }
+    
+    .suggestion-chip {
+      padding: 0.4rem 0.6rem;
+      font-size: 0.8rem;
+      border-radius: 0.5rem;
+    }
   }
 }
 
 @media (max-width: 480px) {
   .content-box {
-    padding: 0.75rem 0.75rem 0 0.75rem;
+    padding: 0.5rem 0.5rem 0 0.5rem;
   }
   
   .chat-window {
-    padding: 0.5rem 0.5rem 0.75rem 0.5rem;
-    max-height: calc(100vh - 180px);
+    padding: 0.4rem 0.4rem 0.6rem 0.4rem;
+    max-height: calc(100vh - 160px);
     -webkit-overflow-scrolling: touch;
     
     &::-webkit-scrollbar {
-      width: 4px;
+      width: 3px;
     }
     
     &::-webkit-scrollbar-thumb {
@@ -2144,25 +2393,361 @@ function handleError(error: any, context: string = '操作') {
     }
   }
   
-  .welcome-screen .hi {
-    font-size: 1.8rem;
+  .welcome-screen {
+    padding: 1rem 0.75rem;
+    min-height: 250px;
+    
+    .welcome-avatar {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 1rem;
+      
+      i {
+        font-size: 1.6rem;
+      }
+    }
+    
+    .welcome-title {
+      font-size: 1.6rem;
+      margin-bottom: 0.6rem;
+    }
+    
+    .welcome-subtitle {
+      font-size: 0.9rem;
+      margin-bottom: 1.2rem;
+    }
+    
+    .welcome-features {
+      gap: 0.6rem;
+      margin-bottom: 1.2rem;
+      
+      .feature-item {
+        padding: 0.5rem 0.6rem;
+        
+        i {
+          font-size: 1rem;
+        }
+        
+        span {
+          font-size: 0.85rem;
+        }
+      }
+    }
+    
+    .welcome-prompt {
+      font-size: 0.85rem;
+      
+      i {
+        font-size: 0.9rem;
+      }
+    }
   }
   
   .suggestions {
-    gap: 0.5rem;
+    gap: 0.3rem;
+    margin-bottom: 0.5rem;
     
     .chip {
-      padding: 0.4rem 0.6rem;
-      font-size: 0.875rem;
+      padding: 0.35rem 0.5rem;
+      font-size: 0.8rem;
+      border-radius: 0.6rem;
+      min-width: 100px;
+    }
+  }
+  
+  .follow-up-suggestions {
+    margin-top: 0.6rem;
+    padding: 0.5rem;
+    
+    .suggestions-header {
+      font-size: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .suggestion-chip {
+      padding: 0.35rem 0.5rem;
+      font-size: 0.75rem;
+      border-radius: 0.4rem;
     }
   }
   
   .composer {
-    padding: 0.5rem 0.5rem 0.75rem 0.5rem;
+    padding: 0.4rem 0.4rem 0.6rem 0.4rem;
   }
   
   .page-footer {
-    padding: 0.5rem 0.75rem;
+    padding: 0.4rem 0.5rem;
+    
+    .ai-disclaimer span {
+      font-size: 0.7rem;
+    }
+  }
+  
+  .composer-actions {
+    gap: 0.6rem;
+    
+    .send-btn {
+      height: 40px;
+      font-size: 0.85rem;
+    }
+  }
+  
+  .knobs {
+    gap: 0.5rem;
+    padding: 0.6rem;
+    
+    label {
+      font-size: 0.8rem;
+      
+      input[type="range"] {
+        width: 80px;
+      }
+      
+      input[type="number"] {
+        width: 60px;
+        padding: 0.25rem 0.4rem;
+        font-size: 0.75rem;
+      }
+      
+      .value {
+        font-size: 0.75rem;
+      }
+    }
+    
+    .model-select-label {
+      .model-select {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+      }
+      
+      .model-description {
+        font-size: 0.65rem;
+      }
+    }
+  }
+  
+  .msg {
+    gap: 5px;
+    margin-bottom: 8px;
+    
+    .avatar {
+      width: 28px;
+      height: 28px;
+      font-size: 0.75rem;
+    }
+    
+    .bubble {
+      max-width: 90%;
+      padding: 6px 8px;
+      font-size: 0.8rem;
+      border-radius: 0.6rem;
+      
+      .bubble-toolbar {
+        top: 3px;
+        right: 3px;
+        
+        .icon-btn {
+          padding: 0.25rem;
+          font-size: 0.75rem;
+        }
+      }
+      
+      .bubble-content {
+        margin-top: 14px;
+      }
+    }
+  }
+  
+  .composer-input {
+    min-height: 70px;
+    font-size: 16px;
+    border-radius: 0.6rem;
+    padding: 0.5rem 0.6rem;
+  }
+  
+  .quick-actions-bar {
+    margin-bottom: 0.25rem;
+    padding: 0.25rem;
+    gap: 0.3rem;
+    
+    .quick-action-btn {
+      width: 28px;
+      height: 28px;
+      padding: 0.3rem;
+      
+      i {
+        font-size: 0.75rem;
+      }
+    }
+  }
+  
+  .mobile-quick-actions {
+    bottom: 1.2rem;
+    right: 1.2rem;
+    
+    .quick-action-btn {
+      width: 48px;
+      height: 48px;
+      font-size: 1.1rem;
+    }
+  }
+  
+  /* 侧边栏小屏优化 */
+  .sidebar {
+    max-height: 250px;
+    
+    .sidebar-header {
+      padding: 0.4rem 0.6rem;
+      
+      .title {
+        font-size: 0.85rem;
+      }
+      
+      .user-info {
+        .user-name {
+          font-size: 0.75rem;
+        }
+        
+        .session-count {
+          font-size: 0.65rem;
+        }
+      }
+    }
+    
+    .search-box {
+      padding: 0.3rem 0.6rem 0.15rem;
+      
+      .search-input {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.5rem;
+      }
+    }
+    
+    .new-chat-btn {
+      margin: 0.4rem 0.6rem;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.8rem;
+      
+      i {
+        font-size: 0.85rem;
+      }
+    }
+    
+    .session-list {
+      max-height: 160px;
+      margin: 0.3rem 0.4rem 0.4rem;
+      gap: 0.25rem;
+      
+      li {
+        .session-item {
+          padding: 0.3rem 0.4rem;
+          
+          .session-info {
+            .text {
+              font-size: 0.8rem;
+            }
+            
+            .time {
+              font-size: 0.65rem;
+            }
+          }
+        }
+        
+        .item-actions {
+          gap: 0.15rem;
+          
+          .icon-btn {
+            padding: 0.15rem 0.25rem;
+            font-size: 0.75rem;
+          }
+        }
+      }
+    }
+  }
+  
+  /* 触摸友好的交互优化 */
+  .mobile-quick-actions {
+    .quick-action-btn {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      
+      &:active {
+        transform: scale(0.95);
+        transition: transform 0.1s ease;
+      }
+    }
+  }
+  
+  /* 触摸友好的按钮和输入框 */
+  .btn, .icon-btn, .tab-btn {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 44px; /* 触摸友好的最小高度 */
+    
+    &:active {
+      transform: scale(0.98);
+      transition: transform 0.1s ease;
+    }
+  }
+  
+  .composer-input, .search-input {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    font-size: 16px; /* 防止iOS缩放 */
+  }
+  
+  /* 触摸友好的滚动 */
+  .chat-window, .session-list {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    
+    /* 自定义滚动条 */
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: rgba($darkgray, 0.1);
+      border-radius: 2px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: rgba($primary, 0.4);
+      border-radius: 2px;
+      
+      &:hover {
+        background: rgba($primary, 0.6);
+      }
+    }
+  }
+  
+  /* 触摸友好的标签页 */
+  .tab-navigation {
+    .tab-btn {
+      min-height: 48px;
+      padding: 0.6rem 1rem;
+      
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+  }
+  
+  /* 触摸友好的建议问题 */
+  .suggestions, .follow-up-suggestions {
+    .chip, .suggestion-chip {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      &:active {
+        transform: scale(0.95);
+        transition: transform 0.1s ease;
+      }
+    }
   }
 }
 </style>

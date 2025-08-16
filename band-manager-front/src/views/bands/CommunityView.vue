@@ -8,10 +8,26 @@
     </div>
 
     <div class="community-layout">
-      <section class="composer-section composer-fixed">
+      <section class="composer-section composer-fixed" :class="{ collapsed: composerCollapsed }">
         <div class="fixed-inner">
           <div class="composer-card">
-          <div v-if="!isAuthenticated" class="composer-overlay">
+            <!-- 收起/展开控制按钮 -->
+            <div class="composer-toggle" @click="toggleComposer">
+              <i class="fa" :class="composerCollapsed ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+              <span v-if="composerCollapsed" class="toggle-text">展开发布框</span>
+            </div>
+            
+            <!-- 收起状态下的快速发布按钮 -->
+            <div v-if="composerCollapsed" class="composer-collapsed-content">
+              <button class="btn btn-primary btn-sm" @click="toggleComposer" :disabled="!isAuthenticated">
+                <i class="fa fa-plus"></i>
+                发布动态
+              </button>
+            </div>
+            
+            <!-- 展开状态下的完整发布界面 -->
+            <div v-else class="composer-expanded-content">
+              <div v-if="!isAuthenticated" class="composer-overlay">
             <p>登录后即可发布帖子与评论</p>
             <router-link to="/auth/login" class="btn btn-primary btn-sm">去登录</router-link>
           </div>
@@ -58,6 +74,7 @@
           <div v-if="composer.tags.length" class="tags-preview">
             <span v-for="(t, idx) in composer.tags" :key="t + idx" class="tag" @click="removeTag(idx)">#{{ t }}</span>
           </div>
+            </div>
           </div>
         </div>
       </section>
@@ -337,19 +354,44 @@
 
     <!-- 图片查看器模态框 -->
     <div v-if="imageViewerVisible" class="image-viewer" @click="closeImageViewer">
-      <div class="image-viewer-content">
-        <button class="close-btn" @click="closeImageViewer">
+      <div class="image-viewer-content" @click.stop>
+        <button class="close-btn" @click="closeImageViewer" title="关闭 (ESC)">
           <i class="fa fa-times"></i>
         </button>
-        <img :src="currentImageUrl" alt="查看图片" />
+        
+        <div class="image-container">
+          <img 
+            :src="currentImageUrl" 
+            :alt="`图片 ${currentImageIndex + 1}`"
+            @load="onImageViewerImageLoad"
+            @error="onImageViewerImageError"
+          />
+        </div>
+        
         <div v-if="currentImageList.length > 1" class="image-nav">
-          <button class="nav-btn prev" @click.stop="prevImage" :disabled="currentImageIndex === 0">
+          <button 
+            class="nav-btn prev" 
+            @click.stop="prevImage" 
+            :disabled="currentImageIndex === 0"
+            title="上一张 (←)"
+          >
             <i class="fa fa-chevron-left"></i>
           </button>
           <span class="image-counter">{{ currentImageIndex + 1 }} / {{ currentImageList.length }}</span>
-          <button class="nav-btn next" @click.stop="nextImage" :disabled="currentImageIndex === currentImageList.length - 1">
+          <button 
+            class="nav-btn next" 
+            @click.stop="nextImage" 
+            :disabled="currentImageIndex === currentImageList.length - 1"
+            title="下一张 (→)"
+          >
             <i class="fa fa-chevron-right"></i>
           </button>
+        </div>
+        
+        <!-- 键盘快捷键提示 -->
+        <div class="keyboard-hints">
+          <span>ESC 关闭</span>
+          <span v-if="currentImageList.length > 1">← → 切换</span>
         </div>
       </div>
     </div>
@@ -358,7 +400,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick, type Ref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { CommunityService, type CommunityPost, type CommunityComment } from '@/api/communityService'
 import { marked } from 'marked'
@@ -378,6 +420,23 @@ const pages = ref(1)
 const total = ref(0)
 const hasMore = computed(() => page.value < pages.value)
 const loadMoreTrigger = ref<HTMLElement | null>(null)
+const isComponentMounted = ref(true) // 组件挂载状态标志
+const cleanupFunctions = ref<Array<() => void>>([]) // 清理函数集合
+
+// 安全的异步操作包装器
+const safeAsync = <T>(asyncFn: () => Promise<T>): Promise<T | null> => {
+  if (!isComponentMounted.value) {
+    return Promise.resolve(null)
+  }
+  return asyncFn()
+}
+
+// 安全的响应式变量更新
+const safeUpdate = <T>(ref: Ref<T>, value: T) => {
+  if (isComponentMounted.value && ref.value !== undefined) {
+    ref.value = value
+  }
+}
 
 // 图片查看器
 const imageViewerVisible = ref(false)
@@ -390,13 +449,18 @@ let debounceTimer: any = null
 const debouncedFetch = () => {
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
+    // 检查组件是否仍然挂载
+    if (!isComponentMounted.value) return
+    
     page.value = 1
     fetchPosts().then(() => {
-      // 重新设置无限滚动观察器
-      nextTick(() => {
-        cleanupInfiniteScroll()
-        setupInfiniteScroll()
-      })
+      // 重新设置无限滚动观察器（仅在组件挂载时）
+      if (isComponentMounted.value) {
+        nextTick(() => {
+          cleanupInfiniteScroll()
+          setupInfiniteScroll()
+        })
+      }
     })
   }, 300)
 }
@@ -406,6 +470,7 @@ const composer = reactive({ content: '', previewImages: [] as string[], imageFil
 const tagInput = ref('')
 const submitting = ref(false)
 const canSubmit = computed(() => composer.content.trim().length > 0)
+const composerCollapsed = ref(false) // 控制发布框收起/展开状态
 
 function onPickImages(e: Event) {
   const input = e.target as HTMLInputElement
@@ -441,19 +506,54 @@ function addTag() {
 function removeTag(idx: number) { composer.tags.splice(idx, 1) }
 
 async function submitPost() {
-  if (!canSubmit.value) return
+  if (!canSubmit.value || !isComponentMounted.value) return
+  
   submitting.value = true
+  
   try {
-    await CommunityService.createPost({ content: composer.content, image_urls: composer.previewImages, link_urls: composer.link_urls, tags: composer.tags })
+    const result = await CommunityService.createPost({ 
+      content: composer.content, 
+      image_urls: composer.previewImages, 
+      link_urls: composer.link_urls, 
+      tags: composer.tags 
+    })
+    
+    // 检查组件是否仍然挂载
+    if (!isComponentMounted.value) return
+    
+    // 清空表单
     composer.content = ''
     composer.previewImages = []
     composer.link_urls = []
     composer.tags = []
-    await fetchPosts()
+    
+    // 显示成功消息
+    console.log('帖子发布成功')
+    
+    // 显示用户友好的成功提示
+    if (isComponentMounted.value) {
+      error.value = '' // 清除之前的错误
+      // 显示成功消息
+      const successMessage = '发布成功！页面即将刷新...'
+      console.log(successMessage)
+      
+      // 使用 setTimeout 确保状态更新完成后再刷新
+      setTimeout(() => {
+        if (isComponentMounted.value) {
+          window.location.reload()
+        }
+      }, 1000) // 给用户1秒时间看到成功消息
+    }
+    
   } catch (err: any) {
-    error.value = err?.error || '发布失败'
+    if (isComponentMounted.value) {
+      error.value = err?.error || '发布失败'
+      console.error('发布帖子失败:', err)
+    }
   } finally {
-    submitting.value = false
+    if (isComponentMounted.value) {
+      submitting.value = false
+    }
   }
 }
 
@@ -472,6 +572,12 @@ function filterByTag(name: string) {
 }
 
 async function fetchPosts(append = false) {
+  // 严格检查组件挂载状态
+  if (!isComponentMounted.value) {
+    console.log('fetchPosts: 组件已卸载，跳过执行')
+    return
+  }
+  
   try {
     if (append) {
       loadingMore.value = true
@@ -479,6 +585,7 @@ async function fetchPosts(append = false) {
       loading.value = true
       page.value = 1
     }
+    
     error.value = ''
     
     const res = await CommunityService.listPosts({ 
@@ -488,6 +595,17 @@ async function fetchPosts(append = false) {
       sort: query.sort, 
       tag: query.tag || undefined 
     })
+    
+    // 再次检查组件挂载状态
+    if (!isComponentMounted.value) {
+      console.log('fetchPosts: API 调用后组件已卸载，跳过更新')
+      return
+    }
+    
+    // 使用 nextTick 确保 DOM 更新完成后再操作数据
+    await nextTick()
+    
+    if (!isComponentMounted.value) return
     
     if (append) {
       // 追加模式：添加到现有列表
@@ -505,30 +623,53 @@ async function fetchPosts(append = false) {
     page.value = res.page
     pages.value = res.pages
     
-    // 为每个帖子获取前3条评论
-    await Promise.all(res.items.map(async (post) => {
-      try {
-        const commentsRes = await CommunityService.listComments({ 
-          post_id: post.id, 
-          page_size: 3 
-        })
-        postComments.value.set(post.id, commentsRes.items)
-      } catch (error) {
-        console.warn(`Failed to load comments for post ${post.id}:`, error)
-      }
-    }))
+    // 为每个帖子获取前3条评论（仅在组件挂载时）
+    if (isComponentMounted.value) {
+      const commentPromises = res.items.map(async (post) => {
+        try {
+          // 每次评论获取前都检查挂载状态
+          if (!isComponentMounted.value) return
+          
+          const commentsRes = await CommunityService.listComments({ 
+            post_id: post.id, 
+            page_size: 3 
+          })
+          
+          if (commentsRes && isComponentMounted.value) {
+            postComments.value.set(post.id, commentsRes.items)
+          }
+        } catch (error) {
+          if (isComponentMounted.value) {
+            console.warn(`Failed to load comments for post ${post.id}:`, error)
+          }
+        }
+      })
+      
+      // 等待所有评论加载完成
+      await Promise.all(commentPromises)
+    }
+    
   } catch (err: any) {
-    error.value = err?.error || '加载失败'
+    if (isComponentMounted.value) {
+      error.value = err?.error || '加载失败'
+    }
   } finally {
-    loading.value = false
-    loadingMore.value = false
+    if (isComponentMounted.value) {
+      loading.value = false
+      loadingMore.value = false
+    }
   }
 }
 
 // 加载更多帖子
 async function loadMorePosts() {
-  if (loadingMore.value || !hasMore.value) return
+  if (loadingMore.value || !hasMore.value || !isComponentMounted.value) return
+  
   page.value += 1
+  
+  // 检查组件是否仍然挂载
+  if (!isComponentMounted.value) return
+  
   await fetchPosts(true)
 }
 
@@ -552,14 +693,24 @@ function canEditPost(post: CommunityPost) {
 }
 
 async function toggleLikePost(post: CommunityPost) {
+  if (!isComponentMounted.value) return
+  
   try {
     liking.value = true
     const res = await CommunityService.likePost(post.id)
-    post.like_count = res.like_count
-    if (res.action === 'liked') likedPostIds.value.add(post.id)
-    else likedPostIds.value.delete(post.id)
+    
+    // 检查组件是否仍然挂载
+    if (!isComponentMounted.value) return
+    
+    if (res) {
+      post.like_count = res.like_count
+      if (res.action === 'liked') likedPostIds.value.add(post.id)
+      else likedPostIds.value.delete(post.id)
+    }
   } finally {
-    liking.value = false
+    if (isComponentMounted.value) {
+      liking.value = false
+    }
   }
 }
 
@@ -767,17 +918,27 @@ function createObjectURL(file: File): string {
 
 // 图片加载事件处理
 function onImageLoad(event: Event) {
+  // 检查组件是否已卸载
+  if (!isComponentMounted.value) return
+  
   const img = event.target as HTMLImageElement
+  
+  // 检查组件状态
+  if (!img || !img.parentNode) return
+  
   img.style.opacity = '1'
   
   // 启动性能监控
-  monitorImagePerformance(img)
+  const cleanup = monitorImagePerformance(img)
   
   // 为单张图片应用智能比例检测
   const imageItem = img.closest('.image-item')
   const gallery = img.closest('.gallery')
   
-  if (gallery?.classList.contains('images-1') && imageItem) {
+  // 检查DOM元素是否仍然存在
+  if (!imageItem || !gallery || !gallery.parentNode) return
+  
+  if (gallery.classList.contains('images-1') && imageItem) {
     const aspectRatio = img.naturalWidth / img.naturalHeight
     const width = img.naturalWidth
     const height = img.naturalHeight
@@ -823,14 +984,21 @@ function onImageLoad(event: Event) {
     
     // 根据质量调整显示策略
     const imgElement = imageItem.querySelector('img')
-    if (imgElement && analysis.recommendedDisplay) {
+    if (imgElement && analysis.recommendedDisplay && imgElement.parentNode) {
       imgElement.style.objectFit = analysis.recommendedDisplay
     }
   }
 }
 
 function onImageError(event: Event) {
+  // 检查组件是否已卸载
+  if (!isComponentMounted.value) return
+  
   const img = event.target as HTMLImageElement
+  
+  // 检查组件状态
+  if (!img || !img.parentNode) return
+  
   img.style.opacity = '0.5'
   img.alt = '图片加载失败'
 }
@@ -903,11 +1071,15 @@ function analyzeImageQuality(img: HTMLImageElement): {
 
 // 添加图片加载性能监控
 function monitorImagePerformance(img: HTMLImageElement) {
+  // 检查组件是否已卸载
+  if (!img || !img.parentNode) return
+  
   const startTime = performance.now()
   
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
-      if (entry.isIntersecting) {
+      // 再次检查组件状态
+      if (entry.isIntersecting && img && img.parentNode) {
         const loadTime = performance.now() - startTime
         
         // 记录加载时间（可用于后续优化）
@@ -921,6 +1093,13 @@ function monitorImagePerformance(img: HTMLImageElement) {
   })
   
   observer.observe(img)
+  
+  // 返回清理函数
+  return () => {
+    if (observer) {
+      observer.disconnect()
+    }
+  }
 }
 
 // 保存编辑帖子
@@ -964,51 +1143,92 @@ async function saveEditPost() {
 }
 
 async function fetchComments(post: CommunityPost) {
+  if (!isComponentMounted.value) return
+  
   try {
     commentsLoading.value = true
     const res = await CommunityService.listComments({ post_id: post.id })
-    comments.value = res.items
-    likedCommentIds.value = new Set(res.items.filter(c => c.liked_by_me).map(c => c.id))
+    
+    // 检查组件是否仍然挂载
+    if (!isComponentMounted.value) return
+    
+    if (res) {
+      comments.value = res.items
+      likedCommentIds.value = new Set(res.items.filter(c => c.liked_by_me).map(c => c.id))
+    }
   } catch (err) {
     // ignore
   } finally {
-    commentsLoading.value = false
+    if (isComponentMounted.value) {
+      commentsLoading.value = false
+    }
   }
 }
 
 async function submitComment(post: CommunityPost) {
+  if (!isComponentMounted.value) return
+  
   const text = commentContent.value.trim()
   if (!text) return
+  
   commenting.value = true
+  
   try {
     const res = await CommunityService.createComment({ post_id: post.id, content: text })
-    commentContent.value = ''
-    post.comment_count = res.comment_count
-    await fetchComments(post)
+    
+    // 检查组件是否仍然挂载
+    if (!isComponentMounted.value) return
+    
+    if (res) {
+      commentContent.value = ''
+      post.comment_count = res.comment_count
+      await fetchComments(post)
+    }
   } finally {
-    commenting.value = false
+    if (isComponentMounted.value) {
+      commenting.value = false
+    }
   }
 }
 
 async function toggleLikeComment(c: CommunityComment) {
+  if (!isComponentMounted.value) return
+  
   try {
     liking.value = true
     const res = await CommunityService.likeComment(c.id)
-    c.like_count = res.like_count
-    if (res.action === 'liked') likedCommentIds.value.add(c.id)
-    else likedCommentIds.value.delete(c.id)
+    
+    // 检查组件是否仍然挂载
+    if (!isComponentMounted.value) return
+    
+    if (res) {
+      c.like_count = res.like_count
+      if (res.action === 'liked') likedCommentIds.value.add(c.id)
+      else likedCommentIds.value.delete(c.id)
+    }
   } finally {
-    liking.value = false
+    if (isComponentMounted.value) {
+      liking.value = false
+    }
   }
 }
 
 async function deletePost(post: CommunityPost) {
+  if (!isComponentMounted.value) return
+  
   if (!confirm('确定删除该帖子吗？')) return
+  
   try {
     await CommunityService.deletePost(post.id)
+    
+    // 检查组件是否仍然挂载
+    if (!isComponentMounted.value) return
+    
     await fetchPosts()
   } catch (err) {
-    // ignore
+    if (isComponentMounted.value) {
+      console.error('删除帖子失败:', err)
+    }
   }
 }
 
@@ -1019,17 +1239,28 @@ function openImageViewer(url: string, index: number, imageList: string[]) {
   currentImageList.value = imageList
   imageViewerVisible.value = true
   document.body.style.overflow = 'hidden'
+  
+  // 添加键盘事件监听
+  document.addEventListener('keydown', handleImageViewerKeydown)
+  
+  console.log(`打开图片查看器: ${index + 1}/${imageList.length}`)
 }
 
 function closeImageViewer() {
   imageViewerVisible.value = false
   document.body.style.overflow = ''
+  
+  // 移除键盘事件监听
+  document.removeEventListener('keydown', handleImageViewerKeydown)
+  
+  console.log('关闭图片查看器')
 }
 
 function prevImage() {
   if (currentImageIndex.value > 0) {
     currentImageIndex.value--
     currentImageUrl.value = currentImageList.value[currentImageIndex.value]
+    console.log(`切换到上一张图片: ${currentImageIndex.value + 1}/${currentImageList.value.length}`)
   }
 }
 
@@ -1037,6 +1268,42 @@ function nextImage() {
   if (currentImageIndex.value < currentImageList.value.length - 1) {
     currentImageIndex.value++
     currentImageUrl.value = currentImageList.value[currentImageIndex.value]
+    console.log(`切换到下一张图片: ${currentImageIndex.value + 1}/${currentImageList.value.length}`)
+  }
+}
+
+// 键盘快捷键支持
+function handleImageViewerKeydown(event: KeyboardEvent) {
+  if (!imageViewerVisible.value) return
+  
+  switch (event.key) {
+    case 'Escape':
+      closeImageViewer()
+      break
+    case 'ArrowLeft':
+      prevImage()
+      break
+    case 'ArrowRight':
+      nextImage()
+      break
+  }
+}
+
+// 图片查看器图片加载事件
+function onImageViewerImageLoad(event: Event) {
+  const img = event.target as HTMLImageElement
+  if (img) {
+    img.style.opacity = '1'
+    console.log('图片查看器图片加载完成:', img.naturalWidth, 'x', img.naturalHeight)
+  }
+}
+
+function onImageViewerImageError(event: Event) {
+  const img = event.target as HTMLImageElement
+  if (img) {
+    img.style.opacity = '0.5'
+    img.alt = '图片加载失败'
+    console.error('图片查看器图片加载失败:', img.src)
   }
 }
 
@@ -1059,7 +1326,10 @@ function formatTime(iso: string) {
   try { return new Date(iso).toLocaleString() } catch { return '' }
 }
 
-fetchPosts()
+// 初始化加载帖子（仅在组件挂载时）
+if (isComponentMounted.value) {
+  fetchPosts()
+}
 
 // 计算并设置搜索栏相对标题的固定偏移
 const pageHeaderRef = ref<HTMLElement | null>(null)
@@ -1071,12 +1341,22 @@ const setHeaderVar = () => {
 let observer: IntersectionObserver | null = null
 
 const setupInfiniteScroll = () => {
-  if (!loadMoreTrigger.value) return
+  if (!loadMoreTrigger.value || !isComponentMounted.value) return
+  
+  // 清理之前的观察器
+  if (observer) {
+    observer.disconnect()
+  }
   
   observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
-        if (entry.isIntersecting && hasMore.value && !loadingMore.value) {
+        // 严格检查组件挂载状态和所有必要条件
+        if (entry.isIntersecting && 
+            hasMore.value && 
+            !loadingMore.value && 
+            loadMoreTrigger.value && 
+            isComponentMounted.value) {
           loadMorePosts()
         }
       })
@@ -1099,18 +1379,50 @@ const cleanupInfiniteScroll = () => {
 }
 
 onMounted(() => {
+  console.log('CommunityView: 组件开始挂载...')
+  
   setHeaderVar()
   window.addEventListener('resize', setHeaderVar)
   
   // 设置无限滚动
   nextTick(() => {
-    setupInfiniteScroll()
+    if (isComponentMounted.value) {
+      setupInfiniteScroll()
+    }
   })
+  
+  console.log('CommunityView: 组件挂载完成')
 })
 
 onBeforeUnmount(() => {
+  console.log('CommunityView: 组件开始卸载，清理资源...')
+  
+  // 立即设置卸载标志，阻止所有后续异步操作
+  isComponentMounted.value = false
+  
+  // 清理事件监听器
   window.removeEventListener('resize', setHeaderVar)
+  
+  // 清理无限滚动观察器
   cleanupInfiniteScroll()
+  
+  // 清理防抖定时器
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+  }
+  
+  // 清理图片性能监控
+  cleanupFunctions.value.forEach(cleanup => {
+    try {
+      cleanup()
+    } catch (e) {
+      // 忽略清理错误
+    }
+  })
+  cleanupFunctions.value = []
+  
+  console.log('CommunityView: 组件卸载完成，资源已清理')
 })
 
 // 搜索栏展开/收起
@@ -1126,6 +1438,13 @@ const toggleSearch = async () => {
 const onSearchBlur = () => {
   if (!query.search.trim()) {
     searchExpanded.value = false
+  }
+}
+
+// 切换发布框收起/展开状态
+const toggleComposer = () => {
+  if (isComponentMounted.value) {
+    composerCollapsed.value = !composerCollapsed.value
   }
 }
 </script>
@@ -1149,6 +1468,105 @@ const onSearchBlur = () => {
 .composer-fixed { position: fixed; left: 0; right: 0; bottom: 8px; z-index: 6; padding: 0 1rem; }
 .fixed-inner { max-width: 1068px; margin: 0 auto; }
 .composer-fixed .composer-card { background: rgba($darkgray,.95); backdrop-filter: blur(8px); border:1px solid rgba($primary,.25); border-radius: $border-radius-xl; }
+
+// 收起状态样式
+.composer-fixed.collapsed {
+  .composer-card {
+    padding: 0.5rem;
+    min-height: auto;
+  }
+  
+  .composer-expanded-content {
+    display: none;
+  }
+  
+  .composer-collapsed-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 40px;
+  }
+}
+
+// 收起/展开控制按钮
+.composer-toggle {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba($primary, 0.1);
+  border: 1px solid rgba($primary, 0.3);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: $primary;
+  transition: all 0.3s ease;
+  z-index: 10;
+  
+  &:hover {
+    background: rgba($primary, 0.2);
+    border-color: $primary;
+    transform: scale(1.1);
+  }
+  
+  i {
+    font-size: 0.875rem;
+    transition: transform 0.3s ease;
+  }
+  
+  .toggle-text {
+    position: absolute;
+    right: 40px;
+    white-space: nowrap;
+    background: rgba($darkgray, 0.9);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    color: $gray-300;
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+  }
+  
+  &:hover .toggle-text {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// 收起状态下的快速发布按钮
+.composer-collapsed-content {
+  display: none;
+  
+  .btn {
+    background: linear-gradient(135deg, $primary 0%, $secondary 100%);
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba($primary, 0.4);
+    }
+    
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// 展开状态下的内容
+.composer-expanded-content {
+  animation: slideInUp 0.4s ease-out;
+}
 .composer-overlay { position:absolute; inset:0; background: rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; gap:1rem; border-radius: $border-radius-lg; z-index:2; }
 .composer-input { width: 100%; min-height: 90px; background: rgba($lightgray, .08); border: 1px solid rgba($primary, .3); border-radius: $border-radius-md; color: $white; padding: .75rem; }
 .composer-actions { display:flex; align-items:center; justify-content:space-between; margin-top:.5rem; }
@@ -1945,72 +2363,114 @@ const onSearchBlur = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.95);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 2rem;
   
-  .image-viewer-content {
-    position: relative;
-    max-width: 90vw;
-    max-height: 90vh;
-    
-    img {
+      .image-viewer-content {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      
+      .image-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        max-width: 95vw;
+        max-height: 85vh;
+        padding: 1rem;
+      }
+      
+      img {
       max-width: 100%;
       max-height: 100%;
+      width: auto;
+      height: auto;
       object-fit: contain;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      transition: all 0.3s ease;
+      
+      &:hover {
+        transform: scale(1.02);
+      }
     }
     
     .close-btn {
       position: absolute;
-      top: -40px;
+      top: -25px; // 从 -50px 改为 -25px，更贴近图像
       right: 0;
       background: rgba(255, 255, 255, 0.2);
       border: none;
       color: white;
-      width: 32px;
-      height: 32px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
       
       &:hover {
         background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+      }
+      
+      i {
+        font-size: 1.2rem;
       }
     }
     
     .image-nav {
       position: absolute;
-      bottom: -50px;
+      bottom: -30px; // 从 -60px 改为 -30px，更贴近图像
       left: 50%;
       transform: translateX(-50%);
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 1.5rem;
       color: white;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.75rem 1.5rem;
+      border-radius: 2rem;
+      backdrop-filter: blur(10px);
       
       .nav-btn {
         background: rgba(255, 255, 255, 0.2);
         border: none;
         color: white;
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: all 0.3s ease;
         
         &:hover:not(:disabled) {
           background: rgba(255, 255, 255, 0.3);
+          transform: scale(1.1);
         }
         
         &:disabled {
           opacity: 0.5;
           cursor: not-allowed;
+        }
+        
+        i {
+          font-size: 1rem;
         }
       }
       
@@ -2018,6 +2478,107 @@ const onSearchBlur = () => {
         font-size: 0.9rem;
         min-width: 80px;
         text-align: center;
+        font-weight: 500;
+      }
+      
+      .keyboard-hints {
+        position: absolute;
+        bottom: -50px; // 从 -80px 改为 -50px，更贴近图像
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 1rem;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.8rem;
+        font-weight: 500;
+        
+        span {
+          background: rgba(0, 0, 0, 0.3);
+          padding: 0.25rem 0.5rem;
+          border-radius: 0.5rem;
+          backdrop-filter: blur(10px);
+        }
+      }
+    }
+  }
+  
+  // 响应式设计
+  @media (max-width: 768px) {
+    padding: 1rem;
+    
+    .image-viewer-content {
+      .close-btn {
+        top: -20px; // 从 -40px 改为 -20px，更贴近图像
+        width: 36px;
+        height: 36px;
+        
+        i {
+          font-size: 1rem;
+        }
+      }
+      
+      .image-nav {
+        bottom: -25px; // 从 -50px 改为 -25px，更贴近图像
+        gap: 1rem;
+        padding: 0.5rem 1rem;
+        
+        .nav-btn {
+          width: 32px;
+          height: 32px;
+          
+          i {
+            font-size: 0.9rem;
+          }
+        }
+        
+        .image-counter {
+          font-size: 0.8rem;
+          min-width: 60px;
+        }
+      }
+      
+      .keyboard-hints {
+        bottom: -40px; // 从默认位置改为 -40px，更贴近图像
+      }
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.5rem;
+    
+    .image-viewer-content {
+      .close-btn {
+        top: -18px; // 从 -35px 改为 -18px，更贴近图像
+        width: 32px;
+        height: 32px;
+        
+        i {
+          font-size: 0.9rem;
+        }
+      }
+      
+      .image-nav {
+        bottom: -22px; // 从 -45px 改为 -22px，更贴近图像
+        gap: 0.75rem;
+        padding: 0.4rem 0.8rem;
+        
+        .nav-btn {
+          width: 28px;
+          height: 28px;
+          
+          i {
+            font-size: 0.8rem;
+          }
+        }
+        
+        .image-counter {
+          font-size: 0.75rem;
+          min-width: 50px;
+        }
+      }
+      
+      .keyboard-hints {
+        bottom: -35px; // 从默认位置改为 -35px，更贴近图像
       }
     }
   }
@@ -2389,6 +2950,33 @@ const onSearchBlur = () => {
 }
 
 @media (min-width: 992px) { .community-layout { grid-template-columns: 1fr; } }
+
+// 移动端收起/展开优化
+@media (max-width: 768px) {
+  .composer-fixed {
+    padding: 0 0.5rem;
+    
+    .composer-toggle {
+      width: 28px;
+      height: 28px;
+      top: 0.25rem;
+      right: 0.25rem;
+      
+      .toggle-text {
+        display: none; // 移动端隐藏提示文字
+      }
+    }
+    
+    &.collapsed .composer-card {
+      padding: 0.25rem;
+      
+      .composer-collapsed-content .btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.875rem;
+      }
+    }
+  }
+}
 </style>
 
 

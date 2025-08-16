@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 import os
 from flask_cors import CORS
 
@@ -19,11 +19,48 @@ def create_app():
     # 初始化CORS，使用配置中的允许源并明确设置资源路径
     CORS(app, resources={r"/api/*": {
         "origins": app.config.get('CORS_ORIGINS'),
-        "allow_headers": ["Content-Type", "Authorization"],
-        # 允许 PATCH 以支持管理端更新
-        "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        "supports_credentials": True
+        "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+        # 允许所有必要的HTTP方法
+        "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
+        "supports_credentials": True,
+        "expose_headers": ["Content-Type", "Authorization"],
+        "max_age": 86400  # 预检请求缓存24小时
     }})
+    
+    # 添加额外的CORS头处理
+    @app.after_request
+    def after_request(response):
+        # 确保CORS头被正确设置
+        origin = request.headers.get('Origin')
+        if origin:
+            # 检查是否在允许的源列表中
+            allowed_origins = app.config.get('CORS_ORIGINS', [])
+            ip_patterns = app.config.get('CORS_IP_PATTERNS', [])
+            
+            # 检查精确匹配
+            if origin in allowed_origins:
+                response.headers['Access-Control-Allow-Origin'] = origin
+                response.headers['Access-Control-Allow-Credentials'] = 'true'
+                response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD'
+                response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+            # 检查IP模式匹配（开发环境）
+            elif app.config.get('DEBUG', False):
+                for pattern in ip_patterns:
+                    if _match_ip_pattern(origin, pattern):
+                        response.headers['Access-Control-Allow-Origin'] = origin
+                        response.headers['Access-Control-Allow-Credentials'] = 'true'
+                        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD'
+                        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+                        break
+        
+        return response
+    
+    def _match_ip_pattern(origin, pattern):
+        """检查origin是否匹配IP模式"""
+        import re
+        # 将通配符模式转换为正则表达式
+        regex_pattern = pattern.replace('*', r'\d+').replace('.', r'\.')
+        return re.match(regex_pattern, origin) is not None
     # 注册蓝图
     register_blueprints(app)
     
