@@ -4,9 +4,9 @@ echo "📊 检查乐队管理系统服务状态..."
 
 # 检查后端
 echo "🔍 后端服务 (端口 5000):"
-if curl -s http://47.108.249.242:5000/health > /dev/null; then
+if curl -s http://47.107.79.244:5000/health > /dev/null; then
     echo "  ✅ 后端服务正常运行"
-    curl -s http://47.108.249.242:5000/health | python3 -m json.tool 2>/dev/null || echo "  响应格式异常"
+    curl -s http://47.107.79.244:5000/health | python3 -m json.tool 2>/dev/null || echo "  响应格式异常"
 else
     echo "  ❌ 后端服务无响应"
 fi
@@ -14,7 +14,7 @@ fi
 # 检查前端
 echo ""
 echo "🔍 前端服务 (端口 3000):"
-if curl -s -o /dev/null -w "%{http_code}" http://47.108.249.242:3000 | grep -q "200"; then
+if curl -s -o /dev/null -w "%{http_code}" http://47.107.79.244:3000 | grep -q "200"; then
     echo "  ✅ 前端服务正常运行"
 else
     echo "  ❌ 前端服务无响应"
@@ -81,6 +81,6 @@ fi
 
 echo ""
 echo "📋 访问地址:"
-echo "  🌐 前端: http://47.108.249.242:3000"
-echo "  🔧 后端API: http://47.108.249.242:5000"
-echo "  ❤️  健康检查: http://47.108.249.242:5000/health"
+echo "  🌐 前端: http://47.107.79.244:3000"
+echo "  🔧 后端API: http://47.107.79.244:5000"
+echo "  ❤️  健康检查: http://47.107.79.244:5000/health"

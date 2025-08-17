@@ -5,7 +5,7 @@ echo "🚀 快速部署乐队管理系统..."
 
 # 设置环境变量
 export FLASK_ENV=production
-export API_BASE_URL=http://47.108.249.242:5000
+export API_BASE_URL=http://47.107.79.244:5000
 
 # 后端启动
 echo "🔧 启动后端服务..."
@@ -33,9 +33,9 @@ echo $FRONTEND_PID > frontend.pid
 
 echo "✅ 部署完成！"
 echo "📋 服务信息:"
-echo "   前端: http://47.108.249.242:3000"
-echo "   后端: http://47.108.249.242:5000"
-echo "   健康检查: http://47.108.249.242:5000/health"
+echo "   前端: http://47.107.79.244:3000"
+echo "   后端: http://47.107.79.244:5000"
+echo "   健康检查: http://47.107.79.244:5000/health"
 echo ""
 echo "📝 日志文件:"
 echo "   后端日志: backend.log"

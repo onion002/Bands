@@ -6,9 +6,9 @@ import os
 from app_factory import create_app
 from flask import send_from_directory, current_app
 
-# 设置生产环境
+# 设置生产环境变量
 os.environ['FLASK_ENV'] = 'production'
-os.environ['API_BASE_URL'] = 'http://47.108.249.242:5000'
+os.environ['API_BASE_URL'] = 'http://47.107.79.244:5000'
 
 app = create_app()
 
@@ -23,13 +23,10 @@ def health_check():
     return {'status': 'healthy', 'message': 'Band Manager API is running'}
 
 if __name__ == '__main__':
-    print("🚀 启动生产环境 Flask 应用...")
-    print(f"🌐 服务器地址: http://47.108.249.242:5000")
-    
-    # 生产环境配置
-    app.run(
-        host='0.0.0.0',  # 监听所有网络接口
-        port=5000,
-        debug=False,     # 关闭调试模式
-        threaded=True    # 启用多线程
-    )
+    print("🚀 乐队管理系统后端服务启动中...")
+    print(f"🌐 服务器地址: http://47.107.79.244:5000")
+    print(f"🔧 环境模式: {app.config['ENV']}")
+    print(f"🐛 调试模式: {app.config['DEBUG']}")
+    print(f"📊 数据库: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print("=" * 50)
+    app.run(host='0.0.0.0', port=5000, debug=False)

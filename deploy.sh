@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 乐队管理系统部署脚本
-# 服务器IP: 47.108.249.242
+# 服务器IP: 47.107.79.244
 
 echo "🚀 开始部署乐队管理系统到生产服务器..."
 
@@ -20,11 +20,11 @@ fi
 
 # 设置环境变量
 export FLASK_ENV=production
-export API_BASE_URL=http://47.108.249.242:5000
+export API_BASE_URL=http://47.107.79.244:5000
 export SECRET_KEY=$(openssl rand -hex 32)
 
 echo -e "${BLUE}📋 部署配置:${NC}"
-echo -e "   服务器IP: 47.108.249.242"
+echo -e "   服务器IP: 47.107.79.244"
 echo -e "   后端端口: 5000"
 echo -e "   前端端口: 3000"
 echo -e "   环境: production"
@@ -92,7 +92,7 @@ cat > start_backend.sh << 'EOF'
 cd BandManager
 source venv/bin/activate
 export FLASK_ENV=production
-export API_BASE_URL=http://47.108.249.242:5000
+export API_BASE_URL=http://47.107.79.244:5000
 echo "🚀 启动后端服务器..."
 python app_production.py
 EOF
@@ -128,7 +128,7 @@ Type=simple
 User=$USER
 WorkingDirectory=$CURRENT_DIR/BandManager
 Environment=FLASK_ENV=production
-Environment=API_BASE_URL=http://47.108.249.242:5000
+Environment=API_BASE_URL=http://47.107.79.244:5000
 ExecStart=$CURRENT_DIR/BandManager/venv/bin/python $CURRENT_DIR/BandManager/app_production.py
 Restart=always
 RestartSec=3
@@ -173,9 +173,9 @@ echo -e "   ${YELLOW}sudo systemctl start band-manager-backend${NC}"
 echo -e "   ${YELLOW}sudo systemctl start band-manager-frontend${NC}"
 echo -e ""
 echo -e "3. 访问地址:"
-echo -e "   ${YELLOW}前端:${NC} http://47.108.249.242:3000"
-echo -e "   ${YELLOW}后端API:${NC} http://47.108.249.242:5000"
-echo -e "   ${YELLOW}健康检查:${NC} http://47.108.249.242:5000/health"
+echo -e "   ${YELLOW}前端:${NC} http://47.107.79.244:3000"
+echo -e "   ${YELLOW}后端API:${NC} http://47.107.79.244:5000"
+echo -e "   ${YELLOW}健康检查:${NC} http://47.107.79.244:5000/health"
 echo -e ""
 echo -e "4. 防火墙设置 (如需要):"
 echo -e "   ${YELLOW}sudo ufw allow 3000${NC}"
