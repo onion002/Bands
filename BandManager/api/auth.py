@@ -13,8 +13,18 @@ auth_bp = Blueprint('auth', __name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 初始化邮件服务
-email_service = EmailService()
+# 创建邮件服务实例（在模块级别创建）
+email_service = None
+
+def get_email_service():
+    """获取邮件服务实例"""
+    global email_service
+    if email_service is None:
+        email_service = EmailService()
+        # 这里需要从current_app获取配置来初始化
+        if current_app:
+            email_service.init_app(current_app)
+    return email_service
 
 def validate_email(email):
     """验证邮箱格式"""
@@ -64,10 +74,10 @@ def send_verification_code():
                 return jsonify({'error': '该邮箱已被注册'}), 409
         
         # 生成验证码
-        code = email_service.generate_verification_code()
+        code = get_email_service().generate_verification_code()
         
         # 发送验证码邮件
-        if email_service.send_verification_email(email, code, verification_type):
+        if get_email_service().send_verification_email(email, code, verification_type):
             return jsonify({
                 'message': '验证码发送成功',
                 'email': email,
@@ -101,7 +111,7 @@ def verify_email():
             return jsonify({'error': '邮箱格式不正确'}), 400
         
         # 验证验证码（不标记为已使用，因为这只是验证，不是最终使用）
-        is_valid, message = email_service.verify_code(email, code, verification_type, mark_used=False)
+        is_valid, message = get_email_service().verify_code(email, code, verification_type, mark_used=False)
         
         if is_valid:
             return jsonify({
@@ -162,7 +172,7 @@ def register_with_verification():
                 return jsonify({'error': '开发者密钥无效'}), 403
         
         # 验证邮箱验证码（标记为已使用，因为这是最终使用）
-        is_valid, message = email_service.verify_code(email, verification_code, 'register', mark_used=True)
+        is_valid, message = get_email_service().verify_code(email, verification_code, 'register', mark_used=True)
         if not is_valid:
             return jsonify({'error': message}), 400
         

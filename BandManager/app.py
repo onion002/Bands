@@ -1,7 +1,7 @@
 from app_factory import create_app
 import os
 from flask_cors import CORS
-from flask import send_from_directory, current_app
+from flask import current_app
 
 app = create_app()
 
@@ -14,9 +14,7 @@ def run_app():
     # 运行应用
     app.run(debug=True, host='0.0.0.0', port=5000)
 
-@app.route('/uploads/<path:filename>')
-def uploaded_file(filename):
-    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
+# 静态文件路由已在 app_factory.py 中定义，无需重复定义
 
 if __name__ == '__main__':
     run_app()

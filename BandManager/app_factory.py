@@ -64,6 +64,18 @@ def create_app():
     # 注册蓝图
     register_blueprints(app)
     
+    # 添加静态文件路由 - 必须在create_app函数内部
+    @app.route('/uploads/<path:filename>')
+    def uploaded_file(filename):
+        """提供上传文件的访问"""
+        from flask import send_from_directory
+        return send_from_directory('uploads', filename)
+    
+    # 健康检查路由
+    @app.route('/health')
+    def health_check():
+        return {'message': 'Band Manager API is running', 'status': 'healthy'}
+    
     return app
 
 def is_reloader_process():
@@ -121,6 +133,15 @@ def init_extensions(app):
     if not app.config.get('SQLALCHEMY_DATABASE_URI'):
         # 如果还没有设置，使用默认值
         app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite:///sqlite:///band_db.sqlite')
+    
+    # 邮件服务配置默认值
+    app.config.setdefault('MAIL_SERVER', 'smtp.qq.com')
+    app.config.setdefault('MAIL_PORT', 587)
+    app.config.setdefault('MAIL_USE_TLS', True)
+    app.config.setdefault('MAIL_USE_SSL', False)
+    app.config.setdefault('MAIL_USERNAME', '3137826052@qq.com')
+    app.config.setdefault('MAIL_PASSWORD', 'ptvporstvsbqdegc')
+    app.config.setdefault('MAIL_DEFAULT_SENDER', '3137826052@qq.com')
     
     from models import db
     from flask_migrate import Migrate

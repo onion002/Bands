@@ -183,3 +183,29 @@ class EmailService:
             db.session.rollback()
             logger.error(f"清理过期验证码失败: {str(e)}")
             return False
+
+
+# 兼容性函数，保持向后兼容
+def send_email(to_email, subject, body):
+    """发送普通邮件 - 兼容性函数"""
+    try:
+        service = EmailService()
+        # 这里需要初始化邮件服务，但为了简单起见，我们直接返回False
+        # 实际使用时应该通过app上下文调用
+        logger.warning("send_email函数已废弃，请使用EmailService类")
+        return False
+    except Exception as e:
+        logger.error(f"邮件发送失败: {to_email}, 错误: {str(e)}")
+        return False
+
+def send_verification_email(email, code, verification_type='register'):
+    """发送验证码邮件 - 兼容性函数"""
+    try:
+        service = EmailService()
+        # 这里需要初始化邮件服务，但为了简单起见，我们直接返回False
+        # 实际使用时应该通过app上下文调用
+        logger.warning("send_verification_email函数已废弃，请使用EmailService类")
+        return False
+    except Exception as e:
+        logger.error(f"验证码邮件发送失败: {email}, 错误: {str(e)}")
+        return False

@@ -25,8 +25,8 @@ def health_check():
 if __name__ == '__main__':
     print("🚀 乐队管理系统后端服务启动中...")
     print(f"🌐 服务器地址: http://47.107.79.244:5000")
-    print(f"🔧 环境模式: {app.config['ENV']}")
-    print(f"🐛 调试模式: {app.config['DEBUG']}")
-    print(f"📊 数据库: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print(f"🔧 环境模式: {os.environ.get('FLASK_ENV', 'production')}")
+    print(f"🐛 调试模式: {app.config.get('DEBUG', False)}")
+    print(f"📊 数据库: {app.config.get('SQLALCHEMY_DATABASE_URI', 'Not configured')}")
     print("=" * 50)
     app.run(host='0.0.0.0', port=5000, debug=False)
