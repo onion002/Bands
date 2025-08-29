@@ -26,3 +26,4 @@ schedule==1.2.0
 python-dotenv==1.0.0
 requests==2.32.4
 gunicorn==21.2.0
+pytz==2023.3

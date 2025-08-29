@@ -6,6 +6,7 @@ import os
 import uuid
 import logging
 from datetime import datetime
+from utils.timezone_utils import get_beijing_now_for_db
 
 from models import db, User, Post, Comment, Tag, Like, Report
 from auth_decorators import require_auth, require_admin, optional_auth, get_current_user, require_superadmin
@@ -215,7 +216,7 @@ def update_post(post_id: int):
         
         # 更新帖子内容
         post.content = content
-        post.updated_at = datetime.utcnow()
+        post.updated_at = get_beijing_now_for_db()
         
         # 处理标签
         tags = data.get('tags') or []

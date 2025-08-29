@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 from enum import Enum
 import json
+from utils.timezone_utils import get_beijing_now_for_db, format_beijing_time
 
 db = SQLAlchemy()
 
@@ -20,7 +21,7 @@ class EmailVerification(db.Model):
     verification_type = db.Column(db.String(20), nullable=False, default='register')  # register, login, reset_password
     is_used = db.Column(db.Boolean, nullable=False, default=False)
     expires_at = db.Column(db.DateTime, nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db)
     
     def is_expired(self):
         """检查验证码是否过期"""
@@ -32,8 +33,8 @@ class EmailVerification(db.Model):
             'email': self.email,
             'verification_type': self.verification_type,
             'is_used': self.is_used,
-            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'expires_at': format_beijing_time(self.expires_at) if self.expires_at else None,
+            'created_at': format_beijing_time(self.created_at) if self.created_at else None
         }
 
 class Band(db.Model):
@@ -54,8 +55,8 @@ class Band(db.Model):
     secondary_color = db.Column(db.String(7), default="#457b9d")
 
     # 时间戳字段
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db)
+    updated_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db, onupdate=get_beijing_now_for_db)
 
     # 软删除字段
     is_deleted = db.Column(db.Boolean, nullable=False, default=False)
@@ -111,8 +112,8 @@ class Member(db.Model):
     avatar_url = db.Column(db.String(255), nullable=True)
 
     # 时间戳字段
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db)
+    updated_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db, onupdate=get_beijing_now_for_db)
 
     # 软删除字段
     is_deleted = db.Column(db.Boolean, nullable=False, default=False)
@@ -153,8 +154,8 @@ class Event(db.Model):
     poster_image_url = db.Column(db.String(255), nullable=True)  # 演出海报
 
     # 时间戳字段
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db)
+    updated_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db, onupdate=get_beijing_now_for_db)
 
     # 软删除字段
     is_deleted = db.Column(db.Boolean, nullable=False, default=False)
@@ -167,7 +168,7 @@ class Event(db.Model):
             'id': self.id,
             'title': self.title,
             'description': self.description,
-            'event_date': self.event_date.isoformat() if self.event_date else None,
+            'event_date': format_beijing_time(self.event_date) if self.event_date else None,
             'venue': self.venue,
             'address': self.address,
             'ticket_price': float(self.ticket_price) if self.ticket_price else None,
@@ -204,8 +205,8 @@ class User(db.Model):
     events_public = db.Column(db.Boolean, nullable=False, default=False)
 
     # 时间戳字段
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db)
+    updated_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db, onupdate=get_beijing_now_for_db)
 
     # 关联关系 - 管理员用户拥有的数据
     owned_bands = db.relationship('Band', backref='owner', lazy=True, foreign_keys='Band.owner_id')
@@ -260,7 +261,7 @@ class User(db.Model):
             'display_name': self.display_name,
             'avatar_url': self.avatar_url,
             'is_active': self.is_active,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'created_at': format_beijing_time(self.created_at) if self.created_at else None,
             'bands_public': self.bands_public,
             'members_public': self.members_public,
             'events_public': self.events_public
@@ -284,7 +285,7 @@ class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, index=True, nullable=False)
 
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db)
 
     def to_dict(self):
         return {
@@ -306,8 +307,8 @@ class Post(db.Model):
     like_count = db.Column(db.Integer, nullable=False, default=0)
     comment_count = db.Column(db.Integer, nullable=False, default=0)
 
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db)
+    updated_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db, onupdate=get_beijing_now_for_db)
 
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     author = db.relationship('User', backref=db.backref('posts', lazy=True))
@@ -346,8 +347,8 @@ class Post(db.Model):
             'link_urls': self.get_link_urls(),
             'like_count': self.like_count,
             'comment_count': self.comment_count,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': format_beijing_time(self.created_at) if self.created_at else None,
+            'updated_at': format_beijing_time(self.updated_at) if self.updated_at else None,
             'author': {
                 'id': self.author.id,
                 'username': self.author.username,
@@ -364,8 +365,8 @@ class Comment(db.Model):
     content = db.Column(db.Text, nullable=False)
     like_count = db.Column(db.Integer, nullable=False, default=0)
     is_pinned = db.Column(db.Boolean, nullable=False, default=False)  # 是否置顶
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db)
+    updated_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db, onupdate=get_beijing_now_for_db)
 
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False, index=True)
     post = db.relationship('Post', backref=db.backref('comments', lazy=True, cascade='all, delete-orphan'))
@@ -382,8 +383,8 @@ class Comment(db.Model):
             'content': self.content,
             'like_count': self.like_count,
             'is_pinned': self.is_pinned,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': format_beijing_time(self.created_at) if self.created_at else None,
+            'updated_at': format_beijing_time(self.updated_at) if self.updated_at else None,
             'post_id': self.post_id,
             'author': {
                 'id': self.author.id,
@@ -401,7 +402,7 @@ class Like(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=True, index=True)
     comment_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=True, index=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db)
 
     user = db.relationship('User', backref=db.backref('likes', lazy=True, cascade='all, delete-orphan'))
     post = db.relationship('Post', backref=db.backref('likes', lazy=True, cascade='all, delete-orphan'))
@@ -416,7 +417,7 @@ class Report(db.Model):
     target_id = db.Column(db.Integer, nullable=False)
     reason = db.Column(db.String(500))
     status = db.Column(db.String(20), nullable=False, default='pending')  # pending, resolved, dismissed
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=get_beijing_now_for_db)
 
     reporter = db.relationship('User', backref=db.backref('reports', lazy=True))
 

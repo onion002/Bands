@@ -263,6 +263,9 @@
                         <i :class="[c.is_pinned ? 'fa fa-thumbtack' : 'fa fa-thumbtack']"></i> 
                         {{ c.is_pinned ? '取消置顶' : '置顶' }}
                       </button>
+                      <button v-if="canDeleteComment(c)" class="action delete" @click="deleteComment(c.id)">
+                        <i class="fa fa-trash"></i> 删除
+                      </button>
                       <button class="action" @click="reportTarget('comment', c.id)"><i class="fa fa-flag"></i> 举报</button>
                     </div>
                   </div>
@@ -311,6 +314,9 @@
                         <button v-if="canPinComment(c)" class="action pin" @click="togglePinComment(c)" :disabled="pinning">
                           <i :class="[c.is_pinned ? 'fa fa-thumbtack' : 'fa fa-thumbtack']"></i> 
                           {{ c.is_pinned ? '取消置顶' : '置顶' }}
+                        </button>
+                        <button v-if="canDeleteComment(c)" class="action delete" @click="deleteComment(c.id)">
+                          <i class="fa fa-trash"></i> 删除
                         </button>
                         <button class="action" @click="reportTarget('comment', c.id)"><i class="fa fa-flag"></i> 举报</button>
                       </div>
@@ -405,6 +411,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { CommunityService, type CommunityPost, type CommunityComment } from '@/api/communityService'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
+import { formatTime as formatTimeUtil } from '@/utils/timeUtils'
 
 const auth = useAuthStore()
 const isAuthenticated = computed(() => auth.isAuthenticated)
@@ -794,6 +801,25 @@ function canPinComment(comment: CommunityComment): boolean {
   return post.author?.id === authStore.user.id
 }
 
+// 判断是否可以删除评论（超级管理员、评论作者、帖子作者可以删除）
+function canDeleteComment(comment: CommunityComment): boolean {
+  const authStore = useAuthStore()
+  if (!isAuthenticated.value || !authStore.user) return false
+  
+  // 超级管理员可以删除任何评论
+  if (authStore.user.user_type === 'superadmin') return true
+  
+  // 评论作者可以删除自己的评论
+  if (comment.author?.id === authStore.user.id) return true
+  
+  // 找到对应的帖子
+  const post = posts.value.find(p => p.id === comment.post_id)
+  if (!post) return false
+  
+  // 帖子作者可以删除自己帖子下的评论
+  return post.author?.id === authStore.user.id
+}
+
 // 切换评论置顶状态
 async function togglePinComment(comment: CommunityComment) {
   if (pinning.value) return
@@ -841,6 +867,42 @@ async function togglePinComment(comment: CommunityComment) {
     console.error('置顶操作失败:', err)
   } finally {
     pinning.value = false
+  }
+}
+
+// 删除评论
+async function deleteComment(commentId: number) {
+  if (!confirm('确定删除这条评论吗？')) return
+  
+  try {
+    await CommunityService.deleteComment(commentId)
+    
+    // 从postComments中移除评论
+    for (const [postId, commentsArray] of postComments.value.entries()) {
+      const index = commentsArray.findIndex(c => c.id === commentId)
+      if (index !== -1) {
+        commentsArray.splice(index, 1)
+        postComments.value.set(postId, [...commentsArray])
+        
+        // 更新帖子的评论数量
+        const post = posts.value.find(p => p.id === postId)
+        if (post) {
+          post.comment_count = Math.max(0, post.comment_count - 1)
+        }
+        break
+      }
+    }
+    
+    // 从展开评论区移除评论
+    const expandedIndex = comments.value.findIndex(c => c.id === commentId)
+    if (expandedIndex !== -1) {
+      comments.value.splice(expandedIndex, 1)
+    }
+    
+    console.log('评论删除成功')
+  } catch (err: any) {
+    console.error('删除评论失败:', err)
+    alert(err.error || '删除评论失败')
   }
 }
 
@@ -1323,7 +1385,7 @@ marked.setOptions({})
 function renderMarkdown(text: string) { return marked.parse(text || '') as string }
 
 function formatTime(iso: string) {
-  try { return new Date(iso).toLocaleString() } catch { return '' }
+  return formatTimeUtil(iso, 'relative')
 }
 
 // 初始化加载帖子（仅在组件挂载时）
@@ -2177,6 +2239,7 @@ const toggleComposer = () => {
 .action.detail:hover { color:#10b981; background:rgba(#10b981,.1); }
 .action.edit:hover { color:#f59e0b; background:rgba(#f59e0b,.1); }
 .action.danger:hover { color:#ef4444; background:rgba(#ef4444,.1); }
+.action.delete:hover { color:#ef4444; background:rgba(#ef4444,.1); }
 
 .default-comments,
 .comments { 

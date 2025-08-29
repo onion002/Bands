@@ -214,6 +214,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { CommunityService } from '@/api/communityService'
 import { marked } from 'marked'
+import { formatTime as formatTimeUtil } from '@/utils/timeUtils'
 
 const route = useRoute()
 const router = useRouter()
@@ -250,7 +251,10 @@ const canDeletePost = computed(() => {
 
 const canDeleteComment = computed(() => (comment) => {
   if (!authStore.user) return false
-  return isSuperAdmin.value || comment.author_id === authStore.user.id
+  // 超级管理员、评论作者、或帖子作者可以删除评论
+  return isSuperAdmin.value || 
+         comment.author_id === authStore.user.id || 
+         (post.value && post.value.author && post.value.author.id === authStore.user.id)
 })
 
 const renderedContent = computed(() => {
@@ -264,22 +268,8 @@ const renderMarkdown = (text) => {
   return marked(text)
 }
 
-const formatTime = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  
-  const minute = 60 * 1000
-  const hour = 60 * minute
-  const day = 24 * hour
-  
-  if (diff < minute) return '刚刚'
-  if (diff < hour) return `${Math.floor(diff / minute)}分钟前`
-  if (diff < day) return `${Math.floor(diff / hour)}小时前`
-  if (diff < 7 * day) return `${Math.floor(diff / day)}天前`
-  
-  return date.toLocaleDateString('zh-CN')
+const formatTime = (dateString: string) => {
+  return formatTimeUtil(dateString, 'relative')
 }
 
 const loadPost = async () => {
