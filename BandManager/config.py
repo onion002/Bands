@@ -45,10 +45,10 @@ class Config:
     # CORS 配置 --------
     # 允许前端跨域访问
     CORS_ORIGINS = [
-        "http://47.107.79.244:3000",  # 生产环境前端
-        "https://47.107.79.244:3000", # HTTPS版本
-        "http://47.107.79.244",       # 不带端口
-        "https://47.107.79.244",      # HTTPS不带端口
+        "http://47.108.30.30:3000",  # 生产环境前端
+        "https://47.108.30.30:3000", # HTTPS版本
+        "http://47.108.30.30",       # 不带端口
+        "https://47.108.30.30",      # HTTPS不带端口
         "http://118.25.219.26:5173",   # 原有配置保留
         "http://localhost:5173",       # 本地开发
         "http://localhost:3000",       # 本地生产构建测试
@@ -77,7 +77,7 @@ class ProductionConfig(Config):
     """生产环境配置"""
     DEBUG = False
     SQLALCHEMY_ECHO = False
-    API_BASE_URL = 'http://47.107.79.244:5000'
+    API_BASE_URL = 'http://47.108.30.30:5000'
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'CHANGE-THIS-IN-PRODUCTION-VERY-IMPORTANT'
 
     # 生产环境数据库配置

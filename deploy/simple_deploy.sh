@@ -13,10 +13,10 @@ NC='\033[0m' # No Color
 
 # 设置环境变量
 export FLASK_ENV=production
-export API_BASE_URL=http://47.107.79.244:5000
+export API_BASE_URL=http://47.108.30.30:5000
 
 echo -e "${BLUE}📋 部署配置:${NC}"
-echo -e "   服务器IP: 47.107.79.244"
+echo -e "   服务器IP: 47.108.30.30"
 echo -e "   后端端口: 5000"
 echo -e "   前端端口: 3000"
 echo -e "   环境: production"
@@ -89,7 +89,7 @@ cat > start_backend.sh << 'EOF'
 cd BandManager
 source venv/bin/activate
 export FLASK_ENV=production
-export API_BASE_URL=http://47.107.79.244:5000
+export API_BASE_URL=http://47.108.30.30:5000
 echo "🚀 启动后端服务器..."
 python app_production.py
 EOF
@@ -116,9 +116,9 @@ echo -e "   ${YELLOW}后端:${NC} ./start_backend.sh"
 echo -e "   ${YELLOW}前端:${NC} ./start_frontend.sh"
 echo -e ""
 echo -e "2. 访问地址:"
-echo -e "   ${YELLOW}前端:${NC} http://47.107.79.244:3000"
-echo -e "   ${YELLOW}后端API:${NC} http://47.107.79.244:5000"
-echo -e "   ${YELLOW}健康检查:${NC} http://47.107.79.244:5000/health"
+echo -e "   ${YELLOW}前端:${NC} http://47.108.30.30:3000"
+echo -e "   ${YELLOW}后端API:${NC} http://47.108.30.30:5000"
+echo -e "   ${YELLOW}健康检查:${NC} http://47.108.30.30:5000/health"
 echo -e ""
 echo -e "3. 防火墙设置 (如需要):"
 echo -e "   ${YELLOW}sudo firewall-cmd --permanent --add-port=3000/tcp${NC}"

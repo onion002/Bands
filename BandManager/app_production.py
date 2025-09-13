@@ -8,7 +8,7 @@ from flask import send_from_directory, current_app
 
 # 设置生产环境变量
 os.environ['FLASK_ENV'] = 'production'
-os.environ['API_BASE_URL'] = 'http://47.107.79.244:5000'
+os.environ['API_BASE_URL'] = 'http://47.108.30.30:5000'
 
 app = create_app()
 
@@ -24,7 +24,7 @@ def health_check():
 
 if __name__ == '__main__':
     print("🚀 乐队管理系统后端服务启动中...")
-    print(f"🌐 服务器地址: http://47.107.79.244:5000")
+    print(f"🌐 服务器地址: http://47.108.30.30:5000")
     print(f"🔧 环境模式: {os.environ.get('FLASK_ENV', 'production')}")
     print(f"🐛 调试模式: {app.config.get('DEBUG', False)}")
     print(f"📊 数据库: {app.config.get('SQLALCHEMY_DATABASE_URI', 'Not configured')}")

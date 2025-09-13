@@ -1,10 +1,10 @@
-# 完整部署指南 - 新服务器 47.107.79.244
+# 完整部署指南 - 新服务器 47.108.30.30
 
 ## 📋 部署前检查清单
 
 在开始部署之前，请确认以下信息：
 
-- [ ] 服务器IP: 47.107.79.244
+- [ ] 服务器IP: 47.108.30.30
 - [ ] 操作系统: Alibaba Cloud Linux 3
 - [ ] 已连接到服务器
 - [ ] 有sudo权限
@@ -260,8 +260,8 @@ sudo firewall-cmd --list-ports
 sudo firewall-cmd --list-ports | grep -E "(3000|5000)"
 
 # 从外部测试连接
-curl http://47.107.79.244:5000/health
-curl http://47.107.79.244:3000
+curl http://47.108.30.30:5000/health
+curl http://47.108.30.30:3000
 ```
 
 **预期结果**: 
@@ -283,10 +283,10 @@ chmod +x check_status.sh
 ```bash
 # 手动检查各项服务
 echo "=== 后端服务 ==="
-curl -s http://47.107.79.244:5000/health | python3 -m json.tool
+curl -s http://47.108.30.30:5000/health | python3 -m json.tool
 
 echo "=== 前端服务 ==="
-curl -s -o /dev/null -w "%{http_code}" http://47.107.79.244:3000
+curl -s -o /dev/null -w "%{http_code}" http://47.108.30.30:3000
 
 echo "=== 数据库连接 ==="
 mysql -u root -p -e "USE band_db; SHOW TABLES;"
@@ -304,12 +304,12 @@ redis-cli ping
 ### 6.2 功能测试
 ```bash
 # 测试用户注册功能
-curl -X POST http://47.107.79.244:5000/api/auth/register \
+curl -X POST http://47.108.30.30:5000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","email":"test@example.com","password":"Test123!"}'
 
 # 测试用户登录功能
-curl -X POST http://47.107.79.244:5000/api/auth/login \
+curl -X POST http://47.108.30.30:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","password":"Test123!"}'
 ```
@@ -381,10 +381,10 @@ chmod 600 BandManager/.env
 
 ## 🔗 访问地址
 
-- **前端应用**: http://47.107.79.244:3000
-- **后端API**: http://47.107.79.244:5000
-- **健康检查**: http://47.107.79.244:5000/health
-- **API文档**: http://47.107.79.244:5000/api/
+- **前端应用**: http://47.108.30.30:3000
+- **后端API**: http://47.108.30.30:5000
+- **健康检查**: http://47.108.30.30:5000/health
+- **API文档**: http://47.108.30.30:5000/api/
 
 ---
 

@@ -132,8 +132,8 @@ verify_step_exit "Redis连接" "redis-cli ping"
 # 外部访问测试
 echo -e "\n${YELLOW}=== 外部访问测试 ===${NC}"
 
-verify_step_exit "外部后端访问" "curl -s http://47.107.79.244:5000/health"
-verify_step_exit "外部前端访问" "curl -s -o /dev/null -w '%{http_code}' http://47.107.79.244:3000"
+verify_step_exit "外部后端访问" "curl -s http://47.108.30.30:5000/health"
+verify_step_exit "外部前端访问" "curl -s -o /dev/null -w '%{http_code}' http://47.108.30.30:3000"
 
 # 显示验证结果
 echo -e "\n${YELLOW}=== 验证结果汇总 ===${NC}"
@@ -144,9 +144,9 @@ echo -e "${RED}失败: ${FAILED}${NC}"
 if [ $FAILED -eq 0 ]; then
     echo -e "\n${GREEN}🎉 所有验证项目都通过了！部署成功！${NC}"
     echo -e "\n${BLUE}📋 访问地址:${NC}"
-    echo -e "前端: http://47.107.79.244:3000"
-    echo -e "后端: http://47.107.79.244:5000"
-    echo -e "健康检查: http://47.107.79.244:5000/health"
+    echo -e "前端: http://47.108.30.30:3000"
+    echo -e "后端: http://47.108.30.30:5000"
+    echo -e "健康检查: http://47.108.30.30:5000/health"
 else
     echo -e "\n${RED}⚠️  有 ${FAILED} 个验证项目失败，请检查并修复问题。${NC}"
     echo -e "\n${BLUE}📋 建议:${NC}"

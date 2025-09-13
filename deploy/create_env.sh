@@ -19,7 +19,7 @@ SECRET_KEY=$(openssl rand -hex 32)
 cat > .env << EOF
 # ========================================
 # 乐队管理系统 - 生产环境配置文件
-# 服务器: 47.107.79.244
+# 服务器: 47.108.30.30
 # 生成时间: $(date)
 # ========================================
 
@@ -52,7 +52,7 @@ VERIFICATION_CODE_LENGTH=6
 REDIS_URL=redis://localhost:6379/0
 
 # ====== API配置 ======
-API_BASE_URL=http://47.107.79.244:5000
+API_BASE_URL=http://47.108.30.30:5000
 
 # ====== 验证码配置 ======
 VERIFICATION_CODE_EXPIRE=300

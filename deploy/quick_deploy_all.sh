@@ -19,7 +19,7 @@ if [ ! -f "quick_setup.sh" ]; then
 fi
 
 echo -e "${BLUE}📋 部署配置:${NC}"
-echo -e "   服务器IP: 47.107.79.244"
+echo -e "   服务器IP: 47.108.30.30"
 echo -e "   后端端口: 5000"
 echo -e "   前端端口: 3000"
 echo -e "   环境: production"
@@ -82,9 +82,9 @@ echo -e "   后端服务PID: $BACKEND_PID"
 echo -e "   前端服务PID: $FRONTEND_PID"
 
 echo -e "\n${BLUE}🌐 访问地址:${NC}"
-echo -e "   前端应用: http://47.107.79.244:3000"
-echo -e "   后端API: http://47.107.79.244:5000"
-echo -e "   健康检查: http://47.107.79.244:5000/health"
+echo -e "   前端应用: http://47.108.30.30:3000"
+echo -e "   后端API: http://47.108.30.30:5000"
+echo -e "   健康检查: http://47.108.30.30:5000/health"
 
 echo -e "\n${BLUE}📖 部署文档:${NC}"
 echo -e "   部署总结: DEPLOYMENT_SUMMARY.md"
