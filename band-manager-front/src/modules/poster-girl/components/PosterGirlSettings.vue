@@ -9,6 +9,93 @@
 
       <!-- 设置表单 -->
       <form @submit.prevent="saveSettings" class="settings-form">
+        <!-- 配置模式设置 -->
+        <div class="settings-section">
+          <h3>⚙️ 配置模式</h3>
+          
+          <div class="config-mode-selector">
+            <div class="mode-status">
+              <div class="status-indicator" :class="configModeInfo.currentMode">
+                <i class="fas fa-circle"></i>
+              </div>
+              <div class="status-text">
+                <strong>当前模式：{{ configModeInfo.currentMode === 'default' ? '默认配置' : '本地配置' }}</strong>
+                <p>{{ configModeInfo.modeDescription }}</p>
+              </div>
+            </div>
+            
+            <div class="mode-buttons">
+              <button 
+                type="button"
+                @click="switchToDefaultMode"
+                class="mode-btn"
+                :class="{ active: configModeInfo.currentMode === 'default' }"
+              >
+                <i class="fas fa-home"></i>
+                <span>默认配置</span>
+                <small>使用系统预设配置</small>
+              </button>
+              
+              <button 
+                type="button"
+                @click="switchToLocalMode"
+                class="mode-btn"
+                :class="{ active: configModeInfo.currentMode === 'localStorage' }"
+              >
+                <i class="fas fa-cog"></i>
+                <span>本地配置</span>
+                <small>
+                  {{ configModeInfo.hasLocalConfig ? '使用自定义配置' : '暂无自定义配置' }}
+                </small>
+              </button>
+            </div>
+            
+            <!-- 本地配置管理 -->
+            <div v-if="configModeInfo.currentMode === 'localStorage'" class="local-config-management">
+              <div class="config-actions">
+                <button 
+                  type="button"
+                  @click="exportConfig"
+                  class="btn btn-info btn-sm"
+                  :disabled="!configModeInfo.hasLocalConfig"
+                >
+                  <i class="fas fa-download"></i> 导出配置
+                </button>
+                
+                <button 
+                  type="button"
+                  @click="clearLocalConfig"
+                  class="btn btn-warning btn-sm"
+                  :disabled="!configModeInfo.hasLocalConfig"
+                >
+                  <i class="fas fa-trash"></i> 清除本地配置
+                </button>
+              </div>
+              
+              <div class="import-config">
+                <label for="importFile" class="btn btn-secondary btn-sm">
+                  <i class="fas fa-upload"></i> 导入配置
+                </label>
+                <input 
+                  type="file" 
+                  id="importFile" 
+                  accept=".json"
+                  @change="importConfig"
+                  style="display: none;"
+                >
+              </div>
+            </div>
+            
+            <div class="mode-help">
+              <h5>💡 模式说明</h5>
+              <ul>
+                <li><strong>默认配置</strong>：始终使用系统预设的配置，设置修改不会保存</li>
+                <li><strong>本地配置</strong>：允许自定义设置并保存到浏览器，支持导入/导出</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         <!-- 基本设置 -->
         <div class="settings-section">
           <h3>⚙️ 基本设置</h3>
@@ -377,8 +464,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { getCurrentConfig, saveConfig, defaultPosterGirlConfig, type PosterGirlConfig, AVAILABLE_MODELS } from '../config/posterGirl'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { 
+  getCurrentConfig, 
+  saveConfig, 
+  defaultPosterGirlConfig, 
+  type PosterGirlConfig, 
+  type ConfigMode,
+  AVAILABLE_MODELS,
+  getCurrentConfigMode,
+  setConfigMode,
+  getConfigModeInfo,
+  hasLocalStorageConfig,
+  clearLocalStorageConfig
+} from '../config/posterGirl'
 
 // 响应式数据
 const showPreview = ref(false)
@@ -386,6 +485,14 @@ const settings = reactive<PosterGirlConfig>(getCurrentConfig())
 
 // 可用模型列表（从全局配置导入）
 const availableModels = ref(AVAILABLE_MODELS)
+
+// 配置模式信息
+const configModeInfo = ref(getConfigModeInfo())
+
+// 更新配置模式信息
+const updateConfigModeInfo = () => {
+  configModeInfo.value = getConfigModeInfo()
+}
 
 // 添加数组项
 const addArrayItem = (key: 'welcome' | 'touch') => {
@@ -459,6 +566,164 @@ const selectDefaultModel = (path: string) => {
   settings.defaultModel = path
 }
 
+// 切换到默认配置模式
+const switchToDefaultMode = () => {
+  if (configModeInfo.value.currentMode === 'default') return
+  
+  if (confirm('切换到默认配置模式将使用系统预设配置，当前的设置修改将不会保存。\n\n确定要切换吗？')) {
+    setConfigMode('default')
+    updateConfigModeInfo()
+    
+    // 重新加载默认配置到表单
+    const defaultConfig = getCurrentConfig()
+    Object.assign(settings, defaultConfig)
+    
+    alert('已切换到默认配置模式！')
+    
+    // 通知看板娘组件更新
+    notifyConfigUpdate()
+  }
+}
+
+// 切换到本地配置模式  
+const switchToLocalMode = () => {
+  if (configModeInfo.value.currentMode === 'localStorage') return
+  
+  setConfigMode('localStorage')
+  updateConfigModeInfo()
+  
+  // 重新加载配置（可能是localStorage配置或默认配置）
+  const currentConfig = getCurrentConfig()
+  Object.assign(settings, currentConfig)
+  
+  alert('已切换到本地配置模式！现在可以自定义并保存设置了。')
+  
+  // 通知看板娘组件更新
+  notifyConfigUpdate()
+}
+
+// 清除本地配置
+const clearLocalConfig = () => {
+  if (!configModeInfo.value.hasLocalConfig) return
+  
+  if (confirm('确定要清除所有本地自定义配置吗？\n\n清除后将恢复到默认配置，此操作不可撤销。')) {
+    clearLocalStorageConfig()
+    updateConfigModeInfo()
+    
+    // 重新加载配置（现在应该是默认配置）
+    const currentConfig = getCurrentConfig()
+    Object.assign(settings, currentConfig)
+    
+    alert('本地配置已清除！')
+    
+    // 通知看板娘组件更新
+    notifyConfigUpdate()
+  }
+}
+
+// 导出配置
+const exportConfig = () => {
+  if (!configModeInfo.value.hasLocalConfig) {
+    alert('当前没有可导出的本地配置')
+    return
+  }
+  
+  try {
+    const configData = localStorage.getItem('posterGirlSettings')
+    if (!configData) {
+      alert('导出失败：找不到配置数据')
+      return
+    }
+    
+    // 验证配置数据
+    const config = JSON.parse(configData)
+    const exportData = {
+      version: '1.0',
+      exportTime: new Date().toISOString(),
+      config: config
+    }
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `poster-girl-config-${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    
+    alert('配置导出成功！')
+  } catch (error) {
+    console.error('导出配置失败:', error)
+    alert('导出配置失败，请重试')
+  }
+}
+
+// 导入配置
+const importConfig = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  
+  if (!file) return
+  
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try {
+      const content = e.target?.result as string
+      const importData = JSON.parse(content)
+      
+      // 验证导入数据格式
+      if (!importData.config) {
+        throw new Error('无效的配置文件格式')
+      }
+      
+      // 验证配置数据
+      const config = importData.config as PosterGirlConfig
+      if (!config.mode || !config.content || !config.size) {
+        throw new Error('配置文件数据不完整')
+      }
+      
+      if (confirm('确定要导入这个配置文件吗？\n\n这将覆盖当前的本地配置。')) {
+        // 保存导入的配置
+        saveConfig(config)
+        updateConfigModeInfo()
+        
+        // 更新表单数据
+        Object.assign(settings, config)
+        
+        alert('配置导入成功！')
+        
+        // 通知看板娘组件更新
+        notifyConfigUpdate()
+      }
+    } catch (error) {
+      console.error('导入配置失败:', error)
+      alert('导入配置失败：文件格式错误或数据不完整')
+    }
+  }
+  
+  reader.readAsText(file)
+  
+  // 清空文件输入，允许重复导入同一文件
+  target.value = ''
+}
+
+// 通知配置更新
+const notifyConfigUpdate = () => {
+  // 通知当前窗口内其它组件
+  window.dispatchEvent(new CustomEvent('posterGirl:updated', { detail: settings }))
+
+  // 同时兼容在 iframe 中时通知父窗口
+  if (window.parent !== window) {
+    window.parent.postMessage({
+      type: 'posterGirlConfigUpdated',
+      config: settings
+    }, '*')
+  }
+}
+
 // 预览尺寸
 const previewSize = () => {
   // 发送消息给主页面，实时预览尺寸
@@ -500,6 +765,7 @@ const saveSettings = () => {
   try {
     console.log('开始保存设置...')
     console.log('当前设置:', settings)
+    console.log('当前配置模式:', configModeInfo.value.currentMode)
     
     // 简单验证
     if (!settings.mode || !settings.model || !settings.content.welcome) {
@@ -507,23 +773,22 @@ const saveSettings = () => {
       return
     }
     
-    // 直接保存设置（验证和补全会自动处理）
+    // 检查配置模式
+    if (configModeInfo.value.currentMode === 'default') {
+      alert('当前处于默认配置模式，设置修改不会保存。\n\n如需保存自定义设置，请先切换到"本地配置"模式。')
+      return
+    }
+    
+    // 本地配置模式，保存设置
     saveConfig(settings)
+    updateConfigModeInfo()
     
     console.log('设置保存成功，localStorage中的配置:', localStorage.getItem('posterGirlSettings'))
     
     alert('设置保存成功！看板娘将自动应用新设置。')
     
-    // 通知当前窗口内其它组件
-    window.dispatchEvent(new CustomEvent('posterGirl:updated', { detail: settings }))
-
-    // 同时兼容在 iframe 中时通知父窗口
-    if (window.parent !== window) {
-      window.parent.postMessage({
-        type: 'posterGirlConfigUpdated',
-        config: settings
-      }, '*')
-    }
+    // 通知看板娘组件更新
+    notifyConfigUpdate()
   } catch (error) {
     console.error('保存设置失败:', error)
     alert('保存设置失败，请重试')
@@ -535,6 +800,7 @@ const loadSettings = () => {
   try {
     const currentSettings = getCurrentConfig()
     Object.assign(settings, currentSettings)
+    updateConfigModeInfo()
   } catch (error) {
     console.error('加载设置失败:', error)
   }
@@ -543,6 +809,8 @@ const loadSettings = () => {
 // 生命周期
 onMounted(() => {
   loadSettings()
+  console.log('设置页面初始化完成')
+  console.log('当前配置模式:', configModeInfo.value)
 })
 </script>
 
@@ -1017,6 +1285,197 @@ onMounted(() => {
         line-height: 1.5;
       }
     }
+  }
+}
+
+// 配置模式样式
+.config-mode-selector {
+  .mode-status {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    border-left: 4px solid #667eea;
+    
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      
+      &.default i {
+        color: #28a745;
+        animation: pulse-green 2s infinite;
+      }
+      
+      &.localStorage i {
+        color: #007bff;
+        animation: pulse-blue 2s infinite;
+      }
+    }
+    
+    .status-text {
+      flex: 1;
+      
+      strong {
+        display: block;
+        color: #333;
+        font-size: 1rem;
+        margin-bottom: 0.2rem;
+      }
+      
+      p {
+        margin: 0;
+        color: #666;
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+    }
+  }
+  
+  .mode-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .mode-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 1.2rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 12px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    
+    &:hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(102, 126, 234, 0.1);
+    }
+    
+    &.active {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.1);
+      
+      i {
+        color: #667eea;
+      }
+      
+      span {
+        color: #667eea;
+        font-weight: 600;
+      }
+    }
+    
+    i {
+      font-size: 1.5rem;
+      color: #666;
+      transition: color 0.3s ease;
+    }
+    
+    span {
+      font-size: 1rem;
+      font-weight: 500;
+      color: #333;
+      transition: all 0.3s ease;
+    }
+    
+    small {
+      font-size: 0.8rem;
+      color: #666;
+      margin-top: 0.2rem;
+    }
+  }
+  
+  .local-config-management {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    
+    .config-actions {
+      display: flex;
+      gap: 0.6rem;
+      margin-bottom: 0.8rem;
+      flex-wrap: wrap;
+      
+      @media (max-width: 768px) {
+        flex-direction: column;
+      }
+    }
+    
+    .import-config {
+      display: flex;
+      gap: 0.6rem;
+    }
+  }
+  
+  .mode-help {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-radius: 12px;
+    padding: 1rem;
+    border-left: 4px solid #2196f3;
+    
+    h5 {
+      margin: 0 0 0.8rem 0;
+      color: #1976d2;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    
+    ul {
+      margin: 0;
+      padding-left: 1.2rem;
+      
+      li {
+        margin-bottom: 0.4rem;
+        font-size: 0.9rem;
+        color: #555;
+        line-height: 1.5;
+        
+        strong {
+          color: #333;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+}
+
+// 动画效果
+@keyframes pulse-green {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes pulse-blue {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
   }
 }
 

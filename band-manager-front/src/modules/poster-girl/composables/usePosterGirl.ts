@@ -1,6 +1,6 @@
 // 看板娘主要逻辑的组合式API
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
-import { getCurrentConfig, saveConfig } from '../config/posterGirl'
+import { getCurrentConfig, saveConfig, getCurrentConfigMode } from '../config/posterGirl'
 import { live2dService } from '../services/live2dService'
 import { modelManager } from '../services/modelManager'
 import type { PosterGirlConfig, UsePosterGirlReturn } from '../types'

@@ -29,7 +29,6 @@ export {
   
   // 默认配置
   defaultPosterGirlConfig,
-  customPosterGirlConfig,
   
   // 模型列表
   AVAILABLE_MODELS

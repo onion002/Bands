@@ -59,7 +59,7 @@ export const defaultPosterGirlConfig: PosterGirlConfig = {
   tips: true, // 启用提示系统
   size: {
     width: 280,
-    height: 250
+    height: 340
   },
   content: {
     welcome: [
@@ -89,9 +89,38 @@ export const defaultPosterGirlConfig: PosterGirlConfig = {
         text: "这个卡片很有趣呢！"
       },
       {
-        selector: "button",
-        text: "点击这个按钮试试看~"
+        selector: ".music-box",
+        text: "想要听美妙的音乐吗？😝"
+      },
+      {
+        selector: ".pio-skin",
+        text: "我会变身的哦😉"
+      },
+      {
+        selector: ".pio-teacher",
+        text: "我是你的音乐老师哦😉"
+      },
+      {
+        selector: ".pio-settings",
+        text: "我是你的看板娘哦😉"
+      },
+      {
+        selector: ".pio-music",
+        text: "我是你的音乐助手哦😉"
+      },
+      {
+        selector: ".favorite-btn",
+        text: "喜欢可以收藏哦！♥"
+      },
+      {
+        selector: ".play-btn",
+        text: "点击即可播放。🎧"
+      },
+      {
+        selector: ".pio-close",
+        text: "我会想你的😙"
       }
+
     ]
   },
   model: [
@@ -99,66 +128,34 @@ export const defaultPosterGirlConfig: PosterGirlConfig = {
     "/poster-girl-assets/models/remu/model.json",
     "/poster-girl-assets/models/umaru/xiaomai.model.json"
   ],
-  defaultModel: "/poster-girl-assets/models/pio/model.json"
+  defaultModel: "/poster-girl-assets/models/remu/model.json"
 }
 
-// 自定义配置示例
-export const customPosterGirlConfig: PosterGirlConfig = {
-  mode: "draggable",
-  hidden: false,
-  size: {
-    width: 320,
-    height: 280
-  },
-  content: {
-    welcome: [
-      "🎵 音乐无界，梦想无限！",
-      "欢迎来到我们的音乐世界~",
-      "今天想要探索什么音乐呢？"
-    ],
-    touch: [
-      "🎸 让我们一起摇滚吧！",
-      "🎹 钢琴声真美妙~",
-      "🥁 鼓点节奏感十足！"
-    ],
-    skin: [
-      "想看看我的新造型吗？",
-      "新装扮很适合我呢~"
-    ],
-    home: "回到音乐之家！",
-    close: "音乐永不停歇，下次见！",
-    custom: [
-      {
-        selector: ".band-card",
-        text: "这个乐队的风格很独特！"
-      },
-      {
-        selector: ".card", 
-        text: "这个卡片很有趣呢！"
-      },
-      {
-        selector: "button",
-        text: "点击这个按钮试试看~"
-      },
-      {
-        type: "read",
-        selector: ".post-item a"
-      },
-      {
-        type: "link",
-        selector: ".post-content a"
-      }
-    ]
-  },
-  model: [
-    "/pio/models/pio/model.json",
-    "/pio/models/remu/model.json"
-  ],
-  tips: true
+// 配置模式枚举
+export type ConfigMode = 'default' | 'localStorage'
+
+// 获取当前配置模式
+export function getCurrentConfigMode(): ConfigMode {
+  const mode = localStorage.getItem('posterGirlConfigMode')
+  return mode === 'default' ? 'default' : 'localStorage'
 }
 
-// 获取当前配置（直接使用localStorage中的配置，如果没有则使用默认配置）
+// 设置配置模式
+export function setConfigMode(mode: ConfigMode): void {
+  localStorage.setItem('posterGirlConfigMode', mode)
+  console.log('配置模式已切换至:', mode)
+}
+
+// 获取当前配置（根据配置模式决定使用默认配置还是localStorage配置）
 export function getCurrentConfig(): PosterGirlConfig {
+  const configMode = getCurrentConfigMode()
+  
+  if (configMode === 'default') {
+    console.log('使用默认配置')
+    return { ...defaultPosterGirlConfig }
+  }
+  
+  // localStorage模式
   try {
     const saved = localStorage.getItem('posterGirlSettings')
     if (saved) {
@@ -170,8 +167,28 @@ export function getCurrentConfig(): PosterGirlConfig {
     console.error('加载看板娘配置失败:', error)
   }
   
-  console.log('使用默认配置')
+  console.log('localStorage配置不存在，使用默认配置')
   return { ...defaultPosterGirlConfig }
+}
+
+// 检查是否有localStorage配置
+export function hasLocalStorageConfig(): boolean {
+  try {
+    const saved = localStorage.getItem('posterGirlSettings')
+    return saved !== null && saved.trim() !== ''
+  } catch (error) {
+    return false
+  }
+}
+
+// 清除localStorage配置
+export function clearLocalStorageConfig(): void {
+  try {
+    localStorage.removeItem('posterGirlSettings')
+    console.log('localStorage配置已清除')
+  } catch (error) {
+    console.error('清除localStorage配置失败:', error)
+  }
 }
 
 // 保存配置到localStorage
@@ -183,6 +200,33 @@ export function saveConfig(config: PosterGirlConfig): void {
     console.log('配置保存成功:', validatedConfig)
   } catch (error) {
     console.error('保存看板娘配置失败:', error)
+  }
+}
+
+// 获取配置模式状态信息
+export function getConfigModeInfo(): {
+  currentMode: ConfigMode
+  hasLocalConfig: boolean
+  modeDescription: string
+} {
+  const currentMode = getCurrentConfigMode()
+  const hasLocalConfig = hasLocalStorageConfig()
+  
+  let modeDescription = ''
+  if (currentMode === 'default') {
+    modeDescription = '使用系统默认配置，所有设置都是初始值'
+  } else {
+    if (hasLocalConfig) {
+      modeDescription = '使用本地保存的自定义配置'
+    } else {
+      modeDescription = '本地模式但无自定义配置，将使用默认配置'
+    }
+  }
+  
+  return {
+    currentMode,
+    hasLocalConfig,
+    modeDescription
   }
 }
 
