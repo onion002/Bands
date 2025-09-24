@@ -1,6 +1,10 @@
 from flask import Flask, request
 import os
 from flask_cors import CORS
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
 
 def create_app():
     # 创建 Flask 应用实例
