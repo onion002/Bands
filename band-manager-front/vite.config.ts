@@ -35,8 +35,9 @@ export default defineConfig(({ mode }) => {
       }
     },
     preview: {
-      host: '0.0.0.0', // 生产预览也允许外部访问
-      port: 3000
+      host: true, // 允许外部访问，禁用host检查
+      port: 3000,
+      allowedHosts: ['bands.icu', 'www.bands.icu', 'localhost', '127.0.0.1']
     },
     css: {
       preprocessorOptions: {
