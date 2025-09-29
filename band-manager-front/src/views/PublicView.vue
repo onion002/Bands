@@ -197,7 +197,8 @@ const loadAdminData = async () => {
     await new Promise(resolve => setTimeout(resolve, 1000))
     
     // 调用后端API
-    const response = await fetch(`/api/auth/public/${adminUsername.value}`)
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+    const response = await fetch(`${API_BASE_URL}/api/auth/public/${adminUsername.value}`)
     if (!response.ok) {
       const errorData = await response.json()
       throw new Error(errorData.error || '管理员不存在或没有公开数据')
