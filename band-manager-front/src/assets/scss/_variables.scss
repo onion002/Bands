@@ -3,6 +3,7 @@
 $primary: #ff2a6d;        // 霓虹粉
 $secondary: #05d9e8;      // 霓虹蓝
 $danger: #ef4444;         // 危险色/错误色
+$error: #ef4444;          // 错误色（别名）
 $success: #10b981;        // 成功色
 $warning: #f59e0b;        // 警告色
 $dark: #121212;           // 深色背景
@@ -24,6 +25,9 @@ $background-color: $dark;
 
 // 渐变色
 $gradient-primary: linear-gradient(135deg, $primary, $secondary);
+$gradient-primary-hover: linear-gradient(135deg, darken($primary, 10%), darken($secondary, 10%));
+$gradient-secondary: linear-gradient(135deg, $secondary, $primary);
+$gradient-secondary-hover: linear-gradient(135deg, darken($secondary, 10%), darken($primary, 10%));
 $gradient-dark: linear-gradient(135deg, $dark, $darkgray);
 
 // 阴影
@@ -35,6 +39,7 @@ $shadow-dark: 0 10px 25px rgba(0, 0, 0, 0.3);
 $border-primary: 1px solid rgba(255, 42, 109, 0.3);
 $border-secondary: 1px solid rgba(5, 217, 232, 0.3);
 $border-light: 1px solid rgba(255, 255, 255, 0.1);
+$border-color: rgba(255, 255, 255, 0.1);
 
 // 字体
 $font-family-base: 'Inter', 'Helvetica Neue', Arial, sans-serif;
@@ -50,3 +55,12 @@ $border-radius-sm: 0.5rem;
 $border-radius-md: 0.75rem;
 $border-radius-lg: 1rem;
 $border-radius-xl: 1.5rem;
+$border-radius-full: 9999px;
+
+// 新增变量
+$primary-hover: darken($primary, 10%);
+$secondary-hover: darken($secondary, 10%);
+$card-bg: rgba(26, 26, 46, 0.8);
+$input-bg: rgba(26, 26, 46, 0.6);
+$text-muted: $gray-300;
+$table-header-bg: rgba(255, 255, 255, 0.05);

@@ -54,13 +54,71 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       assetsDir: 'assets',
       sourcemap: false, // 生产环境不生成sourcemap
+      minify: 'terser', // 使用terser进行更好的压缩
+      terserOptions: {
+        compress: {
+          drop_console: !isDev, // 生产环境移除console
+          drop_debugger: !isDev, // 生产环境移除debugger
+          pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn']
+        }
+      },
       rollupOptions: {
         output: {
+          // 🚀 优化的代码分割策略
           manualChunks: {
-            vendor: ['vue', 'vue-router', 'pinia']
+            // 核心Vue库
+            'vue-core': ['vue', 'vue-router', 'pinia'],
+            // 第三方库
+            'vendor': ['axios'],
+            // 工具库
+            'utils': ['marked', 'highlight.js'],
+            // 按功能分组的路由
+            'admin': [
+              'src/views/admin/AdminUsersView.vue',
+              'src/views/admin/AdminReportsView.vue'
+            ],
+            'band-management': [
+              'src/views/bands/BandManagement.vue',
+              'src/views/bands/MemberManagement.vue',
+              'src/views/bands/EventManagement.vue'
+            ]
+          },
+          // 优化chunk命名
+          chunkFileNames: (chunkInfo) => {
+            const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk'
+            return `js/[name]-[hash].js`
+          },
+          entryFileNames: 'js/[name]-[hash].js',
+          assetFileNames: (assetInfo) => {
+            const info = assetInfo.name.split('.')
+            const ext = info[info.length - 1]
+            if (/\.(css)$/.test(assetInfo.name)) {
+              return `css/[name]-[hash].${ext}`
+            }
+            if (/\.(png|jpe?g|gif|svg|webp|ico)$/.test(assetInfo.name)) {
+              return `images/[name]-[hash].${ext}`
+            }
+            if (/\.(woff2?|eot|ttf|otf)$/.test(assetInfo.name)) {
+              return `fonts/[name]-[hash].${ext}`
+            }
+            return `assets/[name]-[hash].${ext}`
           }
         }
+      },
+      // 设置chunk大小警告阈值
+      chunkSizeWarningLimit: 500,
+      // 启用CSS代码分割
+      cssCodeSplit: true,
+      // 优化依赖预构建
+      optimizeDeps: {
+        include: ['vue', 'vue-router', 'pinia', 'axios'],
+        exclude: ['src/modules/poster-girl']
       }
+    },
+    // 优化依赖预构建
+    optimizeDeps: {
+      include: ['vue', 'vue-router', 'pinia', 'axios'],
+      exclude: ['src/modules/poster-girl']
     }
   }
 })
